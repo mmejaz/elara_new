@@ -1,0 +1,88 @@
+services:
+
+  # Laravel Backend
+  backend:
+    build:
+      context: ./back
+      dockerfile: Dockerfile
+    container_name: elara_backend
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./back:/var/www/html
+    depends_on:
+      - db
+    networks:
+      - elara_network
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+
+  # React Frontend
+  frontend:
+    build:
+      context: ./reactTheme
+      dockerfile: Dockerfile
+    container_name: elara_frontend
+    restart: unless-stopped
+    volumes:
+      - ./reactTheme:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+    networks:
+      - elara_network
+
+  # Nginx (proxy for backend)
+  nginx:
+    image: nginx:alpine
+    container_name: elara_nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./back:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - backend
+    networks:
+      - elara_network
+
+  # MySQL Database
+  db:
+    image: mysql:8.0
+    container_name: elara_db
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: elara
+      MYSQL_USER: elara_user
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: secret
+    ports:
+      - "3306:3306"
+    volumes:
+      - elara_db_data:/var/lib/mysql
+    networks:
+      - elara_network
+
+  # phpMyAdmin (optional, for DB management)
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: elara_phpmyadmin
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: secret
+    depends_on:
+      - db
+    networks:
+      - elara_network
+
+networks:
+  elara_network:
+    driver: bridge
+
+volumes:
+  elara_db_data:

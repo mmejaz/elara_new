@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>React Theme</title>
+    <style>
+      #app-preloader {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        background: #ffffff;
+        transition: opacity 0.3s ease;
+      }
+      #app-preloader.is-dark {
+        background: #0a0a0a;
+      }
+      #app-preloader .ring {
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        border: 3px solid rgba(148, 163, 184, 0.25);
+        border-top-color: #1677ff;
+        animation: app-preloader-spin 0.7s linear infinite;
+      }
+      #app-preloader .brand {
+        font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        font-weight: 700;
+        font-size: 18px;
+        letter-spacing: 0.5px;
+        color: #1677ff;
+      }
+      @keyframes app-preloader-spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <div id="app-preloader">
+      <div class="ring"></div>
+      <div class="brand">React Theme</div>
+    </div>
+    <script>
+      // Match the saved theme so dark-mode users don't see a white flash.
+      try {
+        var saved = JSON.parse(
+          localStorage.getItem('react_theme_settings') || '{}',
+        )
+        var loader = document.getElementById('app-preloader')
+        if (saved.themeMode === 'dark') loader.classList.add('is-dark')
+        if (saved.primaryColor) {
+          loader.querySelector('.ring').style.borderTopColor = saved.primaryColor
+          loader.querySelector('.brand').style.color = saved.primaryColor
+        }
+      } catch (e) {
+        /* no saved settings yet — use defaults */
+      }
+    </script>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
