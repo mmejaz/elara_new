@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\ResponseMessage;
+use App\Helpers\ApiResponse;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Services\AuthService;
 use Illuminate\Http\Request;
@@ -16,7 +18,7 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        return response()->json($payload);
+        return ApiResponse::success($payload, ResponseMessage::LOGIN_SUCCESS);
     }
 
     public function logout(Request $request)
@@ -26,11 +28,11 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return response()->json(['message' => 'Logged out']);
+        return ApiResponse::success(null, ResponseMessage::LOGOUT_SUCCESS);
     }
 
     public function me(Request $request)
     {
-        return response()->json($this->authService->currentUser($request->user()));
+        return ApiResponse::success($this->authService->currentUser($request->user()));
     }
 }

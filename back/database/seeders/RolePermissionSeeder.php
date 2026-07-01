@@ -16,74 +16,61 @@ class RolePermissionSeeder extends Seeder
 
         DB::transaction(function () {
 
-        // Define all permissions
-        $permissions = [
-            // User management
-            'view users', 'create users', 'edit users', 'delete users',
+            // Permissions follow "{module}.{action}" with underscores for spaces.
+            $matrix = [
+                'users'       => ['view', 'create', 'edit', 'delete'],
+                'roles'       => ['view', 'create', 'edit', 'delete'],
+                'permissions' => ['view', 'create', 'edit', 'delete'],
+                'students'    => ['view', 'create', 'edit', 'delete'],
+                'teachers'    => ['view', 'create', 'edit', 'delete'],
+                'attendance'  => ['view', 'create', 'edit', 'delete'],
+                'reports'     => ['view', 'export'],
+                'dashboard'   => ['view'],
+            ];
 
-            // Role management
-            'view roles', 'create roles', 'edit roles', 'delete roles',
+            foreach ($matrix as $module => $actions) {
+                foreach ($actions as $action) {
+                    Permission::firstOrCreate(['name' => "{$module}.{$action}"]);
+                }
+            }
 
-            // Permission management
-            'view permissions', 'create permissions', 'edit permissions', 'delete permissions',
+            // Super Admin — full access (bypasses all gates).
+            Role::firstOrCreate(['name' => 'Super Admin']);
 
-            // Student management
-            'view students', 'create students', 'edit students', 'delete students',
+            // Admin — every permission.
+            $admin = Role::firstOrCreate(['name' => 'Admin']);
+            $admin->syncPermissions(Permission::all());
 
-            // Teacher management
-            'view teachers', 'create teachers', 'edit teachers', 'delete teachers',
+            // Teacher — attendance, students, reports, dashboard.
+            $teacher = Role::firstOrCreate(['name' => 'Teacher']);
+            $teacher->syncPermissions([
+                'dashboard.view',
+                'students.view',
+                'attendance.view', 'attendance.create', 'attendance.edit',
+                'reports.view',
+            ]);
 
-            // Attendance
-            'view attendance', 'create attendance', 'edit attendance', 'delete attendance',
+            // Student — view only.
+            $student = Role::firstOrCreate(['name' => 'Student']);
+            $student->syncPermissions([
+                'dashboard.view',
+                'attendance.view',
+                'reports.view',
+            ]);
 
-            // Reports
-            'view reports', 'export reports',
+            // Parent — view only.
+            $parent = Role::firstOrCreate(['name' => 'Parent']);
+            $parent->syncPermissions([
+                'dashboard.view',
+                'attendance.view',
+                'reports.view',
+            ]);
 
-            // Dashboard
-            'view dashboard',
-        ];
-
-        foreach ($permissions as $permission) {
-            Permission::firstOrCreate(['name' => $permission]);
-        }
-
-        // Super Admin — full access (no explicit permissions needed, bypasses all gates)
-        $superAdmin = Role::firstOrCreate(['name' => 'Super Admin']);
-
-        // Admin — all permissions except managing super admin
-        $admin = Role::firstOrCreate(['name' => 'Admin']);
-        $admin->syncPermissions(Permission::all());
-
-        // Teacher — limited to attendance, students, reports, dashboard
-        $teacher = Role::firstOrCreate(['name' => 'Teacher']);
-        $teacher->syncPermissions([
-            'view dashboard',
-            'view students',
-            'view attendance', 'create attendance', 'edit attendance',
-            'view reports',
-        ]);
-
-        // Student — view only
-        $student = Role::firstOrCreate(['name' => 'Student']);
-        $student->syncPermissions([
-            'view dashboard',
-            'view attendance',
-            'view reports',
-        ]);
-
-        // Parent — view only (their child's data)
-        $parent = Role::firstOrCreate(['name' => 'Parent']);
-        $parent->syncPermissions([
-            'view dashboard',
-            'view attendance',
-            'view reports',
-        ]);
-
-        // Assign Super Admin role to first user
-        $user = User::first();
-        if ($user) {
-            $user->assignRole('Super Admin');
-        }
+            // Assign Super Admin role to the first user.
+            $user = User::first();
+            if ($user) {
+                $user->assignRole('Super Admin');
+            }
         });
 
         $this->command->info('Roles and permissions seeded successfully.');

@@ -29,4 +29,26 @@ class UserService
             return new UserResource($user->load('roles'));
         });
     }
+
+    public function update(User $user, array $data): UserResource
+    {
+        return DB::transaction(function () use ($user, $data) {
+            $user->name = $data['name'];
+            $user->email = $data['email'];
+
+            if (! empty($data['password'])) {
+                $user->password = $data['password'];
+            }
+
+            $user->save();
+            $user->syncRoles([$data['role']]);
+
+            return new UserResource($user->load('roles'));
+        });
+    }
+
+    public function delete(User $user): void
+    {
+        DB::transaction(fn () => $user->delete());
+    }
 }
