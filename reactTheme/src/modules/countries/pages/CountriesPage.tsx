@@ -1,8 +1,9 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons'
-import { Button, Card, Popconfirm, Space, Table, Tooltip, Typography } from 'antd'
+import { Button, Popconfirm, Space, Tooltip, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useMemo } from 'react'
 import PageHeader from '../../../components/PageHeader'
+import DataTable, { useColumnToggle, useServerTable } from '../../../components/DataTable'
 import AddCountryDrawer from '../components/AddCountryDrawer'
 import EditCountryDrawer from '../components/EditCountryDrawer'
 import { openAddDrawer, openEditDrawer } from '../countriesSlice'
@@ -15,7 +16,8 @@ const { Text } = Typography
 
 function CountriesPage() {
   const dispatch = useAppDispatch()
-  const { data: rows = [], isLoading } = useCountries()
+  const table = useServerTable(15, 'Search Countries…')
+  const { data, isLoading } = useCountries(table.params)
   const remove = useDeleteCountry()
 
   const handleDelete = (id: number) =>
@@ -26,7 +28,7 @@ function CountriesPage() {
 
   const columns = useMemo<ColumnsType<Country>>(
     () => [
-      { title: 'Name', dataIndex: 'name', render: (name) => <Text strong>{name}</Text> },
+      { title: 'Name', dataIndex: 'name', sorter: true, render: (name) => <Text strong>{name}</Text> },
       {
         title: 'Actions',
         key: 'actions',
@@ -46,27 +48,36 @@ function CountriesPage() {
     [dispatch],
   )
 
+  const { visibleColumns, control } = useColumnToggle(columns)
+
   return (
     <Space orientation="vertical" size={16} className="w-full">
       <PageHeader
         title="Countries"
         subtitle="Manage Countries records."
+        titleExtra={control}
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => dispatch(openAddDrawer())}>
-            Add Country
-          </Button>
+          <Space>
+            {table.searchInput}
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => dispatch(openAddDrawer())}>
+              Add Country
+            </Button>
+          </Space>
         }
       />
-      <Card styles={{ body: { padding: 18 } }}>
-        <Table
-          rowKey="id"
-          columns={columns}
-          dataSource={rows}
-          loading={isLoading}
-          pagination={{ pageSize: 15, showSizeChanger: false }}
-          scroll={{ x: true }}
-        />
-      </Card>
+      <DataTable<Country>
+        columns={visibleColumns}
+        dataSource={data?.data ?? []}
+        loading={isLoading}
+        showColumnToggle={false}
+        searchable={false}
+        server={{
+          total: data?.meta.total ?? 0,
+          page: table.page,
+          pageSize: table.pageSize,
+          onChange: table.onChange,
+        }}
+      />
       <AddCountryDrawer />
       <EditCountryDrawer />
     </Space>

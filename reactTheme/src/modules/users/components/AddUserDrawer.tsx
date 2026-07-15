@@ -1,8 +1,9 @@
 import { LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons'
-import { Button, Drawer, Form, Input, Select } from 'antd'
+import { Button, Drawer, Form, Input, Select, Skeleton } from 'antd'
 import { notify, toast } from '../../../utils/toast'
 import { closeAddDrawer } from '../usersSlice'
-import { useCreateUser, useRoles } from '../queries'
+import { useCreateUser, usePermissions, useRolesDetailed } from '../queries'
+import PermissionPicker from '../../roles/components/PermissionPicker'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 
@@ -11,9 +12,15 @@ function AddUserDrawer() {
   const open = useAppSelector((state) => state.users.addDrawerOpen)
   const [form] = Form.useForm()
 
-  const { data: roles = [], isLoading: rolesLoading } = useRoles()
-  const roleOptions = roles.map((role) => ({ value: role, label: role }))
+  const { data: roles = [], isLoading: rolesLoading } = useRolesDetailed()
+  const { data: permissions = [], isLoading: permissionsLoading } = usePermissions()
+  const roleOptions = roles.map((role) => ({ value: role.name, label: role.name }))
   const mutation = useCreateUser()
+
+  // When a role is picked, preview the permissions it grants (read-only).
+  const selectedRoleName = Form.useWatch('role', form)
+  const selectedRole = roles.find((role) => role.name === selectedRoleName)
+  const rolePermissions = selectedRole?.permissions ?? []
 
   const handleFinish = (values) => {
     mutation.mutate(values, {
@@ -40,7 +47,7 @@ function AddUserDrawer() {
     <Drawer
       title="Add New User"
       placement="right"
-      size={480}
+      size="large"
       open={open}
       onClose={handleClose}
       maskClosable={!mutation.isPending}
@@ -122,6 +129,25 @@ function AddUserDrawer() {
             optionFilterProp="label"
           />
         </Form.Item>
+
+        {selectedRoleName && (
+          <Form.Item
+            label={
+              <span className="font-medium">
+                Access from this role
+                <span className="ml-1 text-xs font-normal text-gray-400">
+                  — permissions granted, by module
+                </span>
+              </span>
+            }
+          >
+            {permissionsLoading ? (
+              <Skeleton active paragraph={{ rows: 3 }} />
+            ) : (
+              <PermissionPicker permissions={permissions} value={rolePermissions} disabled />
+            )}
+          </Form.Item>
+        )}
       </Form>
     </Drawer>
   )

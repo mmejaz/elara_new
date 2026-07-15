@@ -1,8 +1,9 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons'
-import { Button, Card, Popconfirm, Space, Table, Tooltip, Typography } from 'antd'
+import { Button, Popconfirm, Space, Tooltip, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useMemo } from 'react'
 import PageHeader from '../../../components/PageHeader'
+import DataTable, { useColumnToggle, useServerTable } from '../../../components/DataTable'
 import AddCityDrawer from '../components/AddCityDrawer'
 import EditCityDrawer from '../components/EditCityDrawer'
 import { openAddDrawer, openEditDrawer } from '../citiesSlice'
@@ -15,7 +16,8 @@ const { Text } = Typography
 
 function CitiesPage() {
   const dispatch = useAppDispatch()
-  const { data: rows = [], isLoading } = useCities()
+  const table = useServerTable(15, 'Search Cities…')
+  const { data, isLoading } = useCities(table.params)
   const remove = useDeleteCity()
 
   const handleDelete = (id: number) =>
@@ -26,7 +28,7 @@ function CitiesPage() {
 
   const columns = useMemo<ColumnsType<City>>(
     () => [
-      { title: 'Name', dataIndex: 'name', render: (name) => <Text strong>{name}</Text> },
+      { title: 'Name', dataIndex: 'name', sorter: true, render: (name) => <Text strong>{name}</Text> },
       {
         title: 'Actions',
         key: 'actions',
@@ -46,27 +48,36 @@ function CitiesPage() {
     [dispatch],
   )
 
+  const { visibleColumns, control } = useColumnToggle(columns)
+
   return (
     <Space orientation="vertical" size={16} className="w-full">
       <PageHeader
         title="Cities"
         subtitle="Manage Cities records."
+        titleExtra={control}
         extra={
-          <Button type="primary" icon={<PlusOutlined />} onClick={() => dispatch(openAddDrawer())}>
-            Add City
-          </Button>
+          <Space>
+            {table.searchInput}
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => dispatch(openAddDrawer())}>
+              Add City
+            </Button>
+          </Space>
         }
       />
-      <Card styles={{ body: { padding: 18 } }}>
-        <Table
-          rowKey="id"
-          columns={columns}
-          dataSource={rows}
-          loading={isLoading}
-          pagination={{ pageSize: 15, showSizeChanger: false }}
-          scroll={{ x: true }}
-        />
-      </Card>
+      <DataTable<City>
+        columns={visibleColumns}
+        dataSource={data?.data ?? []}
+        loading={isLoading}
+        showColumnToggle={false}
+        searchable={false}
+        server={{
+          total: data?.meta.total ?? 0,
+          page: table.page,
+          pageSize: table.pageSize,
+          onChange: table.onChange,
+        }}
+      />
       <AddCityDrawer />
       <EditCityDrawer />
     </Space>

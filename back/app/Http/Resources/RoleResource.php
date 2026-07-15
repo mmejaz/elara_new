@@ -21,7 +21,9 @@ class RoleResource extends JsonResource
         return [
             'id'                => $this->id,
             'name'              => $this->name,
-            'users_count'       => $this->usersCount,
+            // `withCount('users')` (paginated path) sets users_count; otherwise
+            // fall back to the value injected via withUsersCount() (getAll path).
+            'users_count'       => $this->users_count ?? $this->usersCount,
             'permissions_count' => $this->whenLoaded('permissions', fn() => $this->permissions->count(), 0),
             'permissions'       => $this->whenLoaded('permissions', fn() => $this->permissions->pluck('name')),
         ];

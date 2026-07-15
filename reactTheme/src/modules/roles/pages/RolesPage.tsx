@@ -1,24 +1,29 @@
 import { EditOutlined, PlusOutlined, SafetyCertificateOutlined } from '@ant-design/icons'
-import { Button, Card, Space, Table, Tag, Tooltip, Typography } from 'antd'
+import { Button, Space, Tag, Tooltip, Typography } from 'antd'
+import type { ColumnsType } from 'antd/es/table'
 import { useMemo } from 'react'
 import PageHeader from '../../../components/PageHeader'
+import DataTable, { useColumnToggle, useServerTable } from '../../../components/DataTable'
 import AddRoleDrawer from '../components/AddRoleDrawer'
 import EditRoleDrawer from '../components/EditRoleDrawer'
 import { openAddDrawer, openEditDrawer } from '../rolesSlice'
-import { useRoles } from '../queries'
+import { usePaginatedRoles } from '../queries'
 import { useAppDispatch } from '../../../store/hooks'
+import type { Role } from '../../../types/models'
 
 const { Text } = Typography
 
 function RolesPage() {
   const dispatch = useAppDispatch()
-  const { data: roles = [], isLoading } = useRoles()
+  const table = useServerTable(15, 'Search roles…')
+  const { data, isLoading } = usePaginatedRoles(table.params)
 
-  const columns = useMemo(
+  const columns = useMemo<ColumnsType<Role>>(
     () => [
       {
         title: 'Role',
         dataIndex: 'name',
+        sorter: true,
         render: (name) => (
           <Tag color="processing" icon={<SafetyCertificateOutlined />}>
             {name}
@@ -52,31 +57,41 @@ function RolesPage() {
     [dispatch],
   )
 
+  const { visibleColumns, control } = useColumnToggle(columns)
+
   return (
     <Space orientation="vertical" size={16} className="w-full">
       <PageHeader
         title="Roles"
         subtitle="Define what each group of users can access."
+        titleExtra={control}
         extra={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => dispatch(openAddDrawer())}
-          >
-            Add Role
-          </Button>
+          <Space>
+            {table.searchInput}
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => dispatch(openAddDrawer())}
+            >
+              Add Role
+            </Button>
+          </Space>
         }
       />
 
-      <Card styles={{ body: { padding: 18 } }}>
-        <Table
-          rowKey="id"
-          columns={columns}
-          dataSource={roles}
-          loading={isLoading}
-          pagination={false}
-        />
-      </Card>
+      <DataTable<Role>
+        columns={visibleColumns}
+        dataSource={data?.data ?? []}
+        loading={isLoading}
+        searchable={false}
+        showColumnToggle={false}
+        server={{
+          total: data?.meta.total ?? 0,
+          page: table.page,
+          pageSize: table.pageSize,
+          onChange: table.onChange,
+        }}
+      />
 
       <AddRoleDrawer />
       <EditRoleDrawer />

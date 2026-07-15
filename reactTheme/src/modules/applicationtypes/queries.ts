@@ -1,14 +1,22 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import apiClient from '../../services/apiClient'
+import type { ServerTableParams } from '../../components/DataTable'
 import type { ApplicationType } from './types'
 
-async function fetchApplicationTypes(): Promise<ApplicationType[]> {
-  const { data } = await apiClient.get('/applicationtypes')
-  return data.data
+interface Paginated<T> {
+  data: T[]
+  meta: { current_page: number; per_page: number; total: number; last_page: number }
 }
 
-export function useApplicationTypes() {
-  return useQuery({ queryKey: ['applicationtypes'], queryFn: fetchApplicationTypes })
+export function useApplicationTypes(params: ServerTableParams) {
+  return useQuery({
+    queryKey: ['applicationtypes', params],
+    queryFn: async (): Promise<Paginated<ApplicationType>> => {
+      const { data } = await apiClient.get('/applicationtypes', { params })
+      return data
+    },
+    placeholderData: keepPreviousData, // keep the old page visible while the next loads
+  })
 }
 
 export function useCreateApplicationType() {

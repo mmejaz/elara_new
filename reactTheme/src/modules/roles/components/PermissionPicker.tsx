@@ -35,9 +35,11 @@ interface PermissionPickerProps {
   permissions?: string[]
   value?: string[]
   onChange?: (value: string[]) => void
+  /** Read-only mode — checkboxes reflect `value` but can't be changed (e.g. a role preview). */
+  disabled?: boolean
 }
 
-function PermissionPicker({ permissions = [], value = [], onChange }: PermissionPickerProps) {
+function PermissionPicker({ permissions = [], value = [], onChange, disabled = false }: PermissionPickerProps) {
   const grouped = useMemo(() => groupPermissions(permissions), [permissions])
 
   const toggle = (perm) => {
@@ -68,6 +70,7 @@ function PermissionPicker({ permissions = [], value = [], onChange }: Permission
           <Checkbox
             checked={allChecked}
             indeterminate={someChecked}
+            disabled={disabled}
             onClick={(e) => e.stopPropagation()}
             onChange={(e) => toggleModule(perms, e.target.checked)}
           />
@@ -87,6 +90,7 @@ function PermissionPicker({ permissions = [], value = [], onChange }: Permission
               <Checkbox
                 key={name}
                 checked={value.includes(name)}
+                disabled={disabled}
                 onChange={() => toggle(name)}
               >
                 <Tag color={meta.color} className="!text-xs !m-0">

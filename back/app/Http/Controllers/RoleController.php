@@ -6,7 +6,9 @@ use App\Constants\ResponseMessage;
 use App\Helpers\ApiResponse;
 use App\Http\Requests\Role\StoreRoleRequest;
 use App\Http\Requests\Role\UpdateRoleRequest;
+use App\Http\Resources\RoleResource;
 use App\Services\RoleService;
+use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -22,6 +24,15 @@ class RoleController extends Controller
     public function list()
     {
         return ApiResponse::success($this->roleService->getAll(), ResponseMessage::FETCHED);
+    }
+
+    public function paginated(Request $request)
+    {
+        return ApiResponse::paginated(
+            $this->roleService->paginate($request->only(['search', 'sort_by', 'sort_dir', 'per_page'])),
+            RoleResource::class,
+            ResponseMessage::FETCHED,
+        );
     }
 
     public function store(StoreRoleRequest $request)

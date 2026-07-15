@@ -1,7 +1,9 @@
-import { Button, Drawer, Form, Input, Select } from 'antd'
+import { Alert, Button, Drawer, Form, Select } from 'antd'
+import { useMemo } from 'react'
 import { notify, toast } from '../../../utils/toast'
 import { closeAddDrawer } from '../permissionsSlice'
 import { useCreatePermission } from '../queries'
+import { useModules } from '../../../hooks/useModules'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 
@@ -12,6 +14,17 @@ function AddPermissionDrawer() {
   const open = useAppSelector((state) => state.permissions.addDrawerOpen)
   const [form] = Form.useForm()
   const mutation = useCreatePermission()
+  const { data: modules = [] } = useModules()
+
+  // Real feature modules (menu items), sorted — the source for the Module dropdown.
+  const moduleOptions = useMemo(
+    () =>
+      modules
+        .filter((m) => m.type === 'item')
+        .map((m) => ({ value: m.name, label: m.name }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [modules],
+  )
 
   const toKey = (text) => text.trim().toLowerCase().replace(/\s+/g, '_')
 
@@ -42,7 +55,7 @@ function AddPermissionDrawer() {
     <Drawer
       title="Add New Permission"
       placement="right"
-      size="default"
+      size="large"
       open={open}
       onClose={handleClose}
       maskClosable={!mutation.isPending}
@@ -58,14 +71,33 @@ function AddPermissionDrawer() {
         </div>
       }
     >
-      <Form form={form} layout="vertical" requiredMark={false} onFinish={handleFinish}>
+      <Form form={form} layout="vertical" onFinish={handleFinish}>
+        <Alert
+          type="info"
+          showIcon
+          className="!mb-4"
+          message="Before you start"
+          description={
+            <ul className="mt-1 list-disc pl-4 text-xs">
+              <li>Fields marked with <span className="text-red-500">*</span> are required.</li>
+              <li>Permissions are created as <span className="font-mono">module.action</span> (e.g. invoices.create).</li>
+              <li>The module + action combination must be unique.</li>
+            </ul>
+          }
+        />
         <Form.Item
           label="Module"
           name="module"
-          rules={[{ required: true, message: 'Enter the module name' }]}
-          extra="e.g. invoices, products, reports"
+          rules={[{ required: true, message: 'Select a module' }]}
+          extra="Pick the module this permission belongs to."
         >
-          <Input placeholder="e.g. invoices" size="large" />
+          <Select
+            showSearch
+            placeholder="Select a module"
+            size="large"
+            optionFilterProp="label"
+            options={moduleOptions}
+          />
         </Form.Item>
 
         <Form.Item

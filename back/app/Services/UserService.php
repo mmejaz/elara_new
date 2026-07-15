@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class UserService
@@ -13,6 +14,43 @@ class UserService
         return UserResource::collection(
             User::with('roles')->latest()->get()
         );
+    }
+
+    /** Server-side paginated + searchable user list (name, email, or role). */
+    public function paginate(array $params): LengthAwarePaginator
+    {
+        $query = User::query()->with('roles');
+
+        if (! empty($params['search'])) {
+            $search = $params['search'];
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('email', 'like', '%' . $search . '%')
+                    ->orWhereHas('roles', fn ($r) => $r->where('name', 'like', '%' . $search . '%'));
+            });
+        }
+
+        $sortable = ['name', 'email', 'created_at', 'id'];
+        $sortBy = in_array($params['sort_by'] ?? '', $sortable, true) ? $params['sort_by'] : 'created_at';
+        $sortDir = ($params['sort_dir'] ?? 'asc') === 'asc' ? 'asc' : 'desc';
+
+        return $query
+            ->orderBy($sortBy, $sortDir)
+            ->paginate((int) ($params['per_page'] ?? 15));
+    }
+
+    /** Aggregate counts for the Users page stat cards (unaffected by pagination). */
+    public function stats(): array
+    {
+        $total = User::count();
+        // Count actual users that have a role (avoids orphaned model_has_roles rows).
+        $withRole = User::whereHas('roles')->count();
+
+        return [
+            'total'        => $total,
+            'with_role'    => $withRole,
+            'without_role' => max(0, $total - $withRole),
+        ];
     }
 
     public function create(array $data): UserResource

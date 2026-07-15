@@ -1,4 +1,4 @@
-import { Button, Checkbox, Drawer, Form, Input, Radio, Select, Tag, TreeSelect, Typography } from 'antd'
+import { Alert, Button, Checkbox, Drawer, Form, Input, Radio, Select, Tag, TreeSelect, Typography } from 'antd'
 import { notify, toast } from '../../../utils/toast'
 import {
   AppstoreOutlined,
@@ -103,10 +103,22 @@ function AddModuleDrawer() {
       <Form
         form={form}
         layout="vertical"
-        requiredMark={false}
         onFinish={handleFinish}
         initialValues={{ type: 'item', resourceful: true, permissions: PERMISSION_ACTIONS }}
       >
+        <Alert
+          type="info"
+          showIcon
+          className="!mb-4"
+          message="Before you start"
+          description={
+            <ul className="mt-1 list-disc pl-4 text-xs">
+              <li>Fields marked with <span className="text-red-500">*</span> are required.</li>
+              <li>Module name accepts letters and spaces only.</li>
+              <li>Resourceful modules generate full CRUD files (list, drawers, service, controller).</li>
+            </ul>
+          }
+        />
         <Form.Item
           label="Module Name"
           name="name"

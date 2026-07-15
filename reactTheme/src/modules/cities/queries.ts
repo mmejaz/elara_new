@@ -1,14 +1,22 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import apiClient from '../../services/apiClient'
+import type { ServerTableParams } from '../../components/DataTable'
 import type { City } from './types'
 
-async function fetchCities(): Promise<City[]> {
-  const { data } = await apiClient.get('/cities')
-  return data.data
+interface Paginated<T> {
+  data: T[]
+  meta: { current_page: number; per_page: number; total: number; last_page: number }
 }
 
-export function useCities() {
-  return useQuery({ queryKey: ['cities'], queryFn: fetchCities })
+export function useCities(params: ServerTableParams) {
+  return useQuery({
+    queryKey: ['cities', params],
+    queryFn: async (): Promise<Paginated<City>> => {
+      const { data } = await apiClient.get('/cities', { params })
+      return data
+    },
+    placeholderData: keepPreviousData, // keep the old page visible while the next loads
+  })
 }
 
 export function useCreateCity() {

@@ -7,14 +7,18 @@ const { Text, Title } = Typography
 interface PageHeaderProps {
   title: ReactNode
   subtitle?: ReactNode
+  /** Rendered on the LEFT, inline right after the title (e.g. a settings gear). */
+  titleExtra?: ReactNode
+  /** Rendered on the RIGHT (actions like an "Add" button). */
   extra?: ReactNode
 }
 
 /**
  * Reusable gradient page-header card. Renders a title + subtitle with an accent
- * bar, and an optional `extra` slot on the right for actions/filters.
+ * bar, an optional `titleExtra` slot beside the title (left), and an optional
+ * `extra` slot on the right for actions/filters.
  */
-function PageHeader({ title, subtitle, extra }: PageHeaderProps) {
+function PageHeader({ title, subtitle, titleExtra, extra }: PageHeaderProps) {
   const primaryColor = useAppSelector((state) => state.ui.primaryColor)
   const themeMode = useAppSelector((state) => state.ui.themeMode)
   const borderRadius = useAppSelector((state) => state.ui.borderRadius)
@@ -41,9 +45,12 @@ function PageHeader({ title, subtitle, extra }: PageHeaderProps) {
             style={{ background: primaryColor }}
           />
           <div className="min-w-0">
-            <Title className="!m-0 !text-[22px] !font-semibold !leading-tight !tracking-tight md:!text-2xl">
-              {title}
-            </Title>
+            <div className="flex items-center gap-3">
+              <Title className="!m-0 !text-[22px] !font-semibold !leading-tight !tracking-tight md:!text-2xl">
+                {title}
+              </Title>
+              {titleExtra}
+            </div>
             {subtitle && (
               <Text className="!mt-1.5 !block !text-[13px] !leading-relaxed !text-[#64748b] dark:!text-[#94a3b8]">
                 {subtitle}

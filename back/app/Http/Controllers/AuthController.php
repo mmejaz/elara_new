@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Constants\ResponseMessage;
 use App\Helpers\ApiResponse;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Http\Requests\Profile\UpdateAvatarRequest;
 use App\Services\AuthService;
 use Illuminate\Http\Request;
 
@@ -34,5 +35,21 @@ class AuthController extends Controller
     public function me(Request $request)
     {
         return ApiResponse::success($this->authService->currentUser($request->user()));
+    }
+
+    public function updateAvatar(UpdateAvatarRequest $request)
+    {
+        return ApiResponse::success(
+            $this->authService->updateAvatar($request->user(), $request->file('avatar')),
+            ResponseMessage::UPDATED,
+        );
+    }
+
+    public function deleteAvatar(Request $request)
+    {
+        return ApiResponse::success(
+            $this->authService->deleteAvatar($request->user()),
+            ResponseMessage::DELETED,
+        );
     }
 }

@@ -92,7 +92,11 @@ function SidebarContent({ collapsed = false, onNavigate }: SidebarContentProps) 
                   itemHoverColor: isDark ? '#ffffff' : primaryColor,
                   itemActiveBg: hexToRgba(primaryColor, 0.2),
                   groupTitleColor: menuGroupTitleColor,
+                  // Expanded sub-menu background — default is a navy in dark mode;
+                  // match the sidebar background so there's no blue tint.
+                  subMenuItemBg: colorBgContainer,
                   darkItemBg: colorBgContainer,
+                  darkSubMenuItemBg: colorBgContainer,
                   darkItemColor: menuItemColor,
                   darkItemHoverBg: menuHoverBg,
                   darkItemHoverColor: '#ffffff',

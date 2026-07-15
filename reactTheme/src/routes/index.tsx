@@ -94,6 +94,12 @@ const CountriesPage = lazy(() => import('../modules/countries/pages/CountriesPag
 const countriesRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/countries', component: CountriesPage })
 const CitiesPage = lazy(() => import('../modules/cities/pages/CitiesPage'))
 const citiesRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/cities', component: CitiesPage })
+const GendersPage = lazy(() => import('../modules/genders/pages/GendersPage'))
+const gendersRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/genders', component: GendersPage })
+const GlobalSettingsPage = lazy(() => import('../modules/globalsettings/pages/GlobalSettingsPage'))
+const globalSettingsRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/globalsettings', component: GlobalSettingsPage })
+const ConfigureGlobalSettingPage = lazy(() => import('../modules/globalsettings/pages/ConfigureGlobalSettingPage'))
+const globalSettingConfigureRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/globalsettings/$id/configure', component: ConfigureGlobalSettingPage })
 // __MODULE_ROUTE_DEFS__
 
 const routeTree = rootRoute.addChildren([
@@ -113,6 +119,9 @@ const routeTree = rootRoute.addChildren([
     applicationTypesRoute,
     countriesRoute,
     citiesRoute,
+    gendersRoute,
+    globalSettingsRoute,
+    globalSettingConfigureRoute,
     // __MODULE_ROUTES__
     notFoundRoute,
   ]),

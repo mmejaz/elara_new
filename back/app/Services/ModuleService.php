@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Http\Resources\ModuleResource;
 use App\Models\Module;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -21,6 +22,24 @@ class ModuleService
         return ModuleResource::collection(
             Module::ordered()->get()
         );
+    }
+
+    /** Server-side paginated + searchable list for the Module Builder table. */
+    public function paginate(array $params): LengthAwarePaginator
+    {
+        $query = Module::query();
+
+        if (! empty($params['search'])) {
+            $query->where('name', 'like', '%' . $params['search'] . '%');
+        }
+
+        $sortable = ['name', 'created_at', 'id', 'order'];
+        $sortBy = in_array($params['sort_by'] ?? '', $sortable, true) ? $params['sort_by'] : 'order';
+        $sortDir = ($params['sort_dir'] ?? 'asc') === 'desc' ? 'desc' : 'asc';
+
+        return $query
+            ->orderBy($sortBy, $sortDir)
+            ->paginate((int) ($params['per_page'] ?? 15));
     }
 
     /** Update a module (e.g. toggle active/inactive visibility). */

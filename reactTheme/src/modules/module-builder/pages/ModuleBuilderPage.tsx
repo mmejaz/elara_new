@@ -1,23 +1,27 @@
 import { PlusOutlined } from '@ant-design/icons'
-import { Button, Card, Space, Table, Tag, Typography } from 'antd'
+import { Button, Space, Tag, Typography } from 'antd'
+import type { ColumnsType } from 'antd/es/table'
 import { useMemo } from 'react'
 import PageHeader from '../../../components/PageHeader'
+import DataTable, { useColumnToggle, useServerTable } from '../../../components/DataTable'
 import AddModuleDrawer from '../components/AddModuleDrawer'
 import { openAddDrawer } from '../moduleBuilderSlice'
-import { useModules } from '../../../hooks/useModules'
+import { useModulesPaginated } from '../../../hooks/useModules'
 import { useAppDispatch } from '../../../store/hooks'
 
 const { Text } = Typography
 
 function ModuleBuilderPage() {
   const dispatch = useAppDispatch()
-  const { data: modules = [], isLoading, isError } = useModules()
+  const table = useServerTable(15, 'Search modules…')
+  const { data, isLoading } = useModulesPaginated(table.params)
 
-  const columns = useMemo(
+  const columns = useMemo<ColumnsType<Record<string, unknown>>>(
     () => [
       {
         title: 'Module',
         dataIndex: 'name',
+        sorter: true,
         render: (name) => <Text strong>{name}</Text>,
       },
       {
@@ -60,37 +64,41 @@ function ModuleBuilderPage() {
     [],
   )
 
+  const { visibleColumns, control } = useColumnToggle(columns)
+
   return (
     <Space orientation="vertical" size={16} className="w-full">
       <PageHeader
         title="Module Builder"
         subtitle="Generate a new module with its CRUD scaffolding."
+        titleExtra={control}
         extra={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => dispatch(openAddDrawer())}
-          >
-            Create Module
-          </Button>
+          <Space>
+            {table.searchInput}
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => dispatch(openAddDrawer())}
+            >
+              Create Module
+            </Button>
+          </Space>
         }
       />
 
-      <Card styles={{ body: { padding: 18 } }}>
-        <Table
-          rowKey="id"
-          columns={columns}
-          dataSource={modules}
-          loading={isLoading}
-          locale={{
-            emptyText: isError
-              ? 'Backend not connected yet — module generation API is pending.'
-              : 'No modules generated yet.',
-          }}
-          pagination={{ pageSize: 15, showSizeChanger: false }}
-          scroll={{ x: true }}
-        />
-      </Card>
+      <DataTable<Record<string, unknown>>
+        columns={visibleColumns}
+        dataSource={(data?.data ?? []) as unknown as Record<string, unknown>[]}
+        loading={isLoading}
+        searchable={false}
+        showColumnToggle={false}
+        server={{
+          total: data?.meta.total ?? 0,
+          page: table.page,
+          pageSize: table.pageSize,
+          onChange: table.onChange,
+        }}
+      />
 
       <AddModuleDrawer />
     </Space>

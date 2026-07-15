@@ -1,59 +1,80 @@
 import { DownloadOutlined, FileTextOutlined } from '@ant-design/icons'
-import { Button, Card, Col, Empty, Row, Space, Typography } from 'antd'
+import { Button, Space, Tag, Tooltip, Typography } from 'antd'
+import type { ColumnsType } from 'antd/es/table'
+import { useMemo } from 'react'
 import PageHeader from '../../../components/PageHeader'
-import { hexToRgba } from '../../../utils/color'
-import { useAppSelector } from '../../../store/hooks'
+import DataTable, { useColumnToggle, useTableSearch } from '../../../components/DataTable'
 
 const { Text } = Typography
 
-const reports = [
+interface Report {
+  key: string
+  name: string
+  period: string
+}
+
+const reports: Report[] = [
   { key: 'sales', name: 'Sales Summary', period: 'Monthly' },
   { key: 'users', name: 'User Activity', period: 'Weekly' },
   { key: 'finance', name: 'Finance Statement', period: 'Quarterly' },
 ]
 
 function ReportsPage() {
-  const primaryColor = useAppSelector((state) => state.ui.primaryColor)
+  // Static local list, so search filters client-side.
+  const { value: search, input: searchInput } = useTableSearch('Search reports…')
+
+  const columns = useMemo<ColumnsType<Report>>(
+    () => [
+      {
+        title: 'Report',
+        dataIndex: 'name',
+        sorter: (a, b) => a.name.localeCompare(b.name),
+        render: (name) => (
+          <Space>
+            <FileTextOutlined />
+            <Text strong>{name}</Text>
+          </Space>
+        ),
+      },
+      {
+        title: 'Period',
+        dataIndex: 'period',
+        render: (period) => <Tag color="blue">{period}</Tag>,
+      },
+      {
+        title: 'Actions',
+        key: 'actions',
+        width: 120,
+        render: () => (
+          <Tooltip title="Download">
+            <Button type="text" icon={<DownloadOutlined />} aria-label="Download" />
+          </Tooltip>
+        ),
+      },
+    ],
+    [],
+  )
+
+  const { visibleColumns, control } = useColumnToggle(columns)
 
   return (
     <Space orientation="vertical" size={16} className="w-full">
       <PageHeader
         title="Reports"
         subtitle="Generate and download workspace reports."
+        titleExtra={control}
+        extra={searchInput}
       />
 
-      <Row gutter={[12, 12]}>
-        {reports.map((report) => (
-          <Col key={report.key} xs={24} md={8}>
-            <Card styles={{ body: { padding: 18 } }}>
-              <div className="flex items-center gap-3">
-                <div
-                  className="grid size-11 shrink-0 place-items-center rounded-lg text-lg"
-                  style={{
-                    background: hexToRgba(primaryColor, 0.12),
-                    color: primaryColor,
-                  }}
-                >
-                  <FileTextOutlined />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <Text strong className="!block">
-                    {report.name}
-                  </Text>
-                  <Text type="secondary" className="!text-xs">
-                    {report.period}
-                  </Text>
-                </div>
-                <Button type="text" icon={<DownloadOutlined />} aria-label="Download" />
-              </div>
-            </Card>
-          </Col>
-        ))}
-      </Row>
-
-      <Card>
-        <Empty description="Select a report above to preview its data here." />
-      </Card>
+      <DataTable<Report>
+        columns={visibleColumns}
+        dataSource={reports}
+        rowKey="key"
+        searchable={false}
+        searchValue={search}
+        showColumnToggle={false}
+        searchKeys={['name', 'period']}
+      />
     </Space>
   )
 }

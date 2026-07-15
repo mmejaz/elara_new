@@ -1,4 +1,4 @@
-import { Button, Drawer, Form, Input } from 'antd'
+import { Alert, Button, Drawer, Form, Input } from 'antd'
 import { closeAddDrawer } from '../applicationTypesSlice'
 import { useCreateApplicationType } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
@@ -48,7 +48,19 @@ function AddApplicationTypeDrawer() {
         </div>
       }
     >
-      <Form form={form} layout="vertical" requiredMark={false} onFinish={handleFinish}>
+      <Alert
+        type="info"
+        showIcon
+        className="!mb-4"
+        message="Before you start"
+        description={
+          <ul className="mt-1 list-disc pl-4 text-xs">
+            <li>Fields marked with <span className="text-red-500">*</span> are required.</li>
+            <li>Enter a unique name — duplicate names aren't allowed.</li>
+          </ul>
+        }
+      />
+      <Form form={form} layout="vertical" onFinish={handleFinish}>
         <Form.Item label="Name" name="name" rules={[{ required: true, message: 'Enter a name' }]}>
           <Input placeholder="Enter name" size="large" autoFocus />
         </Form.Item>

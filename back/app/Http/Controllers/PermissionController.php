@@ -6,7 +6,9 @@ use App\Constants\ResponseMessage;
 use App\Helpers\ApiResponse;
 use App\Http\Requests\Permission\StorePermissionRequest;
 use App\Http\Requests\Permission\UpdatePermissionRequest;
+use App\Http\Resources\PermissionResource;
 use App\Services\PermissionService;
+use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -22,6 +24,15 @@ class PermissionController extends Controller
     public function list()
     {
         return ApiResponse::success($this->permissionService->getAll(), ResponseMessage::FETCHED);
+    }
+
+    public function paginated(Request $request)
+    {
+        return ApiResponse::paginated(
+            $this->permissionService->paginate($request->only(['search', 'sort_by', 'sort_dir', 'per_page'])),
+            PermissionResource::class,
+            ResponseMessage::FETCHED,
+        );
     }
 
     public function store(StorePermissionRequest $request)

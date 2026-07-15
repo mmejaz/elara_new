@@ -8,6 +8,8 @@ import moduleBuilderReducer from '../modules/module-builder/moduleBuilderSlice'
 import applicationTypesReducer from '../modules/applicationtypes/applicationTypesSlice'
 import countriesReducer from '../modules/countries/countriesSlice'
 import citiesReducer from '../modules/cities/citiesSlice'
+import gendersReducer from '../modules/genders/gendersSlice'
+import globalSettingsReducer from '../modules/globalsettings/globalSettingsSlice'
 // __MODULE_REDUCER_IMPORTS__
 
 export const store = configureStore({
@@ -21,6 +23,8 @@ export const store = configureStore({
     applicationTypes: applicationTypesReducer,
     countries: countriesReducer,
     cities: citiesReducer,
+    genders: gendersReducer,
+    globalSettings: globalSettingsReducer,
     // __MODULE_REDUCERS__
   },
 })

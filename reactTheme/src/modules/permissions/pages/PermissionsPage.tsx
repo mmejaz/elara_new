@@ -1,16 +1,19 @@
 import { EditOutlined, PlusOutlined } from '@ant-design/icons'
-import { Button, Card, Space, Table, Tag, Tooltip, Typography } from 'antd'
+import { Button, Space, Tag, Tooltip, Typography } from 'antd'
+import type { ColumnsType } from 'antd/es/table'
 import { useMemo } from 'react'
 import PageHeader from '../../../components/PageHeader'
+import DataTable, { useColumnToggle, useServerTable } from '../../../components/DataTable'
 import AddPermissionDrawer from '../components/AddPermissionDrawer'
 import EditPermissionDrawer from '../components/EditPermissionDrawer'
 import { openAddDrawer, openEditDrawer } from '../permissionsSlice'
-import { usePermissions } from '../queries'
+import { usePermissionsPaginated } from '../queries'
 import { useAppDispatch } from '../../../store/hooks'
+import type { Permission } from '../../../types/models'
 
 const { Text } = Typography
 
-const ACTION_COLORS = {
+const ACTION_COLORS: Record<string, string> = {
   view: 'blue',
   create: 'green',
   edit: 'orange',
@@ -21,13 +24,15 @@ const ACTION_COLORS = {
 
 function PermissionsPage() {
   const dispatch = useAppDispatch()
-  const { data: permissions = [], isLoading } = usePermissions()
+  const table = useServerTable(15, 'Search permissions…')
+  const { data, isLoading } = usePermissionsPaginated(table.params)
 
-  const columns = useMemo(
+  const columns = useMemo<ColumnsType<Permission>>(
     () => [
       {
         title: 'Permission',
         dataIndex: 'name',
+        sorter: true,
         render: (name) => <Text code>{name}</Text>,
       },
       {
@@ -38,9 +43,7 @@ function PermissionsPage() {
       {
         title: 'Action',
         dataIndex: 'action',
-        render: (action) => (
-          <Tag color={ACTION_COLORS[action] ?? 'default'}>{action}</Tag>
-        ),
+        render: (action) => <Tag color={ACTION_COLORS[action] ?? 'default'}>{action}</Tag>,
       },
       {
         title: 'Assigned Roles',
@@ -48,7 +51,7 @@ function PermissionsPage() {
         render: (roles = []) =>
           roles.length ? (
             <Space size={[4, 4]} wrap>
-              {roles.map((role) => (
+              {roles.map((role: string) => (
                 <Tag key={role} color="processing">{role}</Tag>
               ))}
             </Space>
@@ -73,32 +76,41 @@ function PermissionsPage() {
     [dispatch],
   )
 
+  const { visibleColumns, control } = useColumnToggle(columns)
+
   return (
     <Space orientation="vertical" size={16} className="w-full">
       <PageHeader
         title="Permissions"
         subtitle="Fine-grained capabilities mapped to roles."
+        titleExtra={control}
         extra={
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => dispatch(openAddDrawer())}
-          >
-            Add Permission
-          </Button>
+          <Space>
+            {table.searchInput}
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => dispatch(openAddDrawer())}
+            >
+              Add Permission
+            </Button>
+          </Space>
         }
       />
 
-      <Card styles={{ body: { padding: 18 } }}>
-        <Table
-          rowKey="id"
-          columns={columns}
-          dataSource={permissions}
-          loading={isLoading}
-          pagination={{ pageSize: 15, showSizeChanger: false }}
-          scroll={{ x: true }}
-        />
-      </Card>
+      <DataTable<Permission>
+        columns={visibleColumns}
+        dataSource={data?.data ?? []}
+        loading={isLoading}
+        searchable={false}
+        showColumnToggle={false}
+        server={{
+          total: data?.meta.total ?? 0,
+          page: table.page,
+          pageSize: table.pageSize,
+          onChange: table.onChange,
+        }}
+      />
 
       <AddPermissionDrawer />
       <EditPermissionDrawer />

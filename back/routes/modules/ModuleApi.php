@@ -10,6 +10,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Module management — Super Admin only (lists, generates, toggles).
     Route::middleware('role:Super Admin')->group(function () {
         Route::get('/modules', [ModuleController::class, 'index']);
+        Route::get('/modules/paginated', [ModuleController::class, 'paginated']);
         Route::post('/modules', [ModuleController::class, 'store']);
         Route::patch('/modules/{module}', [ModuleController::class, 'update']);
     });

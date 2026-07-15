@@ -1,14 +1,22 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import apiClient from '../../services/apiClient'
+import type { ServerTableParams } from '../../components/DataTable'
 import type { Country } from './types'
 
-async function fetchCountries(): Promise<Country[]> {
-  const { data } = await apiClient.get('/countries')
-  return data.data
+interface Paginated<T> {
+  data: T[]
+  meta: { current_page: number; per_page: number; total: number; last_page: number }
 }
 
-export function useCountries() {
-  return useQuery({ queryKey: ['countries'], queryFn: fetchCountries })
+export function useCountries(params: ServerTableParams) {
+  return useQuery({
+    queryKey: ['countries', params],
+    queryFn: async (): Promise<Paginated<Country>> => {
+      const { data } = await apiClient.get('/countries', { params })
+      return data
+    },
+    placeholderData: keepPreviousData, // keep the old page visible while the next loads
+  })
 }
 
 export function useCreateCountry() {

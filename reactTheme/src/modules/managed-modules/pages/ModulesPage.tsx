@@ -2,6 +2,7 @@ import { AppstoreOutlined } from '@ant-design/icons'
 import { Card, Col, Empty, Row, Space, Spin, Switch, Tag, Typography } from 'antd'
 import { useMemo } from 'react'
 import PageHeader from '../../../components/PageHeader'
+import { useTableSearch } from '../../../components/DataTable'
 import { ICONS } from '../../../config/iconRegistry'
 import { useModules, useSetModuleVisibility } from '../../../hooks/useModules'
 import { toast } from '../../../utils/toast'
@@ -14,9 +15,15 @@ function ModulesPage() {
   const primaryColor = useAppSelector((state) => state.ui.primaryColor)
   const { data: all = [], isLoading } = useModules()
   const setVisibility = useSetModuleVisibility()
+  const { value: search, input: searchInput } = useTableSearch('Search modules…')
 
-  // Show actual modules (menu items), not section headers.
-  const modules = useMemo(() => all.filter((m) => m.type === 'item'), [all])
+  // Show actual modules (menu items), not section headers — filtered by the search box.
+  const modules = useMemo(() => {
+    const q = search.trim().toLowerCase()
+    return all.filter(
+      (m) => m.type === 'item' && (!q || m.name.toLowerCase().includes(q)),
+    )
+  }, [all, search])
 
   const toggle = (module, checked) => {
     setVisibility.mutate(
@@ -34,6 +41,7 @@ function ModulesPage() {
       <PageHeader
         title="Managed Modules"
         subtitle="Activate or deactivate modules. Inactive modules are hidden from the sidebar."
+        extra={searchInput}
       />
 
       {isLoading ? (

@@ -7,7 +7,14 @@ const createMutate = vi.fn()
 
 // Mock the data layer so the drawer renders without a real API.
 vi.mock('../queries', () => ({
-  useRoles: () => ({ data: ['Admin', 'Teacher'], isLoading: false }),
+  useRolesDetailed: () => ({
+    data: [
+      { id: 1, name: 'Admin', permissions: [] },
+      { id: 2, name: 'Teacher', permissions: [] },
+    ],
+    isLoading: false,
+  }),
+  usePermissions: () => ({ data: [], isLoading: false }),
   useCreateUser: () => ({ mutate: createMutate, isPending: false }),
 }))
 

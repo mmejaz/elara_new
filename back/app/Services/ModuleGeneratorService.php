@@ -202,15 +202,30 @@ class ModuleGeneratorService
 
         use App\Http\Resources\\{$n['singular']}Resource;
         use App\Models\\{$n['singular']};
+        use Illuminate\Contracts\Pagination\LengthAwarePaginator;
         use Illuminate\Support\Facades\DB;
 
         class {$n['singular']}Service
         {
-            public function getAll()
+            /** Columns that may be sorted from the client (whitelist). */
+            private array \$sortable = ['name', 'created_at', 'id'];
+
+            public function paginate(array \$params): LengthAwarePaginator
             {
-                return {$n['singular']}Resource::collection(
-                    {$n['singular']}::latest()->get()
-                );
+                \$query = {$n['singular']}::query();
+
+                if (! empty(\$params['search'])) {
+                    \$query->where('name', 'like', '%' . \$params['search'] . '%');
+                }
+
+                \$sortBy = in_array(\$params['sort_by'] ?? '', \$this->sortable, true)
+                    ? \$params['sort_by']
+                    : 'created_at';
+                \$sortDir = (\$params['sort_dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
+
+                return \$query
+                    ->orderBy(\$sortBy, \$sortDir)
+                    ->paginate((int) (\$params['per_page'] ?? 15));
             }
 
             public function create(array \$data): {$n['singular']}Resource
@@ -248,17 +263,23 @@ class ModuleGeneratorService
         use App\Helpers\ApiResponse;
         use App\Http\Requests\\{$n['singular']}\Store{$n['singular']}Request;
         use App\Http\Requests\\{$n['singular']}\Update{$n['singular']}Request;
+        use App\Http\Resources\\{$n['singular']}Resource;
         use App\Models\\{$n['singular']};
         use App\Services\\{$n['singular']}Service;
+        use Illuminate\Http\Request;
         use Symfony\Component\HttpFoundation\Response;
 
         class {$n['singular']}Controller extends Controller
         {
             public function __construct(private {$n['singular']}Service \$service) {}
 
-            public function index()
+            public function index(Request \$request)
             {
-                return ApiResponse::success(\$this->service->getAll(), ResponseMessage::FETCHED);
+                return ApiResponse::paginated(
+                    \$this->service->paginate(\$request->only(['search', 'sort_by', 'sort_dir', 'per_page'])),
+                    {$n['singular']}Resource::class,
+                    ResponseMessage::FETCHED,
+                );
             }
 
             public function store(Store{$n['singular']}Request \$request)
@@ -364,17 +385,25 @@ class ModuleGeneratorService
 
         // Query hooks
         $this->put("{$src}/modules/{$n['slug']}/queries.ts", <<<TS
-        import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+        import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
         import apiClient from '../../services/apiClient'
+        import type { ServerTableParams } from '../../components/DataTable'
         import type { {$n['singular']} } from './types'
 
-        async function fetch{$n['plural']}(): Promise<{$n['singular']}[]> {
-          const { data } = await apiClient.get('/{$n['slug']}')
-          return data.data
+        interface Paginated<T> {
+          data: T[]
+          meta: { current_page: number; per_page: number; total: number; last_page: number }
         }
 
-        export function use{$n['plural']}() {
-          return useQuery({ queryKey: ['{$n['slug']}'], queryFn: fetch{$n['plural']} })
+        export function use{$n['plural']}(params: ServerTableParams) {
+          return useQuery({
+            queryKey: ['{$n['slug']}', params],
+            queryFn: async (): Promise<Paginated<{$n['singular']}>> => {
+              const { data } = await apiClient.get('/{$n['slug']}', { params })
+              return data
+            },
+            placeholderData: keepPreviousData,
+          })
         }
 
         export function useCreate{$n['singular']}() {
@@ -406,10 +435,11 @@ class ModuleGeneratorService
         // List page
         $this->put("{$src}/modules/{$n['slug']}/pages/{$n['plural']}Page.tsx", <<<TSX
         import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons'
-        import { Button, Card, Popconfirm, Space, Table, Tooltip, Typography } from 'antd'
+        import { Button, Popconfirm, Space, Tooltip, Typography } from 'antd'
         import type { ColumnsType } from 'antd/es/table'
         import { useMemo } from 'react'
         import PageHeader from '../../../components/PageHeader'
+        import DataTable, { useColumnToggle, useServerTable } from '../../../components/DataTable'
         import Add{$n['singular']}Drawer from '../components/Add{$n['singular']}Drawer'
         import Edit{$n['singular']}Drawer from '../components/Edit{$n['singular']}Drawer'
         import { openAddDrawer, openEditDrawer } from '../{$n['camelPlural']}Slice'
@@ -422,7 +452,8 @@ class ModuleGeneratorService
 
         function {$n['plural']}Page() {
           const dispatch = useAppDispatch()
-          const { data: rows = [], isLoading } = use{$n['plural']}()
+          const table = useServerTable(15, 'Search {$n['titlePlural']}…')
+          const { data, isLoading } = use{$n['plural']}(table.params)
           const remove = useDelete{$n['singular']}()
 
           const handleDelete = (id: number) =>
@@ -433,7 +464,7 @@ class ModuleGeneratorService
 
           const columns = useMemo<ColumnsType<{$n['singular']}>>(
             () => [
-              { title: 'Name', dataIndex: 'name', render: (name) => <Text strong>{name}</Text> },
+              { title: 'Name', dataIndex: 'name', sorter: true, render: (name) => <Text strong>{name}</Text> },
               {
                 title: 'Actions',
                 key: 'actions',
@@ -453,27 +484,36 @@ class ModuleGeneratorService
             [dispatch],
           )
 
+          const { visibleColumns, control } = useColumnToggle(columns)
+
           return (
             <Space orientation="vertical" size={16} className="w-full">
               <PageHeader
                 title="{$n['titlePlural']}"
                 subtitle="Manage {$n['titlePlural']} records."
+                titleExtra={control}
                 extra={
-                  <Button type="primary" icon={<PlusOutlined />} onClick={() => dispatch(openAddDrawer())}>
-                    Add {$n['titleSingular']}
-                  </Button>
+                  <Space>
+                    {table.searchInput}
+                    <Button type="primary" icon={<PlusOutlined />} onClick={() => dispatch(openAddDrawer())}>
+                      Add {$n['titleSingular']}
+                    </Button>
+                  </Space>
                 }
               />
-              <Card styles={{ body: { padding: 18 } }}>
-                <Table
-                  rowKey="id"
-                  columns={columns}
-                  dataSource={rows}
-                  loading={isLoading}
-                  pagination={{ pageSize: 15, showSizeChanger: false }}
-                  scroll={{ x: true }}
-                />
-              </Card>
+              <DataTable<{$n['singular']}>
+                columns={visibleColumns}
+                dataSource={data?.data ?? []}
+                loading={isLoading}
+                showColumnToggle={false}
+                searchable={false}
+                server={{
+                  total: data?.meta.total ?? 0,
+                  page: table.page,
+                  pageSize: table.pageSize,
+                  onChange: table.onChange,
+                }}
+              />
               <Add{$n['singular']}Drawer />
               <Edit{$n['singular']}Drawer />
             </Space>
@@ -485,7 +525,7 @@ class ModuleGeneratorService
 
         // Add drawer
         $this->put("{$src}/modules/{$n['slug']}/components/Add{$n['singular']}Drawer.tsx", <<<TSX
-        import { Button, Drawer, Form, Input } from 'antd'
+        import { Alert, Button, Drawer, Form, Input } from 'antd'
         import { closeAddDrawer } from '../{$n['camelPlural']}Slice'
         import { useCreate{$n['singular']} } from '../queries'
         import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
@@ -535,7 +575,19 @@ class ModuleGeneratorService
                 </div>
               }
             >
-              <Form form={form} layout="vertical" requiredMark={false} onFinish={handleFinish}>
+              <Alert
+                type="info"
+                showIcon
+                className="!mb-4"
+                message="Before you start"
+                description={
+                  <ul className="mt-1 list-disc pl-4 text-xs">
+                    <li>Fields marked with <span className="text-red-500">*</span> are required.</li>
+                    <li>Enter a unique name — duplicate names aren't allowed.</li>
+                  </ul>
+                }
+              />
+              <Form form={form} layout="vertical" onFinish={handleFinish}>
                 <Form.Item label="Name" name="name" rules={[{ required: true, message: 'Enter a name' }]}>
                   <Input placeholder="Enter name" size="large" autoFocus />
                 </Form.Item>

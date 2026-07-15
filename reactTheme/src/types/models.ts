@@ -5,6 +5,7 @@ export interface User {
   id: number
   name: string
   email: string
+  avatar: string | null
   roles: string[]
   created_at: string
 }
