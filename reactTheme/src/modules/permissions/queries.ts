@@ -3,15 +3,6 @@ import apiClient from '../../services/apiClient'
 import type { ServerTableParams } from '../../components/DataTable'
 import type { Permission } from '../../types/models'
 
-async function fetchPermissions() {
-  const { data } = await apiClient.get('/permissions/list')
-  return data.data
-}
-
-export function usePermissions() {
-  return useQuery({ queryKey: ['permissions-list'], queryFn: fetchPermissions })
-}
-
 interface Paginated<T> {
   data: T[]
   meta: { current_page: number; per_page: number; total: number; last_page: number }

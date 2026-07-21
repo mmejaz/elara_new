@@ -4,7 +4,6 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserController;
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/users', [UserController::class, 'index'])->middleware('permission:users.view');
     Route::get('/users/paginated', [UserController::class, 'paginated'])->middleware('permission:users.view');
     Route::get('/users/stats', [UserController::class, 'stats'])->middleware('permission:users.view');
     Route::post('/users', [UserController::class, 'store'])->middleware('permission:users.create');

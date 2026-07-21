@@ -6,6 +6,7 @@ export type FieldType =
   | 'dropdown'
   | 'boolean'
   | 'date'
+  | 'image'
 
 export interface GlobalSettingField {
   id?: number

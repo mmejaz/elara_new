@@ -13,12 +13,15 @@ import AddGlobalSettingDrawer from '../components/AddGlobalSettingDrawer'
 import EditGlobalSettingDrawer from '../components/EditGlobalSettingDrawer'
 import RecordDrawer from '../components/RecordDrawer'
 import { openAddDrawer, openEditDrawer } from '../globalSettingsSlice'
-import { useGlobalSetting, useGlobalSettings, useDeleteGlobalSetting } from '../queries'
+import { useGlobalSetting, useGlobalSettings, useDeleteGlobalSetting, useRecords } from '../queries'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 import { hexToRgba } from '../../../utils/color'
 import { toast } from '../../../utils/toast'
 
 const { Text } = Typography
+
+// Fetch just the latest existing value-set to pre-populate the drawer.
+const LATEST_RECORD_PARAMS = { page: 1, per_page: 1 }
 
 function GlobalSettingsPage() {
   const dispatch = useAppDispatch()
@@ -30,6 +33,12 @@ function GlobalSettingsPage() {
   // Values drawer — clicking "Add values" opens it inline (no page redirect).
   const [valuesAppId, setValuesAppId] = useState<number | null>(null)
   const { data: valuesApp, isLoading: valuesLoading } = useGlobalSetting(valuesAppId)
+  // Pre-populate with the app's latest saved values, if any.
+  const { data: latestRecords, isFetching: recordsFetching } = useRecords(
+    valuesAppId ?? 0,
+    LATEST_RECORD_PARAMS,
+  )
+  const existingRecord = valuesAppId ? (latestRecords?.data?.[0] ?? null) : null
 
   const apps = data?.data ?? []
   const total = data?.meta.total ?? 0
@@ -85,7 +94,11 @@ function GlobalSettingsPage() {
                           <Tag color="blue" className="!text-xs">
                             {app.fields_count ?? 0} fields
                           </Tag>
-                          <Tag className="!text-xs">{app.records_count ?? 0} records</Tag>
+                          {(app.records_count ?? 0) > 0 ? (
+                            <Tag color="success" className="!text-xs">Configured</Tag>
+                          ) : (
+                            <Tag className="!text-xs">Not set</Tag>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -111,7 +124,7 @@ function GlobalSettingsPage() {
                     disabled={(app.fields_count ?? 0) === 0}
                     onClick={() => setValuesAppId(app.id)}
                   >
-                    Add values
+                    {(app.records_count ?? 0) > 0 ? 'Edit values' : 'Add values'}
                   </Button>
                 </Card>
               </Col>
@@ -143,9 +156,9 @@ function GlobalSettingsPage() {
       <RecordDrawer
         appId={valuesAppId ?? 0}
         fields={valuesApp?.fields ?? []}
-        loading={valuesLoading}
+        loading={valuesLoading || recordsFetching}
         open={valuesAppId !== null}
-        record={null}
+        record={existingRecord}
         onClose={() => setValuesAppId(null)}
       />
     </Space>

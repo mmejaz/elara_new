@@ -3,18 +3,9 @@ import apiClient from '../../services/apiClient'
 import type { ServerTableParams } from '../../components/DataTable'
 import type { Role } from '../../types/models'
 
-async function fetchRoles() {
-  const { data } = await apiClient.get('/roles/list')
-  return data.data
-}
-
 async function fetchPermissions() {
   const { data } = await apiClient.get('/permissions')
   return data.data
-}
-
-export function useRoles() {
-  return useQuery({ queryKey: ['roles-list'], queryFn: fetchRoles })
 }
 
 interface Paginated<T> {

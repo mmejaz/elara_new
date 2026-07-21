@@ -3,11 +3,6 @@ import apiClient from '../../services/apiClient'
 import type { ServerTableParams } from '../../components/DataTable'
 import type { User } from '../../types/models'
 
-async function fetchUsers() {
-  const { data } = await apiClient.get('/users')
-  return data.data
-}
-
 interface Paginated<T> {
   data: T[]
   meta: { current_page: number; per_page: number; total: number; last_page: number }
@@ -34,10 +29,6 @@ async function fetchRolesDetailed() {
 async function fetchPermissions() {
   const { data } = await apiClient.get('/permissions')
   return data.data
-}
-
-export function useUsers() {
-  return useQuery({ queryKey: ['users'], queryFn: fetchUsers })
 }
 
 /** Server-side paginated + searchable user list for the Users table. */

@@ -5,24 +5,26 @@ namespace Database\Seeders;
 use App\Models\Module;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 class ModuleSeeder extends Seeder
 {
     /**
-     * Seed the sidebar structure that currently lives in the frontend's
-     * config/navigation.jsx. Every row here is a SYSTEM module (is_system =
-     * true) — code-owned, re-seedable, and protected from deletion.
+     * The complete sidebar/module tree — the single source of truth. Every row
+     * is a SYSTEM module (code-owned, re-seedable, matched by slug). Resourceful
+     * items get their CRUD permissions created and granted to Admin.
      *
-     * The nested array IS the single source of truth; re-running this seeder
-     * keeps the DB in sync without duplicating rows (matched by slug).
+     * Nesting is arbitrary: a group holds items, and an item (e.g. "All Lookups")
+     * can itself hold child items.
      */
     private array $tree = [
         [
             'name' => 'Overview', 'slug' => 'overview', 'type' => 'group',
             'children' => [
-                ['name' => 'Dashboard', 'slug' => 'dashboard', 'icon' => 'BarChartOutlined', 'resourceful' => false],
-                ['name' => 'Analytics', 'slug' => 'analytics', 'icon' => 'PieChartOutlined', 'resourceful' => false],
-                ['name' => 'Attendance', 'slug' => 'attendance', 'icon' => 'OrderedListOutlined', 'resourceful' => false],
+                ['name' => 'Dashboard', 'slug' => 'dashboard', 'icon' => 'BarChartOutlined'],
+                ['name' => 'Analytics', 'slug' => 'analytics', 'icon' => 'PieChartOutlined'],
+                ['name' => 'Attendance', 'slug' => 'attendance', 'icon' => 'OrderedListOutlined'],
             ],
         ],
         [
@@ -31,57 +33,84 @@ class ModuleSeeder extends Seeder
                 ['name' => 'Users', 'slug' => 'users', 'icon' => 'TeamOutlined', 'resourceful' => true],
                 ['name' => 'Roles', 'slug' => 'roles', 'icon' => 'SafetyCertificateOutlined', 'resourceful' => true],
                 ['name' => 'Permissions', 'slug' => 'permissions', 'icon' => 'KeyOutlined', 'resourceful' => true],
-                ['name' => 'Managed Modules', 'slug' => 'modules', 'icon' => 'AppstoreAddOutlined', 'resourceful' => false],
-                ['name' => 'Module Builder', 'slug' => 'module-builder', 'icon' => 'BuildOutlined', 'resourceful' => false],
+                ['name' => 'Managed Modules', 'slug' => 'modules', 'icon' => 'AppstoreAddOutlined'],
+                ['name' => 'Module Builder', 'slug' => 'module-builder', 'icon' => 'BuildOutlined'],
+                ['name' => 'Global Setting', 'slug' => 'globalsettings', 'icon' => 'AppstoreOutlined', 'resourceful' => true],
             ],
         ],
         [
             'name' => 'Account', 'slug' => 'account', 'type' => 'group',
             'children' => [
-                ['name' => 'Profile', 'slug' => 'profile', 'icon' => 'UserOutlined', 'resourceful' => false],
-                ['name' => 'Reports', 'slug' => 'reports', 'icon' => 'FileTextOutlined', 'resourceful' => false],
+                ['name' => 'Profile', 'slug' => 'profile', 'icon' => 'UserOutlined'],
+                ['name' => 'Reports', 'slug' => 'reports', 'icon' => 'FileTextOutlined'],
+            ],
+        ],
+        [
+            'name' => 'Lookups', 'slug' => 'lookups', 'type' => 'group',
+            'children' => [
+                [
+                    'name' => 'All Lookups', 'slug' => 'all-lookups', 'icon' => 'BankOutlined',
+                    'children' => [
+                        ['name' => 'Application Type', 'slug' => 'applicationtypes', 'icon' => 'TeamOutlined', 'resourceful' => true],
+                        ['name' => 'Country', 'slug' => 'countries', 'icon' => 'BankOutlined', 'resourceful' => true],
+                        ['name' => 'City', 'slug' => 'cities', 'icon' => 'BookOutlined', 'resourceful' => true],
+                        ['name' => 'Gender', 'slug' => 'genders', 'icon' => 'BookOutlined', 'resourceful' => true],
+                    ],
+                ],
             ],
         ],
     ];
 
     public function run(): void
     {
-        DB::transaction(function () {
-            $groupOrder = 0;
+        $admin = Role::firstOrCreate(['name' => 'Admin']);
 
-            foreach ($this->tree as $group) {
-                $parent = Module::updateOrCreate(
-                    ['slug' => $group['slug']],
-                    [
-                        'name'           => $group['name'],
-                        'type'           => 'group',
-                        'icon'           => null,
-                        'is_resourceful' => false,
-                        'parent_id'      => null,
-                        'order'          => $groupOrder++,
-                        'is_visible'     => true,
-                        'is_system'      => true,
-                    ],
-                );
-
-                $childOrder = 0;
-
-                foreach ($group['children'] as $child) {
-                    Module::updateOrCreate(
-                        ['slug' => $child['slug']],
-                        [
-                            'name'           => $child['name'],
-                            'type'           => 'item',
-                            'icon'           => $child['icon'],
-                            'is_resourceful' => $child['resourceful'],
-                            'parent_id'      => $parent->id,
-                            'order'          => $childOrder++,
-                            'is_visible'     => true,
-                            'is_system'      => true,
-                        ],
-                    );
-                }
-            }
+        DB::transaction(function () use ($admin) {
+            $this->seedNodes($this->tree, null, $admin);
         });
+    }
+
+    private function seedNodes(array $nodes, ?int $parentId, Role $admin): void
+    {
+        $order = 0;
+
+        foreach ($nodes as $node) {
+            $isGroup = ($node['type'] ?? 'item') === 'group';
+            $resourceful = $node['resourceful'] ?? false;
+
+            $module = Module::updateOrCreate(
+                ['slug' => $node['slug']],
+                [
+                    'name'           => $node['name'],
+                    'type'           => $isGroup ? 'group' : 'item',
+                    'icon'           => $node['icon'] ?? null,
+                    'is_resourceful' => $resourceful,
+                    'parent_id'      => $parentId,
+                    'order'          => $order++,
+                    'is_visible'     => true,
+                    'is_system'      => true,
+                ],
+            );
+
+            if ($resourceful) {
+                $this->grantPermissions($module, $admin);
+            }
+
+            if (! empty($node['children'])) {
+                $this->seedNodes($node['children'], $module->id, $admin);
+            }
+        }
+    }
+
+    /** Create the module's CRUD permissions and grant them to Admin (Super Admin bypasses). */
+    private function grantPermissions(Module $module, Role $admin): void
+    {
+        $names = $module->permissionNames();
+
+        foreach ($names as $name) {
+            Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
+        }
+
+        $admin->givePermissionTo($names);
     }
 }

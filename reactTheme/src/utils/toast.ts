@@ -56,7 +56,7 @@ export const toast = {
 }
 
 /**
- * Corner notifications (top-left by default) — larger, with an optional
+ * Corner notifications (top-right by default) — larger, with an optional
  * description. Use for confirmations you want shown in the corner rather than
  * the centered lightweight `toast`.
  *
@@ -68,7 +68,7 @@ const makeNotify =
   (type: NotifyType) =>
   (message: ReactNode, description?: ReactNode, options?: Record<string, unknown>) =>
     notifyApi
-      ? notifyApi[type]({ message, description, placement: 'topLeft', ...options })
+      ? notifyApi[type]({ message, description, placement: 'topRight', ...options })
       : notReady(type, message)
 
 export const notify = {

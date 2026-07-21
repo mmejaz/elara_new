@@ -14,13 +14,6 @@ class PermissionService
         return Permission::pluck('name')->toArray();
     }
 
-    public function getAll()
-    {
-        return PermissionResource::collection(
-            Permission::with('roles')->get()
-        );
-    }
-
     /**
      * Server-side paginated + searchable list. Only `name` is a real column;
      * module/action are derived from it, and a name search (e.g. "city" or

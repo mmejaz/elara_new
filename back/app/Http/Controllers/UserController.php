@@ -16,11 +16,6 @@ class UserController extends Controller
 {
     public function __construct(private UserService $userService) {}
 
-    public function index()
-    {
-        return ApiResponse::success($this->userService->getAll(), ResponseMessage::FETCHED);
-    }
-
     public function paginated(Request $request)
     {
         return ApiResponse::paginated(

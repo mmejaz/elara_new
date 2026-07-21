@@ -21,11 +21,6 @@ class PermissionController extends Controller
         return ApiResponse::success($this->permissionService->getAllNames(), ResponseMessage::FETCHED);
     }
 
-    public function list()
-    {
-        return ApiResponse::success($this->permissionService->getAll(), ResponseMessage::FETCHED);
-    }
-
     public function paginated(Request $request)
     {
         return ApiResponse::paginated(

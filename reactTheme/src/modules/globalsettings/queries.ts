@@ -62,14 +62,6 @@ export function useUpdateRecord(appId: number) {
   return useMutation({
     mutationFn: ({ id, ...values }: { id: number } & Record<string, unknown>) =>
       apiClient.put(`/globalsettings/${appId}/records/${id}`, values),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['globalsetting-records', appId] }),
-  })
-}
-
-export function useDeleteRecord(appId: number) {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: (id: number) => apiClient.delete(`/globalsettings/${appId}/records/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['globalsetting-records', appId] })
       queryClient.invalidateQueries({ queryKey: ['globalsettings'] })

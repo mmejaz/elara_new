@@ -26,11 +26,24 @@ class GlobalSettingRecordService
             ->paginate((int) ($params['per_page'] ?? 15));
     }
 
+    /**
+     * Save the app's values. Single-config: an app holds exactly one value-set,
+     * so this updates the existing record if there is one, otherwise creates it.
+     */
     public function create(GlobalSetting $app, array $data): GlobalSettingRecordResource
     {
-        $record = DB::transaction(fn () => $app->records()->create([
-            'data' => $this->sanitize($app, $data),
-        ]));
+        $record = DB::transaction(function () use ($app, $data) {
+            $clean = $this->sanitize($app, $data);
+            $existing = $app->records()->latest('id')->first();
+
+            if ($existing) {
+                $existing->update(['data' => $clean]);
+
+                return $existing;
+            }
+
+            return $app->records()->create(['data' => $clean]);
+        });
 
         return new GlobalSettingRecordResource($record);
     }
@@ -42,11 +55,6 @@ class GlobalSettingRecordService
         ]));
 
         return new GlobalSettingRecordResource($record);
-    }
-
-    public function delete(GlobalSettingRecord $record): void
-    {
-        DB::transaction(fn () => $record->delete());
     }
 
     /** Keep only values whose key matches a defined field. */

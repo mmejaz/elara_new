@@ -20,7 +20,7 @@ class UpdateGlobalSettingRequest extends FormRequest
             'fields'              => ['array'],
             'fields.*.id'         => ['nullable', 'integer'],
             'fields.*.label'      => ['required', 'string', 'max:255'],
-            'fields.*.type'       => ['required', 'string', 'in:text,number,password,textarea,dropdown,boolean,date'],
+            'fields.*.type'       => ['required', 'string', 'in:text,number,password,textarea,dropdown,boolean,date,image'],
             'fields.*.options'    => ['array'],
             'fields.*.options.*'  => ['string', 'max:255'],
             'fields.*.is_required' => ['boolean'],

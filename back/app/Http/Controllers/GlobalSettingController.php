@@ -30,6 +30,18 @@ class GlobalSettingController extends Controller
         return ApiResponse::success($this->service->show($globalSetting), ResponseMessage::FETCHED);
     }
 
+    /** Upload an image for an image-type field; returns its public URL. */
+    public function uploadImage(Request $request, GlobalSetting $globalSetting)
+    {
+        $request->validate(['image' => ['required', 'file']]);
+
+        // The trait validates against config('files.collections.images'), stores
+        // it centrally, and cleans it up when the app is deleted.
+        $file = $globalSetting->attachFile($request->file('image'), 'images');
+
+        return ApiResponse::success(['url' => $file->url], ResponseMessage::CREATED);
+    }
+
     public function store(StoreGlobalSettingRequest $request)
     {
         return ApiResponse::success(

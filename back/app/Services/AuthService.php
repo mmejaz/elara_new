@@ -34,21 +34,15 @@ class AuthService
 
     public function updateAvatar(User $user, UploadedFile $file): array
     {
-        if ($user->avatar) {
-            Storage::disk('public')->delete($user->avatar);
-        }
-
-        $user->update(['avatar' => $file->store('avatars', 'public')]);
+        // Centralised, validated store; replaces + cleans up the previous avatar.
+        $user->attachSingleFile($file, 'avatar');
 
         return $this->userPayload($user->fresh());
     }
 
     public function deleteAvatar(User $user): array
     {
-        if ($user->avatar) {
-            Storage::disk('public')->delete($user->avatar);
-            $user->update(['avatar' => null]);
-        }
+        $user->detachFiles('avatar');
 
         return $this->userPayload($user->fresh());
     }

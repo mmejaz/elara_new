@@ -98,8 +98,6 @@ const GendersPage = lazy(() => import('../modules/genders/pages/GendersPage'))
 const gendersRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/genders', component: GendersPage })
 const GlobalSettingsPage = lazy(() => import('../modules/globalsettings/pages/GlobalSettingsPage'))
 const globalSettingsRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/globalsettings', component: GlobalSettingsPage })
-const ConfigureGlobalSettingPage = lazy(() => import('../modules/globalsettings/pages/ConfigureGlobalSettingPage'))
-const globalSettingConfigureRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/globalsettings/$id/configure', component: ConfigureGlobalSettingPage })
 // __MODULE_ROUTE_DEFS__
 
 const routeTree = rootRoute.addChildren([
@@ -121,7 +119,6 @@ const routeTree = rootRoute.addChildren([
     citiesRoute,
     gendersRoute,
     globalSettingsRoute,
-    globalSettingConfigureRoute,
     // __MODULE_ROUTES__
     notFoundRoute,
   ]),

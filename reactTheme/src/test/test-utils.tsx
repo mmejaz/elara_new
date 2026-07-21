@@ -10,6 +10,7 @@ import usersReducer from '../modules/users/usersSlice'
 import rolesReducer from '../modules/roles/rolesSlice'
 import permissionsReducer from '../modules/permissions/permissionsSlice'
 import moduleBuilderReducer from '../modules/module-builder/moduleBuilderSlice'
+import gendersReducer from '../modules/genders/gendersSlice'
 import { ToastHost } from '../utils/toast'
 import type { RootState } from '../store'
 
@@ -20,6 +21,7 @@ const rootReducer = combineReducers({
   roles: rolesReducer,
   permissions: permissionsReducer,
   moduleBuilder: moduleBuilderReducer,
+  genders: gendersReducer,
 })
 
 /** Build a fresh store per test, optionally seeded with partial state. */

@@ -14,7 +14,7 @@ class AuthUserResource extends JsonResource
             'id'         => $this->id,
             'name'       => $this->name,
             'email'      => $this->email,
-            'avatar'     => $this->avatar ? Storage::disk('public')->url($this->avatar) : null,
+            'avatar'     => $this->fileIn('avatar')?->url,
             'roles'      => $this->getRoleNames(),
             'permissions' => $this->getAllPermissions()->pluck('name'),
             'created_at' => $this->created_at->toDateString(),

@@ -35,14 +35,14 @@ function ForgotPassword() {
     >
       <Form layout="vertical" requiredMark={false} onFinish={handleSubmit}>
         <Form.Item
-          className="!mb-6 max-sm:!mb-5 [&_.ant-form-item-label>label]:!h-auto [&_.ant-form-item-label>label]:!text-[13px] [&_.ant-form-item-label>label]:!font-medium [&_.ant-form-item-label>label]:!text-[#080808]"
+          className="!mb-5 max-sm:!mb-4 [&_.ant-form-item-label>label]:!h-auto [&_.ant-form-item-label>label]:!text-[13px] [&_.ant-form-item-label>label]:!font-medium [&_.ant-form-item-label>label]:!text-[#080808]"
           label="Email"
           name="email"
           rules={[{ required: true, type: 'email', message: 'Enter your email' }]}
         >
           <Input
             autoComplete="email"
-            className="!min-h-[42px] !rounded-lg !border-0 !bg-[#f4f4f6] !text-[13px] !text-[#111111] !shadow-none hover:!bg-[#f1f1f4] focus:!bg-[#f1f1f4] [&_.ant-input-prefix]:!mr-2.5 [&_.ant-input-prefix]:!text-[#8b8b92] [&_.ant-input]:!bg-transparent [&_.ant-input]:!text-[13px]"
+            className="!min-h-[38px] !rounded-lg !border-0 !bg-[#f4f4f6] !text-[13px] !text-[#111111] !shadow-none hover:!bg-[#f1f1f4] focus:!bg-[#f1f1f4] [&_.ant-input-prefix]:!mr-2.5 [&_.ant-input-prefix]:!text-[#8b8b92] [&_.ant-input]:!bg-transparent [&_.ant-input]:!text-[13px]"
             placeholder="Enter your email"
             prefix={<MailOutlined />}
             size="large"
@@ -51,7 +51,7 @@ function ForgotPassword() {
 
         <Button
           block
-          className="!mt-0 !h-[42px] !rounded-lg !bg-[#050505] !text-[13px] !font-semibold !shadow-none hover:!bg-[#202020]"
+          className="!mt-0 !h-[38px] !rounded-lg !bg-[#050505] !text-[13px] !font-semibold !shadow-none hover:!bg-[#202020]"
           type="primary"
           htmlType="submit"
           loading={loading}
@@ -68,7 +68,7 @@ function ForgotPassword() {
           Back to login
         </Typography.Link>
 
-        <div className="mt-6 flex min-h-[42px] items-center justify-center rounded-lg bg-[#f3fbf7] px-3 text-center font-serif text-xs font-medium leading-snug text-[#145c3d] shadow-[0_6px_18px_rgba(20,92,61,0.06)]">
+        <div className="mt-6 flex min-h-[36px] items-center justify-center rounded-lg bg-[#f3fbf7] px-3 text-center font-serif text-xs font-medium leading-snug text-[#145c3d] shadow-[0_6px_18px_rgba(20,92,61,0.06)]">
           <SafetyCertificateOutlined className="mr-2 shrink-0 text-base !text-[#18a058]" />
           <span>Protected by Secure Sign-in</span>
         </div>

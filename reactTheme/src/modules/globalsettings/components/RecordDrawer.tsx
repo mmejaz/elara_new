@@ -2,6 +2,7 @@ import { Button, DatePicker, Drawer, Form, Input, InputNumber, Select, Skeleton,
 import dayjs, { type Dayjs } from 'dayjs'
 import { useEffect, type ReactNode } from 'react'
 import { useCreateRecord, useUpdateRecord } from '../queries'
+import ImageField from './ImageField'
 import type { GlobalSettingField, GlobalSettingRecord } from '../types'
 import { serverMessage } from '../../../utils/formErrors'
 import { notify, toast } from '../../../utils/toast'
@@ -17,7 +18,7 @@ interface RecordDrawerProps {
   loading?: boolean
 }
 
-function fieldInput(field: GlobalSettingField): ReactNode {
+function fieldInput(field: GlobalSettingField, appId: number): ReactNode {
   switch (field.type) {
     case 'number':
       return <InputNumber className="!w-full" placeholder={field.label} />
@@ -37,6 +38,8 @@ function fieldInput(field: GlobalSettingField): ReactNode {
       return <Switch />
     case 'date':
       return <DatePicker className="!w-full" />
+    case 'image':
+      return <ImageField appId={appId} />
     default:
       return <Input placeholder={field.label} />
   }
@@ -49,7 +52,8 @@ function RecordDrawer({ appId, fields, open, record, onClose, loading }: RecordD
   const mutation = record ? update : create
 
   useEffect(() => {
-    if (!open) return
+    if (!open || loading) return
+    form.resetFields()
     const data = record?.data ?? {}
     const values: Record<string, unknown> = {}
     fields.forEach((f) => {
@@ -57,7 +61,7 @@ function RecordDrawer({ appId, fields, open, record, onClose, loading }: RecordD
       values[f.key] = f.type === 'date' && v ? dayjs(v as string) : (v ?? undefined)
     })
     form.setFieldsValue(values)
-  }, [open, record, fields, form])
+  }, [open, loading, record, fields, form])
 
   const handleFinish = (values: Record<string, unknown>) => {
     const data: Record<string, unknown> = {}
@@ -98,7 +102,7 @@ function RecordDrawer({ appId, fields, open, record, onClose, loading }: RecordD
 
   return (
     <Drawer
-      title={record ? 'Edit Record' : 'Add Record'}
+      title={record ? 'Edit Values' : 'Add Values'}
       placement="right"
       size={480}
       open={open}
@@ -128,7 +132,7 @@ function RecordDrawer({ appId, fields, open, record, onClose, loading }: RecordD
               valuePropName={f.type === 'boolean' ? 'checked' : 'value'}
               rules={f.is_required ? [{ required: true, message: `${f.label} is required` }] : []}
             >
-              {fieldInput(f)}
+              {fieldInput(f, appId)}
             </Form.Item>
           ))}
         </Form>

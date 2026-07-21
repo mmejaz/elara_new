@@ -45,15 +45,6 @@ class GlobalSettingRecordController extends Controller
         );
     }
 
-    public function destroy(GlobalSetting $globalSetting, GlobalSettingRecord $record)
-    {
-        abort_if($record->global_setting_id !== $globalSetting->id, 404);
-
-        $this->service->delete($record);
-
-        return ApiResponse::success(null, ResponseMessage::DELETED);
-    }
-
     /** Build validation rules dynamically from the app's field definitions. */
     private function validated(Request $request, GlobalSetting $globalSetting): array
     {

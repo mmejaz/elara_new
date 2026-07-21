@@ -9,13 +9,6 @@ use Illuminate\Support\Facades\DB;
 
 class UserService
 {
-    public function getAll()
-    {
-        return UserResource::collection(
-            User::with('roles')->latest()->get()
-        );
-    }
-
     /** Server-side paginated + searchable user list (name, email, or role). */
     public function paginate(array $params): LengthAwarePaginator
     {

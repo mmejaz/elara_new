@@ -11,6 +11,7 @@ export const FIELD_TYPES = [
   { value: 'dropdown', label: 'Dropdown' },
   { value: 'boolean', label: 'Toggle (Yes / No)' },
   { value: 'date', label: 'Date' },
+  { value: 'image', label: 'Image' },
 ]
 
 /**
