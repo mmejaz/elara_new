@@ -4,7 +4,9 @@ namespace App\Services;
 
 use App\Http\Resources\AuthUserResource;
 use App\Models\User;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 
 class AuthService
@@ -28,6 +30,21 @@ class AuthService
     public function currentUser(User $user): array
     {
         return $this->userPayload($user);
+    }
+
+    public function updateAvatar(User $user, UploadedFile $file): array
+    {
+        // Centralised, validated store; replaces + cleans up the previous avatar.
+        $user->attachSingleFile($file, 'avatar');
+
+        return $this->userPayload($user->fresh());
+    }
+
+    public function deleteAvatar(User $user): array
+    {
+        $user->detachFiles('avatar');
+
+        return $this->userPayload($user->fresh());
     }
 
     private function userPayload(User $user): array

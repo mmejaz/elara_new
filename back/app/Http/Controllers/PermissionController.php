@@ -2,10 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\ResponseMessage;
+use App\Helpers\ApiResponse;
 use App\Http\Requests\Permission\StorePermissionRequest;
 use App\Http\Requests\Permission\UpdatePermissionRequest;
+use App\Http\Resources\PermissionResource;
 use App\Services\PermissionService;
+use Illuminate\Http\Request;
 use Spatie\Permission\Models\Permission;
+use Symfony\Component\HttpFoundation\Response;
 
 class PermissionController extends Controller
 {
@@ -13,21 +18,32 @@ class PermissionController extends Controller
 
     public function index()
     {
-        return response()->json(['data' => $this->permissionService->getAllNames()]);
+        return ApiResponse::success($this->permissionService->getAllNames(), ResponseMessage::FETCHED);
     }
 
-    public function list()
+    public function paginated(Request $request)
     {
-        return response()->json(['data' => $this->permissionService->getAll()]);
+        return ApiResponse::paginated(
+            $this->permissionService->paginate($request->only(['search', 'sort_by', 'sort_dir', 'per_page'])),
+            PermissionResource::class,
+            ResponseMessage::FETCHED,
+        );
     }
 
     public function store(StorePermissionRequest $request)
     {
-        return response()->json(['data' => $this->permissionService->create($request->validated())], 201);
+        return ApiResponse::success(
+            $this->permissionService->create($request->validated()),
+            ResponseMessage::CREATED,
+            Response::HTTP_CREATED,
+        );
     }
 
     public function update(UpdatePermissionRequest $request, Permission $permission)
     {
-        return response()->json(['data' => $this->permissionService->update($permission, $request->validated())]);
+        return ApiResponse::success(
+            $this->permissionService->update($permission, $request->validated()),
+            ResponseMessage::UPDATED,
+        );
     }
 }
