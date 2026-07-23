@@ -1,7 +1,25 @@
 import axios from 'axios'
 
+/**
+ * Tenants are identified by the request host, so the API has to be called on the
+ * same subdomain the SPA is being served from:
+ *
+ *   localhost:5173      -> localhost:8000       (central)
+ *   acme.localhost:5173 -> acme.localhost:8000  (tenant "acme")
+ *
+ * Protocol and port come from VITE_BACKEND_URL; only the hostname is taken from
+ * the browser. Hardcoding the env host instead would send every tenant's
+ * requests to the central domain, where their users don't exist.
+ */
+const backendOrigin = () => {
+  const configured = new URL(import.meta.env.VITE_BACKEND_URL)
+  configured.hostname = window.location.hostname
+
+  return configured.origin
+}
+
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: `${backendOrigin()}/api`,
   headers: {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -24,7 +42,7 @@ apiClient.interceptors.request.use((config) => {
 })
 
 export const initCsrf = () =>
-  axios.get(`${import.meta.env.VITE_BACKEND_URL}/sanctum/csrf-cookie`, {
+  axios.get(`${backendOrigin()}/sanctum/csrf-cookie`, {
     withCredentials: true,
   })
 

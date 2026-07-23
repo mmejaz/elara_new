@@ -10,6 +10,7 @@ import AdminLayout from '../layouts/AdminLayout'
 import AuthLayout from '../layouts/AuthLayout'
 import AuthGuard from '../components/AuthGuard'
 import NotFoundPage from '../components/NotFoundPage'
+import { isCentralHost } from '../utils/tenant'
 
 // Lazy-load every page so each route is its own chunk. Pages live inside their
 // feature module (src/modules/<feature>/pages).
@@ -22,6 +23,19 @@ const UsersPage = lazy(() => import('../modules/users/pages/UsersPage'))
 const RolesPage = lazy(() => import('../modules/roles/pages/RolesPage'))
 const PermissionsPage = lazy(() => import('../modules/permissions/pages/PermissionsPage'))
 const ModulesPage = lazy(() => import('../modules/managed-modules/pages/ModulesPage'))
+/**
+ * Guards routes that only exist in the central app. The sidebar already omits
+ * these inside a tenant (the API hides the modules), but that leaves a
+ * hand-typed URL rendering a page whose every request 404s — this sends the
+ * user somewhere useful instead. The real enforcement is the `central`
+ * middleware on the backend; this is only for the address bar.
+ */
+const centralOnly = () => {
+  if (!isCentralHost()) {
+    throw redirect({ to: '/dashboard' })
+  }
+}
+
 const ModuleBuilderPage = lazy(() => import('../modules/module-builder/pages/ModuleBuilderPage'))
 const ProfilePage = lazy(() => import('../modules/profile/pages/ProfilePage'))
 const ReportsPage = lazy(() => import('../modules/reports/pages/ReportsPage'))
@@ -85,7 +99,7 @@ const usersRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '
 const rolesRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/roles', component: RolesPage })
 const permissionsRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/permissions', component: PermissionsPage })
 const modulesRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/modules', component: ModulesPage })
-const moduleBuilderRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/module-builder', component: ModuleBuilderPage })
+const moduleBuilderRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/module-builder', component: ModuleBuilderPage, beforeLoad: centralOnly })
 const profileRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/profile', component: ProfilePage })
 const reportsRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/reports', component: ReportsPage })
 const ApplicationTypesPage = lazy(() => import('../modules/applicationtypes/pages/ApplicationTypesPage'))
@@ -99,7 +113,7 @@ const gendersRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path:
 const GlobalSettingsPage = lazy(() => import('../modules/globalsettings/pages/GlobalSettingsPage'))
 const globalSettingsRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/globalsettings', component: GlobalSettingsPage })
 const TenantsPage = lazy(() => import('../modules/tenants/pages/TenantsPage'))
-const tenantsRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/tenants', component: TenantsPage })
+const tenantsRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/tenants', component: TenantsPage, beforeLoad: centralOnly })
 // __MODULE_ROUTE_DEFS__
 
 const routeTree = rootRoute.addChildren([

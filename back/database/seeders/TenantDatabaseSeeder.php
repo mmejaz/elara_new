@@ -37,7 +37,12 @@ class TenantDatabaseSeeder extends Seeder
                 ],
             );
 
-            $admin->assignRole('Super Admin');
+            // "Admin", not "Super Admin": AppServiceProvider grants Super Admin a
+            // Gate::before bypass over every permission check, which is a level
+            // of power the central operator should keep. Admin is granted every
+            // permission by RolePermissionSeeder + ModuleSeeder, so a tenant
+            // owner still reaches everything inside their own workspace.
+            $admin->assignRole('Admin');
         }
     }
 }

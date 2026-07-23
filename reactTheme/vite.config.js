@@ -12,9 +12,12 @@ export default defineConfig({
     },
   },
   server: {
-    host: 'localhost',
+    host: true,
     port: 5173,
     strictPort: false,
+    // Tenants are reached at <tenant>.localhost:5173. Vite blocks unknown Host
+    // headers by default, so the leading-dot entry whitelists the subdomains.
+    allowedHosts: ['.localhost'],
     // Bind-mounted source in Docker (esp. on Windows/WSL) doesn't emit native
     // file-change events into the container, so HMR misses edits. Poll instead.
     watch: {

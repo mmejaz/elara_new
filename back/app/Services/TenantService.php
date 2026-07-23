@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Tenant;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -13,9 +14,46 @@ use Illuminate\Support\Str;
  */
 class TenantService
 {
-    public function paginate(int $perPage = 15)
+    /**
+     * Server-side paginated + searchable tenant list.
+     *
+     * Only id/created_at/updated_at are real columns — Stancl keeps every custom
+     * attribute (name, status, email, …) inside the `data` JSON column, so those
+     * are filtered and sorted through JSON paths rather than plain columns.
+     */
+    public function paginate(array $params = []): LengthAwarePaginator
     {
-        return Tenant::with('domains')->latest()->paginate($perPage);
+        $query = Tenant::query()->with('domains');
+
+        if (! empty($params['search'])) {
+            $search = '%' . $params['search'] . '%';
+
+            $query->where(function ($q) use ($search) {
+                $q->where('id', 'like', $search)
+                    ->orWhere('data->name', 'like', $search)
+                    ->orWhere('data->email', 'like', $search)
+                    ->orWhere('data->phone', 'like', $search)
+                    ->orWhereHas('domains', fn ($d) => $d->where('domain', 'like', $search));
+            });
+        }
+
+        // Maps the column key the table sends to something SQL can order by.
+        $sortable = [
+            'id'         => 'id',
+            'name'       => 'data->name',
+            'status'     => 'data->status',
+            'email'      => 'data->email',
+            'timezone'   => 'data->timezone',
+            'currency'   => 'data->currency',
+            'created_at' => 'created_at',
+        ];
+
+        $sortBy  = $sortable[$params['sort_by'] ?? ''] ?? 'created_at';
+        $sortDir = ($params['sort_dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
+
+        return $query
+            ->orderBy($sortBy, $sortDir)
+            ->paginate((int) ($params['per_page'] ?? 15));
     }
 
     public function create(array $data): Tenant

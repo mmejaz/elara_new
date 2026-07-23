@@ -35,6 +35,32 @@ class Module extends Model
         'meta'           => 'array',
     ];
 
+    /**
+     * Central-only modules are invisible inside a tenant.
+     *
+     * Applied as a global scope rather than filtered in ModuleService::tree()
+     * so it also covers the eager-loaded `childrenRecursive` relation — the
+     * central-only rows are nested under the "Management" group, so a filter on
+     * the root query alone would miss them entirely.
+     *
+     * This hides the menu entry; the `central` middleware is what actually
+     * denies the routes.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('central_only', function (Builder $query): void {
+            if (! tenancy()->initialized) {
+                return;
+            }
+
+            $central = config('central.modules', []);
+
+            if ($central !== []) {
+                $query->whereNotIn($query->getModel()->qualifyColumn('slug'), $central);
+            }
+        });
+    }
+
     public function parent(): BelongsTo
     {
         return $this->belongsTo(Module::class, 'parent_id');

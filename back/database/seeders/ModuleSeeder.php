@@ -76,6 +76,12 @@ class ModuleSeeder extends Seeder
         $order = 0;
 
         foreach ($nodes as $node) {
+            // Central-only modules (tenant provisioning, module generator) are
+            // never seeded into a tenant database. See config/central.php.
+            if (tenancy()->initialized && in_array($node['slug'], config('central.modules', []), true)) {
+                continue;
+            }
+
             $isGroup = ($node['type'] ?? 'item') === 'group';
             $resourceful = $node['resourceful'] ?? false;
 

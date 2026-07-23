@@ -35,6 +35,12 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
 
+        // Tenancy must resolve BEFORE Sanctum's stateful group starts the
+        // session, so that the session (and the users table behind auth) is
+        // read from the tenant database. prependToGroup runs last-prepended
+        // first, so this call must come after statefulApi() above.
+        $middleware->prependToGroup('api', \App\Http\Middleware\InitializeTenancyIfTenantDomain::class);
+
         $middleware->validateCsrfTokens(except: [
             'api/*',
         ]);
@@ -43,6 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role'       => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'central'    => \App\Http\Middleware\PreventAccessFromTenantDomains::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -8,5 +8,10 @@ export interface Tenant {
   currency: string | null
   language: string | null
   domains: string[]
+  /** Physical database backing this tenant, e.g. "tenantacme". */
+  database: string | null
+  admin_name: string | null
+  admin_email: string | null
   created_at: string | null
+  updated_at: string | null
 }

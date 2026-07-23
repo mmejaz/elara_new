@@ -8,15 +8,16 @@ use App\Http\Requests\Tenant\StoreTenantRequest;
 use App\Http\Resources\TenantResource;
 use App\Models\Tenant;
 use App\Services\TenantService;
+use Illuminate\Http\Request;
 
 class TenantController extends Controller
 {
     public function __construct(private TenantService $tenants) {}
 
-    public function index()
+    public function index(Request $request)
     {
         return ApiResponse::paginated(
-            $this->tenants->paginate(),
+            $this->tenants->paginate($request->only(['search', 'sort_by', 'sort_dir', 'per_page'])),
             TenantResource::class,
             ResponseMessage::FETCHED,
         );
