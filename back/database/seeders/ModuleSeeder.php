@@ -35,6 +35,7 @@ class ModuleSeeder extends Seeder
                 ['name' => 'Permissions', 'slug' => 'permissions', 'icon' => 'KeyOutlined', 'resourceful' => true],
                 ['name' => 'Managed Modules', 'slug' => 'modules', 'icon' => 'AppstoreAddOutlined'],
                 ['name' => 'Module Builder', 'slug' => 'module-builder', 'icon' => 'BuildOutlined'],
+                ['name' => 'Tenants', 'slug' => 'tenants', 'icon' => 'CloudServerOutlined'],
                 ['name' => 'Global Setting', 'slug' => 'globalsettings', 'icon' => 'AppstoreOutlined', 'resourceful' => true],
             ],
         ],
