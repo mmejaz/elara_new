@@ -53,6 +53,18 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\EnsureUserBelongsToTenant::class,
         ]);
 
+        // The stateful web surface is tenant-scoped too — notably Sanctum's
+        // /sanctum/csrf-cookie, whose database-driven session must be read from
+        // the tenant DB (the central DB has no sessions table). Same ordering:
+        // tenancy before the web group's StartSession, guard after it.
+        $middleware->web(prepend: [
+            \Stancl\Tenancy\Middleware\InitializeTenancyByDomain::class,
+            \Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains::class,
+        ]);
+        $middleware->web(append: [
+            \App\Http\Middleware\EnsureUserBelongsToTenant::class,
+        ]);
+
         $middleware->validateCsrfTokens(except: [
             'api/*',
         ]);
