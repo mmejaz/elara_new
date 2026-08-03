@@ -35,6 +35,18 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->statefulApi();
 
+        // Every API route is tenant-scoped: users, sessions, cache and jobs all
+        // live in the tenant database. Initialize tenancy by domain BEFORE the
+        // stateful/session middleware (prepended ahead of statefulApi's
+        // EnsureFrontendRequestsAreStateful) so the database-driven session is
+        // read from the tenant DB, then block the central domain from tenant
+        // routes. This covers routes/api.php (login) and the auto-loaded
+        // routes/modules/*.php group alike — no edits inside routes/modules/.
+        $middleware->api(prepend: [
+            \Stancl\Tenancy\Middleware\InitializeTenancyByDomain::class,
+            \Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains::class,
+        ]);
+
         $middleware->validateCsrfTokens(except: [
             'api/*',
         ]);
@@ -75,7 +87,8 @@ return Application::configure(basePath: dirname(__DIR__))
                     Response::HTTP_FORBIDDEN,
                 ),
                 $e instanceof ModelNotFoundException,
-                $e instanceof NotFoundHttpException => ApiResponse::error(
+                $e instanceof NotFoundHttpException,
+                $e instanceof \Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException => ApiResponse::error(
                     ResponseMessage::NOT_FOUND,
                     null,
                     Response::HTTP_NOT_FOUND,
