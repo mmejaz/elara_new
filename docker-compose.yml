@@ -64,6 +64,9 @@ services:
       - "3307:3306"
     volumes:
       - elara_db_data:/var/lib/mysql
+      # Grants elara_user rights over `tenant%` databases on a fresh init so the
+      # provisioning command can create/migrate/drop tenant databases.
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
     networks:
       - elara_network
 
