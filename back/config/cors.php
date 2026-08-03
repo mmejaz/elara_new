@@ -16,6 +16,8 @@ return [
     'allowed_origins_patterns' => [
         // http://<tenant>.lvh.me[:port] — the local wildcard dev domain.
         '#^https?://[a-z0-9-]+\.lvh\.me(:\d+)?$#',
+        // http://localhost[:port] — dev alias mapped to a single tenant.
+        '#^https?://localhost(:\d+)?$#',
     ],
 
     'allowed_headers' => ['*'],
