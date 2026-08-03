@@ -15,6 +15,12 @@ export default defineConfig({
     host: 'localhost',
     port: 5173,
     strictPort: false,
+    // Bind-mounted source in Docker (esp. on Windows/WSL) doesn't emit native
+    // file-change events into the container, so HMR misses edits. Poll instead.
+    watch: {
+      usePolling: true,
+      interval: 300,
+    },
   },
   test: {
     environment: 'jsdom',

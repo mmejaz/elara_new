@@ -1,10 +1,22 @@
 // Domain entity types — mirror the Laravel API Resources.
 // (Phase 5 option: auto-generate these from spatie/laravel-typescript-transformer.)
 
+export interface UserSettings {
+  email_notifications: boolean
+  product_updates: boolean
+  profile_public: boolean
+}
+
 export interface User {
   id: number
   name: string
   email: string
+  phone: string | null
+  designation: string | null
+  country: string | null
+  city: string | null
+  bio: string | null
+  settings: Partial<UserSettings> | null
   avatar: string | null
   roles: string[]
   created_at: string

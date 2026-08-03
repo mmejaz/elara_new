@@ -6,6 +6,9 @@ use App\Constants\ResponseMessage;
 use App\Helpers\ApiResponse;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Profile\UpdateAvatarRequest;
+use App\Http\Requests\Profile\UpdatePasswordRequest;
+use App\Http\Requests\Profile\UpdateProfileRequest;
+use App\Http\Requests\Profile\UpdateSettingsRequest;
 use App\Services\AuthService;
 use Illuminate\Http\Request;
 
@@ -50,6 +53,38 @@ class AuthController extends Controller
         return ApiResponse::success(
             $this->authService->deleteAvatar($request->user()),
             ResponseMessage::DELETED,
+        );
+    }
+
+    public function updateProfile(UpdateProfileRequest $request)
+    {
+        return ApiResponse::success(
+            $this->authService->updateProfile($request->user(), $request->validated()),
+            ResponseMessage::UPDATED,
+        );
+    }
+
+    public function updatePassword(UpdatePasswordRequest $request)
+    {
+        return ApiResponse::success(
+            $this->authService->updatePassword($request->user(), $request->validated('password')),
+            ResponseMessage::UPDATED,
+        );
+    }
+
+    public function updateSettings(UpdateSettingsRequest $request)
+    {
+        return ApiResponse::success(
+            $this->authService->updateSettings($request->user(), $request->validated()),
+            ResponseMessage::UPDATED,
+        );
+    }
+
+    public function access(Request $request)
+    {
+        return ApiResponse::success(
+            $this->authService->accessMatrix($request->user()),
+            ResponseMessage::FETCHED,
         );
     }
 }
