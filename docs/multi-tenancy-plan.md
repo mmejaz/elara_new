@@ -1,449 +1,341 @@
-# Elara — Multi-Tenant / Multi-Organization Plan
+# Elara — Multi-Tenancy Plan (stancl/tenancy v3, database per tenant)
 
-Status: proposed · Target branch: `moduleBuilder` (or a fresh `tenancy` branch)
+Status: proposed · Target branch: `tenancy` (off `moduleBuilder`)
+Package: [tenancyforlaravel.com/docs/v3](https://tenancyforlaravel.com/docs/v3/introduction/) · `stancl/tenancy` ^3.10 (supports Laravel 13)
 
 ## 1. Goal
 
-A **tenant** is a customer. Each tenant is a **root organization** that owns one
-or more **child organizations** (branches, campuses, departments). Modules,
-roles, permissions and lookups are defined once and shared by everyone; the
-*business data* is partitioned per child organization. A user may belong to
-several organizations and may hold **different roles in each**. The application
-must later be able to move to **one database per tenant** without rewriting
-controllers, services or the frontend.
+Each **tenant** is a customer with its **own subdomain** (`acme.elara.com`) and its
+**own MySQL database**, served by a single Laravel application and a single React
+build. Inside a tenant, the customer has a **root organization and any number of
+child organizations** (branches); business data is partitioned per child
+organization, while modules, roles, permissions and lookups are shared across
+that tenant's organizations.
 
 ### Agreed decisions
 
 | Question | Decision |
 |---|---|
-| What is a tenant? | **The root organization** (`parent_id = null`). No separate `tenants` table — one hierarchy, one concept. |
-| Hierarchy depth | **Two levels**: tenant → child organizations. A child cannot have children. |
-| What does a user see? | **Only the currently selected organization.** No cross-org or tenant-wide roll-up. To see a sibling's data they switch into it. |
-| Can a user belong to many orgs? | **Yes** — many-to-many, with an org switcher after login. |
-| Roles | **Definitions global, assignments per organization.** Same role catalogue everywhere; a user can be Admin in Branch A and Viewer in Branch B. |
-| Lookups (genders, countries, cities, application types) | **Shared globally.** No org column. |
-| Modules / sidebar | **Shared globally.** Visibility is driven by permissions, which are now per-org. |
-| Future database split | **One database per tenant**, containing every child organization's rows, still separated by `organization_id` inside it. |
+| Tenant isolation | **Database per tenant**, via `stancl/tenancy` multi-database mode |
+| Tenant URL | **Logical subdomain** — `InitializeTenancyByDomain`, one wildcard DNS record + one wildcard certificate, no per-tenant infrastructure |
+| Deployment | **One codebase, one deployment, one React build** for all tenants |
+| Inside a tenant | Root organization + child organizations, **two levels** |
+| Data visibility | **Only the selected organization.** No cross-organization roll-up, no cross-tenant anything |
+| Users | Live **in the tenant database**. A user belongs to one tenant, may belong to several of its organizations |
+| Roles | Definitions shared within the tenant; **assignments per organization** (spatie teams, `team_foreign_key = organization_id`) |
+| Lookups & modules | Shared within a tenant; **seeded into each tenant database at provisioning** |
 
 ### The two boundaries — keep them distinct
 
-- **`organization_id` is the read boundary.** Every query, today and after the
-  database split, is filtered by the *selected* organization.
-- **`tenant_id` is the infrastructure boundary.** It decides which database the
-  rows eventually live in, and nothing else. It never narrows a query on its own.
+- **The database is the tenant boundary.** Resolved from the hostname by the
+  package. Nothing in application code filters by tenant, ever.
+- **`organization_id` is the read boundary** *inside* a tenant database. Resolved
+  from a request header, applied by a global Eloquent scope.
 
-Conflating these is the single most likely way this design goes wrong.
+`stancl/tenancy` solves the first boundary completely and the second not at all.
+Roughly a third of this plan is the package; the rest is the organization layer
+we build on top.
 
-### Non-goals (for now)
+### Non-goals
 
-- Cross-organization or tenant-wide reporting and aggregation.
-- Per-organization custom role definitions.
+- Cross-tenant anything: shared users, aggregated reporting, global search.
+- Custom full domains per tenant (`acme.com`). The same `domains` table supports
+  them later; it only adds per-domain TLS automation.
 - Organizations nested more than two levels deep.
-- Separate databases — Phase 6 only *prepares* for it.
 
 ---
 
-## 2. Architecture in one paragraph
+## 2. Architecture
 
-Phase 1 is **row-level tenancy in a single database**. Every tenant-owned table
-gets an `organization_id` (the read boundary) and a denormalized `tenant_id`
-(the future database boundary). A request-scoped `OrganizationContext` holds the
-active organization and its tenant, resolved by middleware from an
-`X-Organization-Id` header and validated against the user's memberships. A
-`BelongsToOrganization` trait adds a global Eloquent scope on `organization_id`
-and auto-stamps both columns on create, so **no service, controller or query
-ever mentions either column by hand**. Spatie's teams feature scopes role
-assignments to the same organization id, so the existing `permission:gender.view`
-route guards keep working untouched. Because all tenancy lives in exactly two
-places (the middleware and the trait), moving to database-per-tenant later means
-changing those two places, not the app — and because `tenant_id` is already on
-every row, extracting a tenant's data is one `WHERE` clause.
+```
+                    ┌──────────────────────── central DB ─────────┐
+  elara.com   ────▶ │  tenants · domains · (central admins)        │
+  (landlord)        └─────────────────────────────────────────────┘
 
-The golden rule: **tenancy is invisible to feature code.** The day a developer
-writes `->where('organization_id', ...)` in a service is the day the design
-starts to rot.
+  acme.elara.com ─▶ InitializeTenancyByDomain ─▶ ┌── tenant DB: acme ──────────┐
+                                                 │ organizations (root+branches)│
+  beta.elara.com ─▶ InitializeTenancyByDomain ─▶ │ users · organization_user    │
+                                                 │ roles · permissions (teams)  │
+                                                 │ modules · lookups            │
+                                                 │ business tables + org_id     │
+                                                 └──────────────────────────────┘
+```
+
+Per request: nginx accepts the wildcard host → tenancy middleware resolves the
+tenant from `Host` and switches the DB connection (plus cache, queue, filesystem
+via bootstrappers) → **`EnsureUserBelongsToTenant`** → `ResolveOrganization` sets
+the active organization and spatie's team id → controllers and services run
+unchanged. Neither boundary is visible to feature code.
+
+**Golden rule:** tenancy is invisible to feature code. A service that mentions
+`organization_id` — let alone a tenant — is a bug in the design.
 
 ---
 
-## 3. Current codebase — what this touches
+## 3. What changes in the current codebase
 
-| Area | File(s) | Impact |
+| Area | File(s) | Change |
 |---|---|---|
-| Route bootstrap | `back/bootstrap/app.php` | Add middleware alias + append `organization` to the module route group |
-| Auth | `AuthService`, `AuthController`, `AuthUserResource` | Return org list (grouped by tenant) + active org; permissions become per-org |
-| Models | `app/Models/*.php` | Tenant models `use BelongsToOrganization` |
-| Files | `app/Models/Concerns/HasFiles.php` | Store under a tenant/org-prefixed path |
-| Permissions | `config/permission.php`, `ModuleSeeder`, `DatabaseSeeder` | Enable teams; seeders must pass a team id |
-| Generator | `app/Services/ModuleGeneratorService.php` (~750 lines of stubs) | Emit org-scoped migrations/models — **must not be skipped** |
-| Frontend | `src/services/apiClient.ts`, `src/store/`, layouts, all `queries.ts` | Header interceptor, org slice, switcher, cache keys |
-
-Existing conventions this plan follows: service layer per module, `ApiResponse`
-envelope, `routes/modules/{Module}Api.php` auto-loaded by `bootstrap/app.php`,
-FormRequest validation, resources for output, feature tests shaped like
-`tests/Feature/GenderApiTest.php`.
+| Routing | `bootstrap/app.php` | Module route files move into the **tenant** route group with tenancy + org middleware |
+| Migrations | `database/migrations/` | Split: central (tenants, domains) vs `migrations/tenant/` (everything else) |
+| Session/cache/queue | `.env` — all three are `database` today | Move into the tenant DB via bootstrappers; `SESSION_DOMAIN` becomes `.elara.test` |
+| Auth | `AuthService`, `AuthUserResource` | Return organizations + active org; per-org roles/permissions |
+| Files | `HasFiles` | Per-tenant disk via the filesystem bootstrapper, then `org/{id}/…` inside it |
+| Permissions | `config/permission.php` | `teams => true`, `team_foreign_key => organization_id` |
+| Generator | `ModuleGeneratorService` | Emit into `migrations/tenant/`, add `organization_id`, run `tenants:migrate` |
+| Frontend | `apiClient.ts`, `.env` | API base URL derived from `window.location.hostname` at **runtime**, not baked at build |
+| Nginx | `docker/nginx/default.conf` | `server_name` wildcard |
+| Vite | `vite.config.ts` | `host: true` + `allowedHosts` for the wildcard, HMR host fix |
 
 ---
 
-## 4. Phase 0 — Data model
+## 4. Central database
 
-### 4.1 `organizations`
+Deliberately tiny — everything else belongs to a tenant.
+
+| Table | Purpose |
+|---|---|
+| `tenants` | package table; `id` (slug, e.g. `acme`), `data` json, timestamps |
+| `domains` | package table; `domain` (`acme.elara.com`), `tenant_id` |
+| `central_admins` *(optional)* | login for the landlord panel that provisions tenants |
+
+`App\Models\Tenant` extends the package's model with `HasDatabase, HasDomains`,
+and stores display fields (`name`, `status`, `plan`) in the `data` column or in
+dedicated columns via a custom migration.
+
+**Open item:** is the landlord panel a UI (needing `central_admins` + central
+routes + a separate frontend entry) or artisan commands only? Commands-only is
+recommended for v1 — see §12.
+
+---
+
+## 5. Tenant database schema
+
+### 5.1 `organizations`
 
 ```
 id
-parent_id      nullable, self FK, restrictOnDelete   // null  => this row is a tenant
-tenant_id      self FK, restrictOnDelete             // root org id; for a root, its own id
+parent_id   nullable self FK, restrictOnDelete   // null => root organization
 name
-code           unique per tenant: unique(tenant_id, code)
-status         enum active|inactive, default active
-settings       json nullable                         // per-org config (branding, etc.)
-db_name        nullable  ─┐ tenant rows only; reserved for Phase 6, unused now
-db_host        nullable  ─┘
+code        unique
+status      active|inactive
+settings    json nullable
 timestamps, softDeletes
 ```
 
-Adjacency list (same shape as `modules.parent_id`), capped at two levels, plus a
-denormalized `tenant_id` so "which database does this row belong to" and "give me
-this tenant's organizations" are both O(1) with no recursion.
+No `tenant_id` column — the database *is* the tenant. The root organization row
+is created during provisioning and mirrors the tenant's name.
 
-**Invariants**, enforced in `OrganizationService` and asserted by tests:
+Invariants (enforced in `OrganizationService`, asserted by tests):
+1. Exactly one root (`parent_id IS NULL`) per tenant database.
+2. A child's parent must be the root — **no third level**.
+3. The root cannot be deleted.
 
-1. `parent_id = null` ⟺ `tenant_id = id` (a root is its own tenant).
-2. `parent_id != null` ⟹ the parent must itself be a root — **no third level**.
-3. `tenant_id` is immutable. Re-parenting an organization across tenants is not
-   supported (it would mean moving rows between databases in Phase 6).
+### 5.2 `organization_user`
 
-For a root org, `tenant_id` can only be set after the id exists — set it in a
-`created` model event inside the same transaction, not in `creating`.
+`organization_id` + `user_id`, unique pair. **A membership must carry at least
+one role in that organization** — enforced in the service, never by callers.
 
-### 4.2 `organization_user`
+### 5.3 `users`
 
-```
-organization_id  FK cascadeOnDelete
-user_id          FK cascadeOnDelete
-unique(organization_id, user_id)
-timestamps
-```
+Standard Laravel users table, now **inside the tenant database**, plus
+`last_organization_id` to remember the switcher choice. Cross-tenant users are
+impossible by construction, which removes an entire class of problem.
 
-Membership is the switcher list. **Invariant: a membership must carry at least
-one role in that organization**, enforced in `OrganizationService`, never by
-callers.
+### 5.4 Roles & permissions
 
-**Recommended constraint: a user's memberships must all belong to one tenant**
-(Super Admin excepted). Users stay in the central database in Phase 6, so a
-cross-tenant user is technically possible — but it means one person's data lives
-in two databases, which breaks tenant export, tenant deletion and any future
-per-tenant GDPR request. Enforce it now; relaxing it later is easy, tightening it
-later is not. See open items (§13).
+`config/permission.php`: `'teams' => true`,
+`'team_foreign_key' => 'organization_id'`. The team is the **child
+organization** — that is what lets one user be Admin in one branch and Viewer in
+another. Role *definitions* are seeded with `organization_id = NULL` (global
+within the tenant); only assignment rows carry an organization.
 
-### 4.3 `users`
+Because these tables are created fresh per tenant, there is **no backfill
+migration** — a real saving compared with retrofitting tenancy later.
 
-```
-+ last_organization_id  nullable FK nullOnDelete    // remembers the switcher choice
-```
-
-No `tenant_id` on users — it is derivable from their memberships, and duplicating
-it invites the two to disagree.
-
-### 4.4 Spatie teams migration
-
-`config/permission.php`: `'teams' => true`, `'team_foreign_key' => 'organization_id'`.
-
-The team is the **child organization**, not the tenant — that is what gives a
-user different roles per branch.
-
-The permission tables already exist (`2026_06_29_151724_create_permission_tables`),
-so a **new** migration must:
-
-1. add nullable `organization_id` to `roles`, `model_has_roles`, `model_has_permissions`;
-2. drop and recreate the composite primary keys on the two pivot tables to include it;
-3. adjust the unique index on `roles` to `(name, guard_name, organization_id)`;
-4. **backfill existing assignment rows** to the default organization — leaving
-   them `null` would silently turn them into global grants;
-5. leave `roles.organization_id = NULL` for all role definitions (null = global
-   role, available in every org — this is exactly the "shared catalogue" we want).
-
-> Do not edit the original permission migration. Existing environments (including
-> the running Docker DB) must migrate forward.
-
-### 4.5 Tenant-owned tables
-
-Every current and future business table gets **both** columns:
+### 5.5 Business tables
 
 ```php
-$table->foreignId('tenant_id')->constrained('organizations')->cascadeOnDelete();
 $table->foreignId('organization_id')->constrained()->cascadeOnDelete();
-$table->index(['tenant_id', 'organization_id']);
+$table->index('organization_id');
 ```
 
-- Only `organization_id` is filtered at read time (the global scope).
-- `tenant_id` exists so Phase 6's extraction is `WHERE tenant_id = X` per table,
-  and so a scoping bug leaks *within one customer* instead of across customers.
-  It is cheap insurance: one integer column, stamped automatically.
+Composite unique keys must be prefixed with `organization_id`, so Branch B can
+reuse a code Branch A already took.
 
-**Every composite unique key must be prefixed with `organization_id`**
-(e.g. `unique(['organization_id', 'code'])`) — otherwise Branch B cannot reuse a
-code that Branch A already took.
+### 5.6 Shared-within-tenant tables
 
-### 4.6 Classification of existing tables
+`modules`, `genders`, `countries`, `cities`, `application_types`,
+`global_settings`, `global_setting_fields` — no `organization_id`, seeded into
+every tenant database at provisioning.
 
-| Table | Scope |
-|---|---|
-| `organizations`, `organization_user` | central (they *define* the boundary) |
-| `users`, `roles`, `permissions`, `model_has_*` | central (assignments carry org) |
-| `modules` | central (shared sidebar) |
-| `genders`, `countries`, `cities`, `application_types` | central (shared lookups) |
-| `global_settings`, `global_setting_fields` | central — the *definition* of a setting is generic |
-| `global_setting_records` | **tenant** — the *value* is per organization |
-| `files` | **tenant** (nullable org for central-owned files such as user avatars) |
-| future generated modules | tenant by default |
+Consequence worth stating plainly: these are now **per-tenant copies**, not one
+global catalogue. Adding a country means a seeder change plus
+`php artisan tenants:seed`. In exchange, a tenant can diverge (different modules
+enabled, its own lookup values) — which is usually what customers want.
+
+`global_setting_records` keeps `organization_id` — the *definition* of a setting
+is tenant-wide, its *value* is per organization.
 
 ---
 
-## 5. Phase 1 — Tenant context (the core)
+## 6. Tenancy layer (the package)
 
-### 5.1 `app/Tenancy/OrganizationContext.php`
+### 6.1 Install & configure
 
-Request-scoped singleton (`$this->app->scoped(...)` in `AppServiceProvider`).
+`composer require stancl/tenancy` → `php artisan tenancy:install` → register
+`App\Providers\TenancyServiceProvider` in `bootstrap/providers.php` →
+`'tenant_model' => App\Models\Tenant::class` → `central_domains` =
+`['elara.test']` locally.
 
-```php
-public function set(Organization $org): void;   // also sets spatie's team id
-public function id(): ?int;                     // active ORGANIZATION id  → read boundary
-public function tenantId(): ?int;               // its tenant id           → infra boundary
-public function organization(): ?Organization;
-public function has(): bool;
-public function runWithout(callable $fn): mixed;            // explicit, auditable bypass
-public function runFor(int $orgId, callable $fn): mixed;    // jobs, console, seeders
-```
+### 6.2 Bootstrappers
 
-`set()` calls `app(PermissionRegistrar::class)->setPermissionsTeamId($org->id)`
-and forgets the cached permissions, so authorization and data scoping can never
-disagree. `tenantId()` reads the org's denormalized column — no extra query.
+Enable in `config/tenancy.php`: **Database** (required), **Cache**, **Queue**,
+**Filesystem**. All three of `SESSION_DRIVER`, `CACHE_STORE` and
+`QUEUE_CONNECTION` are `database` in this project today, so without the Cache and
+Queue bootstrappers those tables would be read from whichever database happened
+to be connected — a real leak, not a theoretical one.
 
-### 5.2 `app/Http/Middleware/ResolveOrganization.php`
+### 6.3 Routes
 
-Runs after `auth:sanctum`, **before** any `permission:` route middleware.
+Tenant routes get `InitializeTenancyByDomain` + `PreventAccessFromCentralDomains`.
+The existing auto-loader in `bootstrap/app.php` (which globs
+`routes/modules/*.php`) keeps working — it just gains the tenancy middleware in
+its group, ahead of `ResolveOrganization` and the route-level `permission:` guards.
 
-1. Read `X-Organization-Id`; fall back to `users.last_organization_id`; then to
-   the user's single membership if they have exactly one.
-2. Verify membership via `organization_user` → else `403 ORGANIZATION_FORBIDDEN`.
-3. Verify the org **and its tenant** are `active` → else `403`. Deactivating a
-   tenant must lock out all of its branches in one action.
-4. `OrganizationContext::set()`.
-5. No resolvable organization → `409 NO_ORGANIZATION_SELECTED` so the SPA knows
-   to show the switcher rather than logging the user out.
+### 6.4 `EnsureUserBelongsToTenant` — mandatory
 
-Registration in `bootstrap/app.php`: alias `'organization'`, and append it to
-the auto-loaded module route group. **Group middleware runs before route
+The session cookie is scoped to `.elara.test` and is therefore **sent to every
+tenant subdomain**. This is [issue #653](https://github.com/stancl/tenancy/issues/653):
+an authenticated user reaching another tenant's data. Users living in the tenant
+database makes it much harder to exploit (the id would have to match a user in the
+other tenant's DB), but "harder" is not "closed".
+
+Middleware, immediately after tenancy initialization: assert the session's tenant
+id matches the resolved tenant; otherwise invalidate the session and 401. Store
+the tenant id in the session at login. **This is the single most important
+security control in the plan** and needs its own test.
+
+### 6.5 Provisioning
+
+`php artisan tenant:create {slug} {name} {admin-email}`:
+
+1. create the tenant + domain rows (the package creates the database);
+2. `tenants:migrate` for that tenant;
+3. seed roles, permissions, modules, lookups;
+4. create the root organization;
+5. create the first admin user and assign the Admin role in the root org;
+6. print the URL and a password-setup link.
+
+Idempotent and transactional as far as MySQL allows — a failure after
+`CREATE DATABASE` must clean up, or the retry must be safe.
+
+---
+
+## 7. Organization layer (built by us)
+
+### 7.1 `OrganizationContext`
+
+Request-scoped singleton: `set()`, `id()`, `organization()`, `has()`,
+`runWithout()`, `runFor()`. `set()` also calls
+`PermissionRegistrar::setPermissionsTeamId()` and forgets the permission cache,
+so authorization and data scoping can never disagree.
+
+### 7.2 `ResolveOrganization` middleware
+
+Runs after tenancy init and after `auth:sanctum`, **before** `permission:` guards:
+
+1. `X-Organization-Id` header → `users.last_organization_id` → sole membership;
+2. membership check → else `403 ORGANIZATION_FORBIDDEN`;
+3. organization active → else `403`;
+4. `OrganizationContext::set()`;
+5. nothing resolvable → `409 NO_ORGANIZATION_SELECTED` so the SPA shows the
+   switcher instead of logging the user out.
+
+Registered in the tenant route group. **Group middleware runs before route
 middleware**, so every existing `permission:*` guard resolves against the right
-organization with zero route-file edits. (Load-bearing assumption — verified by
-a test in step 1, not taken on trust.)
+organization with zero edits to `routes/modules/*.php`. Load-bearing assumption —
+proved by a test, not assumed.
 
-Add matching `ResponseMessage` constants and exception mappings so these errors
-come back in the standard `ApiResponse` envelope.
+### 7.3 `BelongsToOrganization` trait
 
-### 5.3 `app/Models/Concerns/BelongsToOrganization.php`
+Global scope on `organization_id` + auto-stamp on create. **Fails closed**: no
+context inside an HTTP request throws rather than returning every row.
+`withoutOrganizationScope()` is the explicit, greppable escape hatch.
 
-```php
-protected static function bootBelongsToOrganization(): void
-{
-    static::addGlobalScope('organization', fn (Builder $q) => /* where organization_id = context id */);
-    static::creating(function (Model $m) { /* stamp organization_id AND tenant_id from context */ });
-}
-public function organization(): BelongsTo;
-public function tenant(): BelongsTo;
-public function scopeWithoutOrganizationScope(Builder $q): Builder;   // explicit opt-out
-```
-
-The scope filters on `organization_id` only. `tenant_id` is written, never read —
-that asymmetry is deliberate and worth a comment in the trait, because the next
-developer will otherwise "helpfully" add it to the scope.
-
-**Fail closed.** If there is no context and we are inside an HTTP request, throw
-`TenantContextMissingException` instead of returning every row. In console
-context, require an explicit `runFor()`/`runWithout()`.
-
-### 5.4 Leak checklist (the parts people forget)
+### 7.4 Leak checklist
 
 | Vector | Fix |
 |---|---|
-| Queued jobs | Capture `organization_id` in the constructor; re-enter with `runFor()` in `handle()`. A `TenantAware` job base class. |
-| Route-model binding | Implicit binding runs *inside* the global scope, so a foreign id 404s — verify with a test, do not assume. |
-| File storage | `HasFiles` writes to `tenant/{tenantId}/org/{orgId}/…`; both columns stamped on the `files` row. |
-| Caches | Every cache key gets an org prefix; spatie's permission cache is flushed on switch. |
-| Broadcasting / notifications | Include org id in channel names when added. |
-| `unique` validation rules | Must be scoped: `Rule::unique(...)->where('organization_id', $orgId)`. |
-| Bulk `insert()` / `upsert()` | Bypasses model events — never use in tenant services, or stamp both columns manually. |
+| Queued jobs | Tenancy's queue bootstrapper restores the tenant; **the organization must be restored by us** — capture it in the constructor, `runFor()` in `handle()` |
+| Route-model binding | Runs inside the global scope, so a foreign id 404s — verify, don't assume |
+| Files | Tenant disk from the filesystem bootstrapper, then `org/{id}/…` |
+| `unique` validation rules | `Rule::unique(...)->where('organization_id', $orgId)` |
+| Bulk `insert()`/`upsert()` | Bypasses model events — banned in tenant services |
+| Permission cache | Flushed on organization switch |
 
 ---
 
-## 6. Phase 2 — API surface
-
-### 6.1 Organizations module
-
-Following the standard module shape: `OrganizationController`, `OrganizationService`,
-`Store/UpdateOrganizationRequest`, `OrganizationResource`, `routes/modules/OrganizationApi.php`.
+## 8. API surface
 
 ```
-GET    /api/tenants                    root organizations (Super Admin)
-GET    /api/organizations              index (paginated, search/sort)
-GET    /api/organizations/tree         tenant → children, like modules/tree
-POST   /api/organizations              create; parent_id null = new tenant
+POST   /api/login                                  (tenant subdomain)
+GET    /api/user
+POST   /api/organizations/switch  { organization_id }
+GET    /api/organizations         index / tree
+POST   /api/organizations         create branch (parent = root)
 PUT    /api/organizations/{organization}
 DELETE /api/organizations/{organization}
-POST   /api/organizations/{organization}/users     attach user + roles for that org
+POST   /api/organizations/{organization}/users     attach user + roles
 DELETE /api/organizations/{organization}/users/{user}
 ```
 
-Validation on create: `parent_id` must reference a **root** organization
-(enforces the two-level cap), and `tenant_id` is derived server-side — never
-accepted from the client.
+`AuthUserResource` returns `organizations[]`, `active_organization`, and
+roles/permissions **for the active organization only** — so a switch must return
+the full refreshed payload; the client cannot reuse what it has.
 
-Permissions `organization.view|create|edit|delete`, seeded via `ModuleSeeder`
-alongside a new sidebar entry under **Management**. These routes are *not*
-org-scoped themselves — they are administered above the tenant boundary, so they
-are gated by role instead: creating a **tenant** is Super Admin only; creating a
-**child organization** may be delegated to that tenant's admin (see §13).
-
-Deletion rule: an organization with children or with data cannot be hard-deleted;
-soft delete + `status = inactive` instead. Deleting a tenant is an operational
-procedure, not a button.
-
-### 6.2 Switching
-
-```
-POST /api/organizations/switch   { organization_id }
-```
-
-Validates membership, persists `users.last_organization_id`, returns the **full
-refreshed auth payload** — because roles and permissions differ per org, the
-client cannot reuse what it already has.
-
-### 6.3 Auth payload
-
-`AuthUserResource` gains:
-
-```json
-{
-  "organizations": [
-    { "id": 1, "name": "Acme Group",   "parent_id": null, "tenant_id": 1 },
-    { "id": 2, "name": "Lahore Branch","parent_id": 1,    "tenant_id": 1 }
-  ],
-  "active_organization": { "id": 2, "name": "Lahore Branch", "tenant_id": 1 },
-  "roles":       ["Manager"],       // in the ACTIVE organization only
-  "permissions": ["gender.view"]    // in the ACTIVE organization only
-}
-```
-
-Also fix, while here: an unauthenticated API call currently returns
+Also fix here: an unauthenticated API call currently returns
 `500 Route [login] not defined` instead of a clean 401.
 
-### 6.4 User management
+---
 
-Assigning a user now means **org + roles together**. The user edit screen becomes
-a per-org role matrix (rows = the tenant's organizations, columns = roles) rather
-than a flat role picker. `UserService` must set the team id before every
-`assignRole`/`syncRoles` — wrap it so no code path calls spatie directly.
+## 9. Frontend
+
+One build, served on every subdomain.
+
+1. **Runtime API base URL.** `VITE_API_BASE_URL=http://localhost:8000/api` is
+   baked at build time and must go: derive it from `window.location.hostname`
+   (`http://${host}:8000/api` in dev, `https://${host}/api` in prod). This is the
+   change that makes one build work for all tenants.
+2. **Cookies.** `SESSION_DOMAIN=.elara.test`,
+   `SANCTUM_STATEFUL_DOMAINS=*.elara.test:5173`. Cookies ignore ports, so the
+   `:5173` frontend and `:8000` API share them as long as the registrable domain
+   matches — meaning `localhost` must be replaced by `lvh.me` or `elara.test` in
+   local development.
+3. **`orgSlice`** + `X-Organization-Id` request interceptor; response interceptor
+   maps `409` to the switcher and `403 ORGANIZATION_FORBIDDEN` to a forced
+   re-select.
+4. **On switch:** refresh auth state, then `queryClient.clear()`. Every query key
+   is prefixed with the organization id as a second line of defence.
+5. **Screens:** org switcher in the topbar, organizations tree page, per-org role
+   matrix in the Users module.
 
 ---
 
-## 7. Phase 3 — Frontend
+## 10. Infrastructure & local development
 
-1. **`orgSlice`** — `organizations[]`, `activeOrganizationId`, `activeTenantId`,
-   `switchOrganization` thunk.
-2. **`apiClient.ts`** — request interceptor attaches `X-Organization-Id` from the
-   store; response interceptor maps `409 NO_ORGANIZATION_SELECTED` to the
-   switcher modal and `403 ORGANIZATION_FORBIDDEN` to a forced re-select.
-3. **Org switcher** in the topbar, **grouped by tenant** (tenant as the group
-   header, its children indented beneath). For the common single-tenant user this
-   renders as a flat list. On switch: dispatch the API call, replace
-   `roles`/`permissions` in `authSlice`, then `queryClient.clear()` — stale cached
-   lists from the previous org must never render.
-4. **Query keys** — prefix every key with the active org id
-   (`['org', orgId, 'genders', params]`) as a second line of defence.
-5. **Permission gates** — any `hasPermission()` helper reads from the refreshed
-   auth state. A stale permission array is the one failure mode that shows
-   buttons the API then rejects.
-6. **Pages** — Organizations tree page (tenant → branches, create/edit) and the
-   per-org role matrix in the Users module.
-
----
-
-## 8. Phase 4 — Module Builder (mandatory, not optional)
-
-`ModuleGeneratorService` writes every future module. If its stubs are not
-updated, each new module silently leaks data across organizations.
-
-- `modules` table: `+ is_tenant_scoped` boolean, default `true`; exposed as a
-  checkbox in the Module Builder UI (uncheck for shared lookups).
-- Migration stub: emit `tenant_id` + `organization_id` FKs and the composite index.
-- Model stub: `use BelongsToOrganization` when tenant-scoped.
-- Service stub: unchanged — the global scope does the work. This is the proof
-  that the design is right.
-- Request stub: `unique` rules scoped by organization.
-- Test stub: include the cross-org isolation case.
-- Frontend stub: query keys include the org id.
-
----
-
-## 9. Phase 5 — Tests
-
-Extend the `GenderApiTest` shape. New `tests/Feature/OrganizationScopingTest.php`:
-
-- index returns only the active org's rows — including a **sibling branch of the
-  same tenant**, which is the case a `tenant_id`-only filter would wrongly pass;
-- reading/updating/deleting another org's record returns **404, not 403** (do not
-  leak existence);
-- create auto-stamps both `organization_id` and the correct `tenant_id` — no
-  client control over either;
-- switching orgs changes the visible list;
-- a non-member sending another org's header gets 403;
-- deactivating a tenant locks out all of its child organizations;
-- creating a child under a child is rejected (two-level cap);
-- **same user, two orgs, different roles** → 200 creating in Branch A, 403 in Branch B;
-- `/api/user` permission array changes after switching;
-- a queued job runs under the org it was dispatched from;
-- Super Admin (`Gate::before`) still bypasses gates, and remains global.
-
-`TestCase` helpers: `actingAsInOrg(User $u, Organization $o, array $roles)` and a
-`tenantWithBranches(int $n)` factory helper.
-
----
-
-## 10. Phase 6 — Database-per-tenant readiness
-
-Not built now. The target shape:
-
-- **One database per tenant**, holding every child organization's rows. Inside it,
-  `organization_id` keeps doing exactly what it does today — so the read path
-  never changes.
-- **One central database** for `organizations`, `organization_user`, `users`,
-  `roles`, `permissions`, `model_has_*`, `modules` and the shared lookups.
-- `organizations.db_name` / `db_host` (already in the schema) drive connection
-  routing for tenant rows.
-
-Three rules followed **from day one** make it cheap:
-
-1. **No DB-level foreign keys from tenant tables to central tables**
-   (`users`, lookups, and `organizations` itself). Those constraints break the
-   moment tenant tables live in another database. Store the id, validate with an
-   `exists` rule in the FormRequest. FKs *within* the tenant set are fine.
-   → This means the `tenant_id`/`organization_id` FK constraints in §4.5 are
-   dropped as part of the Phase 6 migration; they are useful integrity guards
-   until then.
-2. **Split migrations** — `database/migrations` (central) vs
-   `database/migrations/tenant`, with the classification kept in
-   `config/tenancy.php`. That config is precisely the input Phase 6 needs, and it
-   is what the `is_tenant_scoped` flag from Phase 4 feeds.
-3. **Storage through a per-tenant disk resolver**, never a hardcoded path.
-
-When the switch happens: adopt `stancl/tenancy` in multi-database mode with a
-shared central connection. `organizations` where `parent_id IS NULL` becomes the
-tenant model using the `db_name` column already present; `ResolveOrganization`
-gains a tenancy-initialization step keyed on `tenantId()`; the
-`BelongsToOrganization` scope keeps running unchanged inside the tenant database.
-Migrating an existing customer is `SELECT … WHERE tenant_id = X` per tenant table.
-`roles`/`model_has_roles` stay central, so per-org roles cost nothing extra here.
-**Controllers, services and the entire frontend stay untouched.**
+- **DNS:** `lvh.me` (or `*.localhost`) locally; `*.elara.com` A record in prod.
+- **TLS:** one wildcard certificate via DNS-01. Custom domains would need
+  on-demand issuance — out of scope.
+- **nginx:** `server_name *.elara.test elara.test;` in
+  [docker/nginx/default.conf](docker/nginx/default.conf).
+- **Vite:** `server.host: true`, `allowedHosts: ['.lvh.me']`, and an explicit HMR
+  host — the current `host: 'localhost'` rejects subdomain requests.
+- **Deploy:** every release runs `php artisan tenants:migrate`. Migrations must be
+  safe to re-run and safe to run partially — a failure at tenant 7 of 20 leaves
+  the estate on two schema versions.
+- **Backups:** per-database. `mysqldump --all-databases` is not a per-tenant
+  restore story.
 
 ---
 
@@ -451,35 +343,37 @@ Migrating an existing customer is `SELECT … WHERE tenant_id = X` per tenant ta
 
 | Risk | Mitigation |
 |---|---|
-| Someone "optimizes" the global scope to filter on `tenant_id` | Sibling-branch isolation test (§9, first case) fails loudly; comment in the trait |
-| A query bypasses the global scope and leaks data | Fail-closed trait; isolation tests per module; ban raw `organization_id` filters in review |
-| Spatie teams is a global switch — it changes `assignRole` everywhere | Audit seeders + console commands; funnel all assignment through the service layer |
-| Role assignment outside HTTP lands with `organization_id = null` (a silent global grant) | Guard in the service; a test asserting no null-team assignment rows exist after seeding |
-| Existing role assignments have no org | Backfill migration to the default organization; verified by a post-migration assertion |
-| A third hierarchy level sneaks in via the API | Validation rule + test; `tenant_id` denormalization silently assumes depth 2 |
-| `tenant_id` drifts out of sync with `parent_id` | Set it in one place (model event), make it immutable, assert the invariant in tests |
-| Frontend renders stale org data after a switch | `queryClient.clear()` + org-prefixed query keys + refreshed permissions |
-| Generated modules skip tenancy | Phase 4 before any new module is generated |
+| Cross-tenant session reuse via the wildcard cookie | `EnsureUserBelongsToTenant` + dedicated test; tenant id in the session at login |
+| Cache/queue/session tables read from the wrong database | Enable Cache + Queue bootstrappers; test a job and a cached value under two tenants |
+| A query bypasses the organization scope | Fail-closed trait; sibling-branch isolation tests per module |
+| Generated modules land in the central migrations directory | Phase 4 generator work before any new module is built |
+| Partial `tenants:migrate` after deploy | Idempotent migrations, per-tenant version reporting, run before traffic |
+| Role assigned outside HTTP lands with `organization_id = null` (silent global grant) | All assignment funnelled through the service; test asserting no stray null-team rows |
+| Local dev breaks on `localhost` (no cookie sharing across subdomains) | Switch dev URLs to `lvh.me` early, in Milestone 0 |
+| A future feature needs cross-tenant data | Accept now that it is expensive — this is the architecture's one hard limit |
 
-## 12. Sequencing
+---
 
-| Step | Contents | Rough size |
-|---|---|---|
-| 1 | Phase 0 + 1 — migrations, context, middleware, trait, leak checklist | 1–2 days |
-| 2 | Phase 2 + 3 — organizations API, switcher, org pages, per-org role matrix | 2–3 days |
-| 3 | Phase 4 — generator stubs | 0.5 day |
-| 4 | Phase 5 — isolation test suite | 1 day |
-| 5 | Phase 6 — only when separate databases are actually required | — |
+## 12. Open items
 
-Steps 1 and 2 are worth landing as one reviewable vertical slice: a plan you can
-click through beats a plan you can only read.
+- Landlord panel: artisan commands only (recommended for v1), or a central UI
+  with `central_admins`?
+- Local domain: `lvh.me` (zero setup) vs `elara.test` (needs `/etc/hosts` or
+  dnsmasq)? `lvh.me` recommended.
+- Do tenants ever need different module sets, or is the module tree identical
+  everywhere and simply copied?
+- Password reset / invitation email flow for the first tenant admin.
 
-## 13. Open items
+---
 
-- **Who may create what?** Proposal: Super Admin creates tenants; a tenant's
-  admin (`organization.create` in the root org) creates that tenant's branches.
-- **Cross-tenant users** — recommended constraint is one tenant per user (§4.2).
-  Confirm no real scenario needs otherwise (e.g. a shared consultant).
-- Confirm `global_setting_records` is tenant-scoped while field definitions stay
-  shared (recommended above).
-- Decide whether user avatars (central `files` rows) keep `organization_id = null`.
+## 13. Sequencing
+
+| Milestone | Contents |
+|---|---|
+| **0** | Package install, central DB, subdomain routing, bootstrappers, `EnsureUserBelongsToTenant`, provisioning command, nginx/Vite/DNS |
+| **1** | Organization layer inside the tenant DB: schema, context, middleware, trait, leak checklist |
+| **2** | Organizations API + frontend switcher, tree page, per-org role matrix |
+| **3** | Module Builder generator: tenant migrations + organization scoping |
+| **4** | Isolation test suite (cross-tenant **and** cross-organization) + retrofit of existing modules |
+
+Step-by-step execution: [multi-tenancy-steps.md](multi-tenancy-steps.md).

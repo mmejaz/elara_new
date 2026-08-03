@@ -1,266 +1,254 @@
 # Multi-Tenancy — Step-by-Step Execution
 
-Companion to [multi-tenancy-plan.md](multi-tenancy-plan.md). That document is the
-*design*; this one is the *order of work*. Each step lists the files it touches,
-what "done" means, and where a commit belongs.
+Companion to [multi-tenancy-plan.md](multi-tenancy-plan.md) — that is the
+*design*, this is the *order of work*. Each step lists what it touches, what
+"done" means, and where a commit belongs.
 
-Legend: **[C]** = commit point · **[V]** = verify before moving on.
-
----
-
-# Milestone 1 — Foundation (backend core)
-
-*Nothing user-visible ships here. At the end, tenancy works but there is only one
-organization.*
-
-### Step 1 — Branch + config
-
-- Create branch `tenancy` off `moduleBuilder`.
-- `back/config/permission.php`: `'teams' => true`,
-  `'team_foreign_key' => 'organization_id'`.
-- New `back/config/tenancy.php` — two arrays: `central_tables` and
-  `tenant_tables`, filled in from §4.6 of the plan. Nothing reads it yet; it is
-  the Phase 6 input and the single source of truth for classification.
-
-**[V]** `php artisan config:clear` inside `elara_backend`; app still boots.
-**[C]** `chore(tenancy): enable spatie teams + tenancy config`
+Legend: **[V]** verify before moving on · **[C]** commit point
 
 ---
 
-### Step 2 — Organizations schema
+# Milestone 0 — Tenancy layer
 
-New migration `create_organizations_table`:
+*End state: two tenants on two subdomains, two databases, one codebase. No
+organizations yet.*
 
-- `organizations` per plan §4.1 (`parent_id`, `tenant_id`, `code`, `status`,
-  `settings`, `db_name`, `db_host`, soft deletes).
-- `organization_user` pivot per §4.2.
-- `users.last_organization_id` (separate migration or same file).
+### Step 1 — Local domains (do this first, everything else depends on it)
 
-`app/Models/Organization.php`:
+`localhost` cannot share cookies across subdomains, so development moves to
+`lvh.me` (resolves `*.lvh.me → 127.0.0.1`, no setup).
 
-- `parent()`, `children()`, `tenant()`, `users()` relations.
-- `scopeTenants()` (= `whereNull('parent_id')`).
-- `created` event assigning `tenant_id = id` for roots, **inside the transaction**
-  (it cannot be done in `creating` — no id yet).
-- `isTenant()`, `isBranch()` helpers.
+- `docker/nginx/default.conf`: `server_name *.lvh.me lvh.me;`
+- `reactTheme/vite.config.ts`: `server.host: true`,
+  `allowedHosts: ['.lvh.me']`, explicit `hmr.host`
+- `back/.env`: `APP_URL=http://lvh.me:8000`, `SESSION_DOMAIN=.lvh.me`,
+  `SANCTUM_STATEFUL_DOMAINS=*.lvh.me:5173`
+- `reactTheme/src/services/apiClient.ts`: derive `baseURL` from
+  `window.location.hostname` instead of `VITE_API_BASE_URL`
 
-`app/Models/User.php`: `organizations()` belongsToMany, `lastOrganization()`.
-
-**[V]** `php artisan migrate:fresh --seed` runs clean.
-**[C]** `feat(tenancy): organizations, memberships, hierarchy`
-
----
-
-### Step 3 — Spatie teams migration + backfill
-
-New migration (do **not** edit the original permission migration):
-
-1. `organization_id` nullable on `roles`, `model_has_roles`, `model_has_permissions`;
-2. recreate composite primary keys on both pivots to include it;
-3. `roles` unique index → `(name, guard_name, organization_id)`;
-4. **backfill** existing `model_has_*` rows to the default organization;
-5. role *definitions* keep `organization_id = NULL` (= global catalogue).
-
-Seeders: `DatabaseSeeder` creates a default tenant ("Default Organization") and
-makes every existing user a member; `ModuleSeeder`'s role/permission grants pass
-an explicit team id (or `null` for global roles).
-
-**[V]** `migrate:fresh --seed` then a tinker check: no `model_has_roles` row has
-a null `organization_id` except intentional global grants. Existing login still
-returns the same permissions.
-**[C]** `feat(tenancy): per-organization role assignments`
+**[V]** `http://acme.lvh.me:5173` loads the SPA and logs in against
+`http://acme.lvh.me:8000/api` (still single-database — only the URLs changed).
+**[C]** `chore: move local development to wildcard lvh.me domains`
 
 ---
 
-### Step 4 — Organization context
+### Step 2 — Install the package
 
-`app/Tenancy/OrganizationContext.php` with the API from plan §5.1 (`set`, `id`,
-`tenantId`, `organization`, `has`, `runWithout`, `runFor`). `set()` also calls
-`PermissionRegistrar::setPermissionsTeamId()` and forgets the permission cache.
+`composer require stancl/tenancy` · `php artisan tenancy:install` ·
+register `App\Providers\TenancyServiceProvider` in `bootstrap/providers.php`.
 
-Register as `scoped()` in `AppServiceProvider`.
-`app/Exceptions/TenantContextMissingException.php` + mapping in
-`bootstrap/app.php` and a `ResponseMessage` constant.
+- `app/Models/Tenant.php` — extends the package model,
+  `use HasDatabase, HasDomains`; `name`/`status` columns via an added migration.
+- `config/tenancy.php`: `tenant_model`, `central_domains => ['lvh.me']`.
 
-**[V]** Unit test: `runFor()` sets and restores the previous context, including
-on exception.
-**[C]** `feat(tenancy): request-scoped organization context`
+**[V]** `php artisan migrate` creates `tenants` + `domains` in the central DB.
+**[C]** `feat(tenancy): install stancl/tenancy, tenant model`
 
 ---
 
-### Step 5 — Middleware
+### Step 3 — Split migrations
 
-`app/Http/Middleware/ResolveOrganization.php` per plan §5.2 — header →
-`last_organization_id` → sole membership; membership check; org **and tenant**
-active check; `409 NO_ORGANIZATION_SELECTED` when nothing resolves.
+Move everything except `tenants`/`domains` into `database/migrations/tenant/`:
+users, sessions, cache, jobs, personal_access_tokens, permission tables, modules,
+lookups, global settings, files.
 
-`bootstrap/app.php`: alias `'organization'`, appended to the auto-loaded module
-route group.
-
-**[V]** ⚠️ **The load-bearing assumption.** Write a test proving group middleware
-runs *before* the route-level `permission:` guard — i.e. a request with a valid
-org header passes an existing `permission:gender.view` route with a per-org role,
-with **no edits to any file in `routes/modules/`**. If this fails, everything
-downstream changes, so do not proceed until it is green.
-**[C]** `feat(tenancy): resolve active organization per request`
+**[V]** `migrate:fresh` on the central DB creates *only* the package tables.
+**[C]** `refactor(tenancy): split central and tenant migrations`
 
 ---
 
-### Step 6 — Scoping trait
+### Step 4 — Routes + bootstrappers
 
-`app/Models/Concerns/BelongsToOrganization.php` per plan §5.3: global scope on
-`organization_id` only; `creating` stamps **both** `organization_id` and
-`tenant_id`; fail-closed when context is missing in an HTTP request;
-`withoutOrganizationScope()` escape hatch. Comment the write-but-never-read
-asymmetry of `tenant_id`.
+- `config/tenancy.php`: enable the **Database, Cache, Queue and Filesystem**
+  bootstrappers. All three of session/cache/queue are `database` in this project,
+  so skipping these is a real leak, not a theoretical one.
+- `bootstrap/app.php`: the existing `routes/modules/*.php` auto-loader gains
+  `InitializeTenancyByDomain` + `PreventAccessFromCentralDomains` on its group.
 
-Apply to the first real table as a pilot: migration adding `tenant_id` +
-`organization_id` to `global_setting_records`, and the trait on its model.
-
-**[V]** Two branches of one tenant; records created under branch A are invisible
-under branch B. Sibling isolation, not just cross-tenant.
-**[C]** `feat(tenancy): organization scoping trait`
+**[V]** Same route file, two tenants, two databases — no edits inside
+`routes/modules/`.
+**[C]** `feat(tenancy): tenant routes and bootstrappers`
 
 ---
 
-### Step 7 — Leak vectors
+### Step 5 — Provisioning command
 
-Work the checklist in plan §5.4:
+`php artisan tenant:create {slug} {name} {admin-email}` → tenant + domain rows →
+database creation → `tenants:migrate` → seed roles/permissions/modules/lookups →
+(root organization comes in Milestone 1) → first admin user.
 
-- `HasFiles` → `tenant/{tenantId}/org/{orgId}/…`; `files` gets both columns
-  (nullable for central-owned files such as avatars).
-- `TenantAware` job base class capturing + restoring the org id.
-- Cache keys prefixed with the org id.
-- Audit every `unique` rule in `app/Http/Requests/**` on tenant tables.
-- Grep for `insert(` / `upsert(` in services — they bypass model events.
+Failure after `CREATE DATABASE` must clean up, or the retry must be safe.
 
-**[V]** Upload an avatar and a record file; confirm both land under the right path.
-**[C]** `fix(tenancy): close file, job and cache leak vectors`
+**[V]** Create `acme` and `beta`; log in on both; data created in one is absent
+in the other.
+**[C]** `feat(tenancy): tenant provisioning command`
 
 ---
 
-# Milestone 2 — Organizations API + UI
+### Step 6 — `EnsureUserBelongsToTenant` ⚠️
 
-*End state: you can create branches, assign users with roles, and switch orgs.*
+**The security gate of this milestone.** The session cookie is scoped to
+`.lvh.me` and is sent to every tenant subdomain
+([issue #653](https://github.com/stancl/tenancy/issues/653)).
 
-### Step 8 — Organizations module (backend)
+- Store the tenant id in the session at login.
+- Middleware after tenancy init: session tenant ≠ resolved tenant → invalidate
+  session, 401.
 
-Standard module shape: `OrganizationController`, `OrganizationService`,
-`Store/UpdateOrganizationRequest`, `OrganizationResource`,
-`routes/modules/OrganizationApi.php` — endpoints per plan §6.1.
+**[V]** Log in to `acme`, then request `beta.lvh.me:8000/api/user` with the same
+cookie jar → 401, **not** 200. Automated test, not a manual check.
+**[C]** `feat(tenancy): reject cross-tenant session reuse`
 
-Service owns the invariants: parent must be a root (two-level cap), `tenant_id`
-derived server-side and immutable, membership requires ≥1 role, no hard delete
-with children or data.
-
-`ModuleSeeder`: sidebar entry under **Management** + `organization.*` permissions.
-
-**[V]** Creating a child under a child returns 422. `tenant_id` sent by the
-client is ignored.
-**[C]** `feat(organizations): CRUD, hierarchy, membership`
+**Do not continue until this test is green.**
 
 ---
 
-### Step 9 — Switch + auth payload
+# Milestone 1 — Organization layer (inside each tenant DB)
 
-- `POST /api/organizations/switch` — validate membership, persist
-  `last_organization_id`, return the **full** refreshed auth payload.
-- `AuthUserResource`: `organizations[]`, `active_organization`, and
-  roles/permissions **for the active org only**.
-- Fix the unauthenticated `500 Route [login] not defined` → clean 401.
+### Step 7 — Schema
 
-**[V]** Same user, two branches, different roles → `/api/user` returns different
-permission arrays after switching.
-**[C]** `feat(organizations): switching + org-aware auth payload`
+Tenant migrations: `organizations` (root + branches, two-level cap),
+`organization_user`, `users.last_organization_id`. `Organization` model with
+`parent()`, `children()`, `users()`, `isRoot()`.
+
+**[C]** `feat(organizations): schema and model`
+
+### Step 8 — Spatie teams
+
+`config/permission.php`: `teams => true`, `team_foreign_key => organization_id`.
+Since tenant databases are created fresh, this is a **plain migration edit — no
+backfill**. Seeders pass an explicit team id (`null` for global role definitions).
+
+**[V]** No `model_has_roles` row has a null `organization_id` after seeding,
+except intentional global grants.
+**[C]** `feat(organizations): per-organization role assignments`
+
+### Step 9 — Context + middleware
+
+`app/Tenancy/OrganizationContext.php` (scoped singleton; `set()` also sets
+spatie's team id and flushes the permission cache) and
+`ResolveOrganization` per plan §7.2, registered on the tenant route group.
+
+**[V]** ⚠️ Prove group middleware runs **before** the route-level `permission:`
+guard — a request with a valid org header passes an existing
+`permission:gender.view` route with **no edits to any file in `routes/modules/`**.
+If this fails, the design downstream changes.
+**[C]** `feat(organizations): request-scoped organization context`
+
+### Step 10 — Scoping trait + pilot
+
+`BelongsToOrganization` (global scope, auto-stamp, fail-closed,
+`withoutOrganizationScope()`), applied to `global_setting_records` as the pilot.
+
+**[V]** Two branches of one tenant: records created under Branch A are invisible
+under Branch B. **Sibling** isolation — cross-tenant isolation would pass even
+with a broken scope.
+**[C]** `feat(organizations): scoping trait`
+
+### Step 11 — Leak vectors
+
+Organization restoration in queued jobs (tenancy restores the tenant, not the
+org), `HasFiles` → `org/{id}/…` on the tenant disk, org-prefixed cache keys,
+audit every `unique` rule, grep for `insert(`/`upsert(` in services.
+
+**[C]** `fix(organizations): close job, file and cache leak vectors`
 
 ---
 
-### Step 10 — Frontend plumbing
+# Milestone 2 — API + UI
 
-- `orgSlice` (`organizations`, `activeOrganizationId`, `activeTenantId`,
-  `switchOrganization`).
-- `apiClient.ts`: request interceptor attaching `X-Organization-Id`; response
-  interceptor mapping `409` → switcher modal, `403 ORGANIZATION_FORBIDDEN` →
-  forced re-select.
-- On switch: refresh auth state, then `queryClient.clear()`.
-- Add the org id to every query key in `src/modules/**/queries.ts`.
+### Step 12 — Organizations module
 
-**[V]** Switch orgs with the network tab open — no stale list renders, header
-present on every request.
+Standard module shape (controller/service/requests/resource/route file).
+Service owns the invariants: one root per tenant, parent must be the root, root
+undeletable, membership requires ≥1 role. `ModuleSeeder`: sidebar entry +
+`organization.*` permissions. Provisioning (Step 5) now also creates the root org.
+
+**[C]** `feat(organizations): CRUD and membership API`
+
+### Step 13 — Switch + auth payload
+
+`POST /api/organizations/switch`; `AuthUserResource` returns `organizations[]`,
+`active_organization`, and per-active-org roles/permissions. Fix the
+unauthenticated `500 Route [login] not defined` → 401.
+
+**[V]** Same user, two branches, different roles → different permission arrays.
+**[C]** `feat(organizations): switching and org-aware auth payload`
+
+### Step 14 — Frontend plumbing
+
+`orgSlice`; `X-Organization-Id` request interceptor; response interceptor for
+`409` (switcher) and `403 ORGANIZATION_FORBIDDEN` (forced re-select); org id in
+every query key; `queryClient.clear()` on switch.
+
 **[C]** `feat(web): organization context plumbing`
 
----
+### Step 15 — Screens
 
-### Step 11 — Frontend screens
+Topbar org switcher, organizations tree page, per-org role matrix in Users.
 
-- Org switcher in the topbar, **grouped by tenant** (flat for single-tenant users).
-- Organizations page: tenant → branches tree, create/edit, activate/deactivate.
-- Users module: per-org role matrix (rows = tenant's orgs, columns = roles)
-  replacing the flat role picker.
-
-**[V]** Click through the whole flow in the browser at `localhost:5173`.
 **[C]** `feat(web): organization switcher, tree page, role matrix`
 
 ---
 
-# Milestone 3 — Generator
+# Milestone 3 — Module Builder
 
-### Step 12 — Module Builder stubs
+### Step 16 — Generator stubs
 
-Per plan §8: `modules.is_tenant_scoped` column + Module Builder checkbox;
-migration stub emits both columns and the composite index; model stub adds the
+`modules.is_tenant_scoped` flag + Module Builder checkbox; migration stub writes
+into `database/migrations/tenant/` with `organization_id`; model stub adds the
 trait; request stub scopes `unique`; test stub includes the isolation case;
-frontend stub keys include the org id. Service stub stays unchanged — that is the
-proof the design holds.
+frontend stub keys include the org id; generation triggers `tenants:migrate`.
+The **service stub stays unchanged** — that is the proof the design holds.
 
-**[V]** Generate a throwaway module, create rows in two branches, confirm
-isolation, then `php artisan module:rollback` (or the existing rollback path).
-**[C]** `feat(module-builder): generate organization-scoped modules`
+**[V]** Generate a module, confirm it exists and isolates correctly in **both**
+tenants, then roll back.
+**[C]** `feat(module-builder): tenant-aware, organization-scoped generation`
 
 **Do not generate any new module before this step lands.**
 
 ---
 
-# Milestone 4 — Tests + migration of existing modules
+# Milestone 4 — Tests + retrofit
 
-### Step 13 — Isolation suite
+### Step 17 — Isolation suite
 
-`tests/Feature/OrganizationScopingTest.php` with every case in plan §9, plus
-`TestCase` helpers `actingAsInOrg()` and `tenantWithBranches()`.
+`tests/Feature/TenantIsolationTest.php` — cross-tenant session reuse, jobs, cache,
+files.
+`tests/Feature/OrganizationScopingTest.php` — sibling-branch isolation, 404 (not
+403) for another org's record, auto-stamped `organization_id`, switching changes
+the list, non-member 403, two-level cap, same user with different roles per
+branch, Super Admin still global.
 
-**[C]** `test(tenancy): cross-organization isolation suite`
+Helpers: `actingAsInOrg()`, `tenantWithBranches()`.
+**[C]** `test: tenant and organization isolation suites`
 
-### Step 14 — Retrofit remaining tenant tables
+### Step 18 — Retrofit remaining modules
 
-For each table classified as tenant in `config/tenancy.php` and not yet done:
-migration adding both columns (backfilled to the default org), trait on the model,
-isolation test. One commit per module keeps the diff reviewable.
+Per module: `organization_id` migration, trait, isolation test. One commit each.
 
-**[V]** Full `php artisan test` green; `config/tenancy.php` and reality agree.
-**[C]** `feat(tenancy): scope <module> to organization` ×N
-
----
-
-# Milestone 5 — Later
-
-### Step 15 — Database per tenant
-
-Only when a customer actually requires it. Split migrations into
-`database/migrations/tenant`, drop the cross-database FK constraints (plan §10
-rule 1), adopt `stancl/tenancy` in multi-database mode keyed on
-`organizations.db_name`, and migrate a tenant with
-`SELECT … WHERE tenant_id = X` per tenant table.
+**[V]** Full `php artisan test` green; `npm test` green.
+**[C]** `feat(organizations): scope <module>` ×N
 
 ---
 
-## Decisions still needed (do not block Milestone 1)
+## Decisions still needed
 
-Needed by **Step 8**:
+Needed by **Step 5**: landlord panel — commands only (recommended) or a central
+UI with `central_admins`? · first-admin invitation/password-reset flow.
 
-- Who creates tenants vs branches? (proposal: Super Admin / tenant admin)
-- Is a user allowed to span tenants? (proposal: no, Super Admin excepted)
+Needed by **Step 12**: who may create branches — root-org admin only?
 
-Needed by **Step 14**:
+Needed by **Step 18**: `global_setting_records` org-scoped while definitions stay
+tenant-wide (proposal: yes) · do avatars stay `organization_id = null`?
 
-- `global_setting_records` tenant-scoped, definitions shared? (proposal: yes)
-- Do user avatars keep `organization_id = null`? (proposal: yes)
+---
+
+## Ordering rationale
+
+Milestone 0 before everything: the tenant boundary changes where every table
+lives, so building the organization layer first would mean moving all of it
+afterwards. Step 1 before Step 2 because cookie-domain problems on `localhost`
+masquerade as tenancy bugs and cost hours. Steps 6 and 9 are hard gates — one is
+the security boundary, the other the assumption the whole middleware design rests
+on.
