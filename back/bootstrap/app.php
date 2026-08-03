@@ -47,6 +47,12 @@ return Application::configure(basePath: dirname(__DIR__))
             \Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains::class,
         ]);
 
+        // Appended so it runs after tenancy init AND after the session has
+        // started: reject any session established under a different tenant.
+        $middleware->api(append: [
+            \App\Http\Middleware\EnsureUserBelongsToTenant::class,
+        ]);
+
         $middleware->validateCsrfTokens(except: [
             'api/*',
         ]);

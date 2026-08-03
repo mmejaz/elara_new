@@ -4,18 +4,16 @@ namespace Tests\Feature;
 
 use App\Models\Gender;
 use App\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Spatie\Permission\Models\Role;
-use Tests\TestCase;
+use Tests\TenantTestCase;
 
 /**
  * Covers the Gender module's API — the reference shape every generated
  * resourceful module follows (paginated index + search/sort, validated CRUD,
  * permission-gated routes).
  */
-class GenderApiTest extends TestCase
+class GenderApiTest extends TenantTestCase
 {
-    use RefreshDatabase;
 
     /** Super Admin bypasses every gate (see AppServiceProvider::Gate::before). */
     private function admin(): User

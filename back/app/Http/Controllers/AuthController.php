@@ -22,6 +22,11 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
+        // Bind the session to the tenant it was established under, so it cannot
+        // be replayed against another tenant subdomain (see
+        // EnsureUserBelongsToTenant + the shared .lvh.me cookie).
+        $request->session()->put('tenant_id', tenant('id'));
+
         return ApiResponse::success($payload, ResponseMessage::LOGIN_SUCCESS);
     }
 

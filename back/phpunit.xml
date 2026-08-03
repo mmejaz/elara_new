@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="vendor/autoload.php"
+         bootstrap="tests/bootstrap.php"
          colors="true"
 >
     <testsuites>
@@ -18,7 +18,15 @@
         </include>
     </source>
     <php>
-        <env name="APP_ENV" value="testing"/>
+        <!-- force: the Docker container exports APP_ENV=local, which would
+             otherwise win over this and re-enable the tenancy DB bootstrappers. -->
+        <env name="APP_ENV" value="testing" force="true"/>
+        <!-- Relative request URIs resolve to this tenant host, which the base
+             TenantTestCase registers so tenancy middleware can identify it. -->
+        <env name="APP_URL" value="http://acme.lvh.me"/>
+        <!-- Marks test requests from these hosts as stateful so the session
+             (and thus EnsureUserBelongsToTenant) actually runs. -->
+        <env name="SANCTUM_STATEFUL_DOMAINS" value="acme.lvh.me,beta.lvh.me"/>
         <env name="APP_MAINTENANCE_DRIVER" value="file"/>
         <env name="BCRYPT_ROUNDS" value="4"/>
         <env name="BROADCAST_CONNECTION" value="null"/>

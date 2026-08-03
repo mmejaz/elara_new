@@ -15,17 +15,24 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('cache', function (Blueprint $table) {
-            $table->string('key')->primary();
-            $table->mediumText('value');
-            $table->bigInteger('expiration')->index();
-        });
+        // Guarded so it is a no-op where a `cache` table already exists — e.g.
+        // the test database, which also loads the tenant migration path (its own
+        // create_cache_table). Central and tenant DBs stay independent in prod.
+        if (! Schema::hasTable('cache')) {
+            Schema::create('cache', function (Blueprint $table) {
+                $table->string('key')->primary();
+                $table->mediumText('value');
+                $table->bigInteger('expiration')->index();
+            });
+        }
 
-        Schema::create('cache_locks', function (Blueprint $table) {
-            $table->string('key')->primary();
-            $table->string('owner');
-            $table->bigInteger('expiration')->index();
-        });
+        if (! Schema::hasTable('cache_locks')) {
+            Schema::create('cache_locks', function (Blueprint $table) {
+                $table->string('key')->primary();
+                $table->string('owner');
+                $table->bigInteger('expiration')->index();
+            });
+        }
     }
 
     public function down(): void

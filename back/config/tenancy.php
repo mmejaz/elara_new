@@ -26,7 +26,11 @@ return [
      *
      * To configure their behavior, see the config keys below.
      */
-    'bootstrappers' => [
+    // Tests run against a single throwaway database and resolve tenants by
+    // domain only (to exercise routing and the org/session guards) without
+    // swapping the connection — so no bootstrappers there. Everywhere else the
+    // full set is active.
+    'bootstrappers' => env('APP_ENV') === 'testing' ? [] : [
         Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper::class,
