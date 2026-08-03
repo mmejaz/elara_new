@@ -1,7 +1,20 @@
 import axios from 'axios'
 
+/**
+ * Multi-tenant: the tenant is resolved by domain, so every request must hit the
+ * SAME subdomain the SPA is served from (acme.lvh.me → acme.lvh.me:8000) — that
+ * is what sends the .lvh.me session cookie to the right tenant. Derive the
+ * backend origin from the live hostname rather than a build-time env var, which
+ * could only ever name one host. Fall back to the env var when there is no
+ * `window` (SSR / non-jsdom tests).
+ */
+const backendOrigin =
+  typeof window !== 'undefined' && window.location?.hostname
+    ? `${window.location.protocol}//${window.location.hostname}:8000`
+    : import.meta.env.VITE_BACKEND_URL
+
 const apiClient = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL,
+  baseURL: `${backendOrigin}/api`,
   headers: {
     Accept: 'application/json',
     'Content-Type': 'application/json',
@@ -24,7 +37,7 @@ apiClient.interceptors.request.use((config) => {
 })
 
 export const initCsrf = () =>
-  axios.get(`${import.meta.env.VITE_BACKEND_URL}/sanctum/csrf-cookie`, {
+  axios.get(`${backendOrigin}/sanctum/csrf-cookie`, {
     withCredentials: true,
   })
 
