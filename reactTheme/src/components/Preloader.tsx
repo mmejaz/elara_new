@@ -10,7 +10,10 @@ function Preloader({ fullscreen = false, tip = 'Loading' }) {
         fullscreen ? 'min-h-screen bg-white dark:bg-[#0a0a0a]' : 'min-h-[60vh]'
       }`}
     >
-      <span className="app-spinner" style={{ borderTopColor: primaryColor }} />
+      <span
+        className="size-11 animate-spin rounded-full border-[3px] border-slate-400/25 [animation-duration:700ms]"
+        style={{ borderTopColor: primaryColor }}
+      />
       <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
         {tip}…
       </span>

@@ -29,8 +29,9 @@ class TenancyServiceProvider extends ServiceProvider
                     Jobs\MigrateDatabase::class,
                     Jobs\SeedDatabase::class,
 
-                    // Your own jobs to prepare the tenant.
-                    // Provision API keys, create S3 buckets, anything you want!
+                    // Clear the transient admin_password from central tenants.data
+                    // once the tenant admin has been seeded (must run last).
+                    \App\Jobs\ClearTenantAdminPassword::class,
 
                 ])->send(function (Events\TenantCreated $event) {
                     return $event->tenant;

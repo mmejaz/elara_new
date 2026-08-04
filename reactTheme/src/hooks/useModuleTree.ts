@@ -5,11 +5,11 @@ import type { Module } from '../types/models'
 // Persist the last-known tree so a hard reload can paint the real menu
 // immediately, instead of flashing the static fallback while /modules/tree is
 // still in flight (which made the sidebar visibly rebuild "by parts").
-const CACHE_KEY = 'elara.modules-tree'
+export const MODULE_TREE_CACHE_KEY = 'elara.modules-tree'
 
 function readCachedTree(): Module[] | undefined {
   try {
-    const raw = localStorage.getItem(CACHE_KEY)
+    const raw = localStorage.getItem(MODULE_TREE_CACHE_KEY)
     return raw ? (JSON.parse(raw) as Module[]) : undefined
   } catch {
     return undefined
@@ -19,7 +19,7 @@ function readCachedTree(): Module[] | undefined {
 async function fetchModuleTree(): Promise<Module[]> {
   const { data } = await apiClient.get('/modules/tree')
   try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify(data.data))
+    localStorage.setItem(MODULE_TREE_CACHE_KEY, JSON.stringify(data.data))
   } catch {
     // Best-effort cache — ignore quota/serialization failures.
   }

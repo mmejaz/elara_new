@@ -17,7 +17,7 @@ const { Text } = Typography
 function GendersPage() {
   const dispatch = useAppDispatch()
   const table = useServerTable(15, 'Search Genders…')
-  const { data, isLoading } = useGenders(table.params)
+  const { data, isFetching } = useGenders(table.params)
   const remove = useDeleteGender()
 
   const handleDelete = (id: number) =>
@@ -68,7 +68,7 @@ function GendersPage() {
       <DataTable<Gender>
         columns={visibleColumns}
         dataSource={data?.data ?? []}
-        loading={isLoading}
+        loading={isFetching}
         showColumnToggle={false}
         searchable={false}
         server={{

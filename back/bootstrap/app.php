@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
@@ -33,7 +34,15 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Hardening headers on every response (API + error pages).
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+
         $middleware->statefulApi();
+
+        // Global ceiling on every /api route (the `login` limiter still applies
+        // its stricter per-email/IP limit on top). Uses the `api` limiter
+        // registered in AppServiceProvider.
+        $middleware->throttleApi();
 
         // Tenancy must resolve BEFORE Sanctum's stateful group starts the
         // session, so that the session (and the users table behind auth) is
@@ -64,7 +73,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null; // let web/other handling proceed
             }
 
-            return match (true) {
+            $response = match (true) {
                 $e instanceof ValidationException => ApiResponse::error(
                     ResponseMessage::VALIDATION_FAILED,
                     $e->errors(),
@@ -81,6 +90,15 @@ return Application::configure(basePath: dirname(__DIR__))
                     null,
                     Response::HTTP_FORBIDDEN,
                 ),
+                // Rate-limited (e.g. login throttle). Kept out of the default so
+                // it isn't mislabeled "Server error" in production; the client
+                // reads how long to wait from the Retry-After header preserved
+                // below.
+                $e instanceof ThrottleRequestsException => ApiResponse::error(
+                    ResponseMessage::TOO_MANY_ATTEMPTS,
+                    null,
+                    Response::HTTP_TOO_MANY_REQUESTS,
+                ),
                 $e instanceof ModelNotFoundException,
                 $e instanceof NotFoundHttpException => ApiResponse::error(
                     ResponseMessage::NOT_FOUND,
@@ -93,5 +111,14 @@ return Application::configure(basePath: dirname(__DIR__))
                     $e instanceof HttpExceptionInterface ? $e->getStatusCode() : Response::HTTP_INTERNAL_SERVER_ERROR,
                 ),
             };
+
+            // Carry HTTP-exception headers (Retry-After, X-RateLimit-*, …) onto
+            // the envelope — rebuilding the response above would otherwise drop
+            // them, leaving a 429 with no "try again in N seconds" signal.
+            if ($e instanceof HttpExceptionInterface) {
+                $response->headers->add($e->getHeaders());
+            }
+
+            return $response;
         });
     })->create();

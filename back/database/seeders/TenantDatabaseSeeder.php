@@ -23,6 +23,7 @@ class TenantDatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             ModuleSeeder::class,
             GlobalSettingSeeder::class,
+            ReferenceDataSeeder::class,
         ]);
 
         // First admin for this tenant, from the creation wizard.

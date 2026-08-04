@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\User;
 
+use App\Rules\AssignableRole;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
 
 class UpdateUserRequest extends FormRequest
 {
@@ -18,8 +20,8 @@ class UpdateUserRequest extends FormRequest
         return [
             'name'     => ['required', 'string', 'max:255'],
             'email'    => ['required', 'email', 'unique:users,email,' . $id],
-            'password' => ['nullable', 'string', 'min:8'],
-            'role'     => ['required', 'string', 'exists:roles,name'],
+            'password' => ['nullable', 'string', Password::defaults()],
+            'role'     => ['required', 'string', 'exists:roles,name', new AssignableRole],
         ];
     }
 

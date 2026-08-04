@@ -30,7 +30,7 @@ function UsersPage() {
   const primaryColor = useAppSelector((state) => state.ui.primaryColor)
   const table = useServerTable(15, 'Search users by name, email, or role…')
 
-  const { data, isLoading } = useUsersPaginated(table.params)
+  const { data, isFetching } = useUsersPaginated(table.params)
   const { data: stats } = useUserStats()
   const { data: roles = [] } = useRoles()
   const removeUser = useDeleteUser()
@@ -155,7 +155,7 @@ function UsersPage() {
       <DataTable<User>
         columns={visibleColumns}
         dataSource={data?.data ?? []}
-        loading={isLoading}
+        loading={isFetching}
         searchable={false}
         showColumnToggle={false}
         server={{

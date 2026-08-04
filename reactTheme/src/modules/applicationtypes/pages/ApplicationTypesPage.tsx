@@ -17,7 +17,7 @@ const { Text } = Typography
 function ApplicationTypesPage() {
   const dispatch = useAppDispatch()
   const table = useServerTable(15, 'Search Application Types…')
-  const { data, isLoading } = useApplicationTypes(table.params)
+  const { data, isFetching } = useApplicationTypes(table.params)
   const remove = useDeleteApplicationType()
 
   const handleDelete = (id: number) =>
@@ -68,7 +68,7 @@ function ApplicationTypesPage() {
       <DataTable<ApplicationType>
         columns={visibleColumns}
         dataSource={data?.data ?? []}
-        loading={isLoading}
+        loading={isFetching}
         showColumnToggle={false}
         searchable={false}
         server={{

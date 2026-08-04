@@ -14,7 +14,11 @@ const { Text } = Typography
 function ModuleBuilderPage() {
   const dispatch = useAppDispatch()
   const table = useServerTable(15, 'Search modules…')
-  const { data, isLoading } = useModulesPaginated(table.params)
+  // isFetching (not isLoading): with keepPreviousData the query keeps showing the
+  // previous page's rows on a page switch, so isLoading stays false. isFetching
+  // is true for every in-flight request — initial load, pagination, search, sort
+  // — so the table's loading overlay shows until the new page returns.
+  const { data, isFetching } = useModulesPaginated(table.params)
 
   const columns = useMemo<ColumnsType<Record<string, unknown>>>(
     () => [
@@ -89,7 +93,7 @@ function ModuleBuilderPage() {
       <DataTable<Record<string, unknown>>
         columns={visibleColumns}
         dataSource={(data?.data ?? []) as unknown as Record<string, unknown>[]}
-        loading={isLoading}
+        loading={isFetching}
         searchable={false}
         showColumnToggle={false}
         server={{

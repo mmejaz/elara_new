@@ -19,5 +19,6 @@ class ResponseMessage
     public const VALIDATION_FAILED = 'Validation failed.';
     public const UNAUTHENTICATED   = 'Unauthenticated.';
     public const UNAUTHORIZED      = 'This action is unauthorized.';
+    public const TOO_MANY_ATTEMPTS = 'Too many attempts. Please try again later.';
     public const SERVER_ERROR      = 'Server error.';
 }

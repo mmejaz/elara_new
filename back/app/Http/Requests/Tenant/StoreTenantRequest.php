@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Tenant;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
 
 class StoreTenantRequest extends FormRequest
 {
@@ -22,7 +23,7 @@ class StoreTenantRequest extends FormRequest
             'id'             => ['nullable', 'string', 'max:60', 'regex:/^[a-z0-9_]+$/', 'unique:tenants,id'],
             'admin_name'     => ['nullable', 'string', 'max:255'],
             'admin_email'    => ['required', 'email', 'max:255'],
-            'admin_password' => ['required', 'string', 'min:8'],
+            'admin_password' => ['required', 'string', Password::defaults()],
             'email'          => ['nullable', 'email', 'max:255'],
             'phone'          => ['nullable', 'string', 'max:30'],
             'timezone'       => ['nullable', 'string', 'max:64'],

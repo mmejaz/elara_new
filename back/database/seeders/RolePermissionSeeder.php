@@ -66,10 +66,14 @@ class RolePermissionSeeder extends Seeder
                 'reports.view',
             ]);
 
-            // Assign Super Admin role to the first user.
-            $user = User::first();
-            if ($user) {
-                $user->assignRole('Super Admin');
+            // Assign Super Admin to the first user — CENTRAL context ONLY.
+            // Inside a tenant this seeder runs (via TenantDatabaseSeeder) BEFORE
+            // the tenant admin is created, and re-running `tenants:seed` later
+            // would otherwise escalate that tenant's admin to Super Admin — which
+            // carries the Gate::before bypass. Tenant admins are deliberately
+            // "Admin", assigned by TenantDatabaseSeeder.
+            if (! tenancy()->initialized) {
+                User::first()?->assignRole('Super Admin');
             }
         });
 

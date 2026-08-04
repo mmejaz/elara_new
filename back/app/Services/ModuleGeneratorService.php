@@ -453,7 +453,11 @@ class ModuleGeneratorService
         function {$n['plural']}Page() {
           const dispatch = useAppDispatch()
           const table = useServerTable(15, 'Search {$n['titlePlural']}…')
-          const { data, isLoading } = use{$n['plural']}(table.params)
+          // isFetching (not isLoading): keepPreviousData keeps the previous page's
+          // rows during a page switch, so isLoading stays false. isFetching is true
+          // for every in-flight request, so the table shows its loading overlay on
+          // pagination, search and sort until the new data returns.
+          const { data, isFetching } = use{$n['plural']}(table.params)
           const remove = useDelete{$n['singular']}()
 
           const handleDelete = (id: number) =>
@@ -504,7 +508,7 @@ class ModuleGeneratorService
               <DataTable<{$n['singular']}>
                 columns={visibleColumns}
                 dataSource={data?.data ?? []}
-                loading={isLoading}
+                loading={isFetching}
                 showColumnToggle={false}
                 searchable={false}
                 server={{

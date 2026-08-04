@@ -16,7 +16,7 @@ const { Text } = Typography
 function RolesPage() {
   const dispatch = useAppDispatch()
   const table = useServerTable(15, 'Search roles…')
-  const { data, isLoading } = usePaginatedRoles(table.params)
+  const { data, isFetching } = usePaginatedRoles(table.params)
 
   const columns = useMemo<ColumnsType<Role>>(
     () => [
@@ -82,7 +82,7 @@ function RolesPage() {
       <DataTable<Role>
         columns={visibleColumns}
         dataSource={data?.data ?? []}
-        loading={isLoading}
+        loading={isFetching}
         searchable={false}
         showColumnToggle={false}
         server={{

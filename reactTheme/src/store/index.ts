@@ -1,5 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit'
-import authReducer from './authSlice'
+import apiClient from '../services/apiClient'
+import { clearClientCaches } from '../utils/session'
+import authReducer, { clearCredentials } from './authSlice'
 import uiReducer, { STORAGE_KEY, pickPersistedSettings } from './uiSlice'
 import usersReducer from '../modules/users/usersSlice'
 import rolesReducer from '../modules/roles/rolesSlice'
@@ -47,6 +49,23 @@ store.subscribe(() => {
     }
   }
 })
+
+// Global response interceptor: when the server rejects the session (401) mid-use
+// — expired or revoked cookie — flip auth off so AuthGuard redirects to /login,
+// and drop cached user data. Guarded on isAuthenticated so the routine "not
+// logged in yet" 401 from the initial /user probe doesn't churn state or wipe
+// caches. Registered here (not in apiClient) to avoid a store↔apiClient cycle.
+apiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401 && store.getState().auth.isAuthenticated) {
+      store.dispatch(clearCredentials())
+      clearClientCaches()
+    }
+
+    return Promise.reject(error)
+  },
+)
 
 export type RootState = ReturnType<typeof store.getState>
 export type AppDispatch = typeof store.dispatch

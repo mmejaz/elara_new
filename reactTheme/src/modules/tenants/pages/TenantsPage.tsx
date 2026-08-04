@@ -17,7 +17,7 @@ const dash = <Text type="secondary">—</Text>
 function TenantsPage() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const table = useServerTable(15, 'Search tenants…')
-  const { data, isLoading } = useTenants(table.params)
+  const { data, isFetching } = useTenants(table.params)
   const remove = useDeleteTenant()
   const setStatus = useSetTenantStatus()
 
@@ -184,7 +184,7 @@ function TenantsPage() {
       <DataTable<Tenant>
         columns={visibleColumns}
         dataSource={data?.data ?? []}
-        loading={isLoading}
+        loading={isFetching}
         rowKey="id"
         showColumnToggle={false}
         searchable={false}

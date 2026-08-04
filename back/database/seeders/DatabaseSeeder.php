@@ -15,14 +15,25 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::factory()->create([
-            'name' => 'Super Admin',
-            'email' => 'test@test.com',
-            'password' => bcrypt('password123'),
-        ]);
+        // First admin. firstOrCreate (keyed on email) makes this safe to re-run
+        // on every deploy — no duplicate/unique-constraint failure. Credentials
+        // come from env so production never ships the known dev password; the
+        // defaults only apply to local. Password is passed plain and hashed by
+        // the model's 'hashed' cast. On an existing admin the password is left
+        // untouched (firstOrCreate only sets attributes when creating).
+        User::firstOrCreate(
+            ['email' => env('ADMIN_EMAIL', 'test@test.com')],
+            [
+                'name'     => env('ADMIN_NAME', 'Super Admin'),
+                'password' => env('ADMIN_PASSWORD', 'password123'),
+            ],
+        );
 
+        // Idempotent — each of these upserts by a natural key (role/permission
+        // name, module slug, setting name), so re-seeding never duplicates.
         $this->call(RolePermissionSeeder::class);
         $this->call(ModuleSeeder::class);
         $this->call(GlobalSettingSeeder::class);
+        $this->call(ReferenceDataSeeder::class);
     }
 }

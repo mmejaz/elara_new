@@ -32,4 +32,16 @@ class User extends Authenticatable
             'settings' => 'array',
         ];
     }
+
+    protected static function booted(): void
+    {
+        // Spatie's model_has_roles / model_has_permissions pivots key the model
+        // side by (model_id, model_type) with NO foreign key, so a hard delete
+        // would orphan them — and a future user reusing the same id could inherit
+        // the stale roles. Detach explicitly on delete.
+        static::deleting(function (User $user): void {
+            $user->roles()->detach();
+            $user->permissions()->detach();
+        });
+    }
 }

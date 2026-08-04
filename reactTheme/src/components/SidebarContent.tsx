@@ -1,4 +1,5 @@
 import { ConfigProvider, Menu } from 'antd'
+import { slimScroll } from '../styles/scrollbar'
 import { useMemo } from 'react'
 import { useLocation, useNavigate } from '@tanstack/react-router'
 import { buildMenuItems, menuItems as staticMenuItems } from '../config/navigation'
@@ -77,7 +78,7 @@ function SidebarContent({ collapsed = false, onNavigate }: SidebarContentProps) 
         </span>
       </div>
 
-      <div className="slim-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-2">
+      <div className={`${slimScroll} min-h-0 flex-1 overflow-y-auto overflow-x-hidden py-2`}>
         <div className="w-full px-2">
           <ConfigProvider
             theme={{
