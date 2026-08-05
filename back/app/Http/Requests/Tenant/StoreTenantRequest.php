@@ -9,7 +9,8 @@ class StoreTenantRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        // Only Super Admin can create tenants (they write to central database)
+        return auth()->user()?->hasRole('Super Admin') ?? false;
     }
 
     public function rules(): array

@@ -7,13 +7,43 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 
 /**
- * Writes the full file set for a resourceful module — backend (model,
- * migration, controller, service, requests, resource, routes) and frontend
- * (slice, queries, page, drawers) — plus patches the two central frontend
- * files via marker comments.
+ * Generates complete CRUD scaffolding for a resourceful module.
  *
- * Every write is tracked so a failure mid-way can be fully rolled back,
- * since filesystem writes are not covered by DB transactions.
+ * BACKEND FILES GENERATED (5):
+ * - app/Models/{Name}.php
+ * - database/migrations/YYYY_MM_DD_HHMMSS_create_{table}_table.php
+ * - app/Http/Resources/{Name}Resource.php
+ * - app/Http/Requests/{Name}/Store{Name}Request.php
+ * - app/Http/Requests/{Name}/Update{Name}Request.php
+ * - app/Services/{Name}Service.php
+ * - app/Http/Controllers/{Name}Controller.php
+ * - routes/modules/{Name}Api.php
+ *
+ * FRONTEND FILES GENERATED (4):
+ * - src/modules/{slug}/{camelPlural}Slice.ts
+ * - src/modules/{slug}/queries.ts
+ * - src/modules/{slug}/pages/{Plural}Page.tsx
+ * - src/modules/{slug}/components/Add{Name}Drawer.tsx
+ * - src/modules/{slug}/components/Edit{Name}Drawer.tsx
+ *
+ * FRONTEND FILES PATCHED (2):
+ * - src/store/index.ts (reducer registration)
+ * - src/routes/index.tsx (route registration)
+ *
+ * AUTOMATIC SETUP:
+ * - Permissions created: {module}.view, .create, .edit, .delete
+ * - Admin role granted new permissions
+ *
+ * ERROR HANDLING:
+ * - Validates frontend markers exist BEFORE generation starts
+ * - Tracks all file writes for rollback
+ * - Snapshots patched files for safe restore
+ * - Provides detailed error messages with context
+ * - Automatically rolls back on any failure
+ *
+ * IDEMPOTENCY:
+ * - Detects if code already injected and skips re-patching
+ * - Safe to retry on partial failures
  */
 class ModuleGeneratorService
 {
@@ -27,9 +57,56 @@ class ModuleGeneratorService
     {
         $this->n = $this->names($module->name);
 
-        $this->generateBackend();
-        $this->generateFrontend();
-        $this->patchFrontendWiring();
+        // Validate frontend files exist and have required markers before starting
+        try {
+            $this->validateFrontendWiring();
+        } catch (\RuntimeException $e) {
+            throw new \RuntimeException(
+                "Frontend wiring validation failed before generation started.\n" .
+                "This prevents partial generation.\n\n" .
+                $e->getMessage()
+            );
+        }
+
+        try {
+            $this->generateBackend();
+            $this->generateFrontend();
+            $this->patchFrontendWiring();
+        } catch (\Exception $e) {
+            // On any error, rollback everything
+            $this->rollback();
+            throw $e;
+        }
+    }
+
+    /** Validate that all required markers exist before generation starts. */
+    private function validateFrontendWiring(): void
+    {
+        $src = rtrim(config('modulegen.frontend_src'), '/');
+        $storeIndex = "{$src}/store/index.ts";
+        $routes = "{$src}/routes/index.tsx";
+
+        $errors = [];
+
+        if (! File::exists($storeIndex)) {
+            $errors[] = "Store file missing: {$storeIndex}";
+        } elseif (! str_contains(File::get($storeIndex), '// __MODULE_REDUCER_IMPORTS__')) {
+            $errors[] = "Marker missing in {$storeIndex}: // __MODULE_REDUCER_IMPORTS__";
+        } elseif (! str_contains(File::get($storeIndex), '// __MODULE_REDUCERS__')) {
+            $errors[] = "Marker missing in {$storeIndex}: // __MODULE_REDUCERS__";
+        }
+
+        if (! File::exists($routes)) {
+            $errors[] = "Routes file missing: {$routes}";
+        } elseif (! str_contains(File::get($routes), '// __MODULE_ROUTE_DEFS__')) {
+            $errors[] = "Marker missing in {$routes}: // __MODULE_ROUTE_DEFS__";
+        } elseif (! str_contains(File::get($routes), '// __MODULE_ROUTES__')) {
+            $errors[] = "Marker missing in {$routes}: // __MODULE_ROUTES__";
+        }
+
+        if (! empty($errors)) {
+            throw new \RuntimeException("Validation errors:\n" . implode("\n", $errors));
+        }
     }
 
     /** Undo everything written/patched so far (called on failure). */
@@ -151,13 +228,14 @@ class ModuleGeneratorService
 
         namespace App\Http\Requests\\{$n['singular']};
 
+        use App\Models\\{$n['singular']};
         use Illuminate\Foundation\Http\FormRequest;
 
         class Store{$n['singular']}Request extends FormRequest
         {
             public function authorize(): bool
             {
-                return true;
+                return auth()->user()->can('create', {$n['singular']}::class);
             }
 
             public function rules(): array
@@ -174,13 +252,15 @@ class ModuleGeneratorService
 
         namespace App\Http\Requests\\{$n['singular']};
 
+        use App\Models\\{$n['singular']};
         use Illuminate\Foundation\Http\FormRequest;
 
         class Update{$n['singular']}Request extends FormRequest
         {
             public function authorize(): bool
             {
-                return true;
+                \${$n['camel']} = \$this->route('{$n['camel']}');
+                return auth()->user()->can('update', \${$n['camel']});
             }
 
             public function rules(): array
@@ -711,15 +791,40 @@ class ModuleGeneratorService
         $this->createdFiles[] = $path;
     }
 
-    /** Inject a snippet at a marker, snapshotting original content for rollback. */
+    /**
+     * Inject a snippet at a marker, snapshotting original content for rollback.
+     * Enhanced with better error handling and idempotency detection.
+     */
     private function patch(string $path, string $marker, string $replacement): void
     {
+        if (! File::exists($path)) {
+            throw new \RuntimeException("File not found for patching: {$path}");
+        }
+
         $content = File::get($path);
 
         if (! str_contains($content, $marker)) {
-            throw new \RuntimeException("Marker not found in {$path}: {$marker}");
+            // Provide helpful error message with context
+            $lines = explode("\n", $content);
+            $context = implode("\n", array_slice($lines, 0, 20));
+            throw new \RuntimeException(
+                "Marker not found in {$path}: {$marker}\n" .
+                "File exists but marker is missing. Check:\n" .
+                "1. Marker spelling: '{$marker}'\n" .
+                "2. File not modified unexpectedly\n" .
+                "3. File is in expected location\n\n" .
+                "First 20 lines:\n{$context}"
+            );
         }
 
+        // Detect if code already injected (idempotency)
+        if (str_contains($replacement, $marker) &&
+            str_contains($content, rtrim(str_replace($marker, '', $replacement)))) {
+            // Code already exists, skip patching
+            return;
+        }
+
+        // Snapshot original before first patch
         if (! isset($this->patchedFiles[$path])) {
             $this->patchedFiles[$path] = $content;
         }

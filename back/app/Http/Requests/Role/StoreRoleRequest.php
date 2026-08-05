@@ -3,12 +3,13 @@
 namespace App\Http\Requests\Role;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Spatie\Permission\Models\Role;
 
 class StoreRoleRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return auth()->user()->can('create', Role::class);
     }
 
     public function rules(): array

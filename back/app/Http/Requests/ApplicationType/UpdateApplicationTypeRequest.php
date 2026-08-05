@@ -2,13 +2,15 @@
 
 namespace App\Http\Requests\ApplicationType;
 
+use App\Models\ApplicationType;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateApplicationTypeRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $applicationType = $this->route('applicationType');
+        return auth()->user()->can('update', $applicationType);
     }
 
     public function rules(): array
