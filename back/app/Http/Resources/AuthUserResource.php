@@ -20,7 +20,7 @@ class AuthUserResource extends JsonResource
             'city'        => $this->city,
             'bio'         => $this->bio,
             'settings'    => $this->settings ?? [],
-            'avatar'      => $this->fileIn('avatar')?->url,
+            'avatar'      => $this->files->firstWhere('collection', 'avatar')?->url,
             'roles'       => $this->getRoleNames(),
             'permissions' => $this->getAllPermissions()->pluck('name'),
             'created_at'  => $this->created_at->toDateString(),

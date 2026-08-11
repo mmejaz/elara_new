@@ -15,13 +15,15 @@ class StoreTenantRequest extends FormRequest
 
     public function rules(): array
     {
+        $centralConnection = config('tenancy.database.central_connection');
+
         return [
             'name'           => ['required', 'string', 'max:255'],
             // Full host the tenant is reached at, e.g. school1.elara.test.
-            'domain'         => ['required', 'string', 'max:255', 'regex:/^[a-z0-9.-]+$/', 'unique:domains,domain'],
+            'domain'         => ['required', 'string', 'max:255', 'regex:/^[a-z0-9.-]+$/', "unique:{$centralConnection}.domains,domain"],
             // Optional explicit tenant id → also the DB-name suffix. Locked to a
             // safe charset so it can never inject into CREATE DATABASE.
-            'id'             => ['nullable', 'string', 'max:60', 'regex:/^[a-z0-9_]+$/', 'unique:tenants,id'],
+            'id'             => ['nullable', 'string', 'max:60', 'regex:/^[a-z0-9_]+$/', "unique:{$centralConnection}.tenants,id"],
             'admin_name'     => ['nullable', 'string', 'max:255'],
             'admin_email'    => ['required', 'email', 'max:255'],
             'admin_password' => ['required', 'string', Password::defaults()],
@@ -39,6 +41,7 @@ class StoreTenantRequest extends FormRequest
         return [
             'domain.unique' => 'That domain is already taken.',
             'domain.regex'  => 'Use a valid hostname (letters, numbers, dots and hyphens).',
+            'id.unique'     => 'That tenant id is already in use. Please use a different id or leave it blank to auto-generate.',
             'id.regex'      => 'The id may only contain lowercase letters, numbers and underscores.',
         ];
     }

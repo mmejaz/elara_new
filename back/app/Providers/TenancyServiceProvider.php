@@ -35,7 +35,7 @@ class TenancyServiceProvider extends ServiceProvider
 
                 ])->send(function (Events\TenantCreated $event) {
                     return $event->tenant;
-                })->shouldBeQueued(true), // provision off-request so seeding runs under the default (web) guard, not sanctum.
+                })->shouldBeQueued(env('QUEUE_TENANT_JOBS', false)), // Set QUEUE_TENANT_JOBS=true in production
             ],
             Events\SavingTenant::class => [],
             Events\TenantSaved::class => [],

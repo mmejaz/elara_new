@@ -118,10 +118,14 @@ class ModuleSeeder extends Seeder
     {
         $names = $module->permissionNames();
 
-        foreach ($names as $name) {
-            Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
+        // Create permissions for both 'web' and 'sanctum' guards
+        foreach (['web', 'sanctum'] as $guard) {
+            foreach ($names as $name) {
+                Permission::firstOrCreate(['name' => $name, 'guard_name' => $guard]);
+            }
         }
 
+        // Give permissions to the admin role (using its guard)
         $admin->givePermissionTo($names);
     }
 }

@@ -58,33 +58,29 @@ class TenantService
 
     public function create(array $data): Tenant
     {
-        $connection = config('tenancy.database.central_connection');
+        // Readable, safe id → becomes the DB name suffix (prefix from config).
+        $id = $data['id']
+            ?? Str::of($data['domain'])->before('.')->slug()->toString();
 
-        return DB::connection($connection)->transaction(function () use ($data) {
-            // Readable, safe id → becomes the DB name suffix (prefix from config).
-            $id = $data['id']
-                ?? Str::of($data['domain'])->before('.')->slug()->toString();
+        $tenant = Tenant::create([
+            'id'       => $id,
+            'name'     => $data['name'],
+            'status'   => $data['status'] ?? 'active',
+            'email'    => $data['email'] ?? null,
+            'phone'    => $data['phone'] ?? null,
+            'timezone' => $data['timezone'] ?? 'UTC',
+            'currency' => $data['currency'] ?? 'USD',
+            'language' => $data['language'] ?? 'en',
+            // Consumed by TenantDatabaseSeeder. NOTE: stored in the tenant's
+            // `data` JSON — in production, rotate/clear after provisioning.
+            'admin_name'     => $data['admin_name'] ?? 'Administrator',
+            'admin_email'    => $data['admin_email'],
+            'admin_password' => $data['admin_password'],
+        ]);
 
-            $tenant = Tenant::create([
-                'id'       => $id,
-                'name'     => $data['name'],
-                'status'   => $data['status'] ?? 'active',
-                'email'    => $data['email'] ?? null,
-                'phone'    => $data['phone'] ?? null,
-                'timezone' => $data['timezone'] ?? 'UTC',
-                'currency' => $data['currency'] ?? 'USD',
-                'language' => $data['language'] ?? 'en',
-                // Consumed by TenantDatabaseSeeder. NOTE: stored in the tenant's
-                // `data` JSON — in production, rotate/clear after provisioning.
-                'admin_name'     => $data['admin_name'] ?? 'Administrator',
-                'admin_email'    => $data['admin_email'],
-                'admin_password' => $data['admin_password'],
-            ]);
+        $tenant->domains()->create(['domain' => $data['domain']]);
 
-            $tenant->domains()->create(['domain' => $data['domain']]);
-
-            return $tenant->fresh('domains');
-        });
+        return $tenant->fresh('domains');
     }
 
     public function setStatus(Tenant $tenant, string $status): Tenant

@@ -30,41 +30,63 @@ class RolePermissionSeeder extends Seeder
 
             foreach ($matrix as $module => $actions) {
                 foreach ($actions as $action) {
-                    Permission::firstOrCreate(['name' => "{$module}.{$action}"]);
+                    // Create permissions for both 'web' and 'sanctum' guards
+                    Permission::firstOrCreate(['name' => "{$module}.{$action}", 'guard_name' => 'web']);
+                    Permission::firstOrCreate(['name' => "{$module}.{$action}", 'guard_name' => 'sanctum']);
                 }
             }
 
-            // Super Admin — full access (bypasses all gates).
-            Role::firstOrCreate(['name' => 'Super Admin']);
+            // Super Admin — full access for both 'web' and 'sanctum' guards.
+            foreach (['web', 'sanctum'] as $guard) {
+                $superAdmin = Role::firstOrCreate(['name' => 'Super Admin', 'guard_name' => $guard]);
+                $superAdmin->syncPermissions(Permission::where('guard_name', $guard)->get());
+            }
 
-            // Admin — every permission.
-            $admin = Role::firstOrCreate(['name' => 'Admin']);
-            $admin->syncPermissions(Permission::all());
+            // Admin — every permission for both guards.
+            foreach (['web', 'sanctum'] as $guard) {
+                $admin = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => $guard]);
+                $admin->syncPermissions(Permission::where('guard_name', $guard)->get());
+            }
 
-            // Teacher — attendance, students, reports, dashboard.
-            $teacher = Role::firstOrCreate(['name' => 'Teacher']);
-            $teacher->syncPermissions([
-                'dashboard.view',
-                'students.view',
-                'attendance.view', 'attendance.create', 'attendance.edit',
-                'reports.view',
-            ]);
+            // Create other roles for both guards
+            foreach (['web', 'sanctum'] as $guard) {
+                // Teacher — attendance, students, reports, dashboard.
+                $teacher = Role::firstOrCreate(['name' => 'Teacher', 'guard_name' => $guard]);
+                $teacher->syncPermissions(
+                    Permission::where('guard_name', $guard)
+                        ->whereIn('name', [
+                            'dashboard.view',
+                            'students.view',
+                            'attendance.view', 'attendance.create', 'attendance.edit',
+                            'reports.view',
+                        ])
+                        ->get()
+                );
 
-            // Student — view only.
-            $student = Role::firstOrCreate(['name' => 'Student']);
-            $student->syncPermissions([
-                'dashboard.view',
-                'attendance.view',
-                'reports.view',
-            ]);
+                // Student — view only.
+                $student = Role::firstOrCreate(['name' => 'Student', 'guard_name' => $guard]);
+                $student->syncPermissions(
+                    Permission::where('guard_name', $guard)
+                        ->whereIn('name', [
+                            'dashboard.view',
+                            'attendance.view',
+                            'reports.view',
+                        ])
+                        ->get()
+                );
 
-            // Parent — view only.
-            $parent = Role::firstOrCreate(['name' => 'Parent']);
-            $parent->syncPermissions([
-                'dashboard.view',
-                'attendance.view',
-                'reports.view',
-            ]);
+                // Parent — view only.
+                $parent = Role::firstOrCreate(['name' => 'Parent', 'guard_name' => $guard]);
+                $parent->syncPermissions(
+                    Permission::where('guard_name', $guard)
+                        ->whereIn('name', [
+                            'dashboard.view',
+                            'attendance.view',
+                            'reports.view',
+                        ])
+                        ->get()
+                );
+            }
 
             // Assign Super Admin to the first user — CENTRAL context ONLY.
             // Inside a tenant this seeder runs (via TenantDatabaseSeeder) BEFORE
@@ -73,7 +95,10 @@ class RolePermissionSeeder extends Seeder
             // carries the Gate::before bypass. Tenant admins are deliberately
             // "Admin", assigned by TenantDatabaseSeeder.
             if (! tenancy()->initialized) {
-                User::first()?->assignRole('Super Admin');
+                $user = User::first();
+                if ($user) {
+                    $user->assignRole(Role::where('name', 'Super Admin')->where('guard_name', 'web')->first());
+                }
             }
         });
 

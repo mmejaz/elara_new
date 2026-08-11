@@ -12,6 +12,7 @@ use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
+use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentified;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -90,6 +91,11 @@ return Application::configure(basePath: dirname(__DIR__))
                     null,
                     Response::HTTP_FORBIDDEN,
                 ),
+                $e instanceof \Spatie\Permission\Exceptions\PermissionDoesNotExist => ApiResponse::error(
+                    'Permission error',
+                    null,
+                    Response::HTTP_INTERNAL_SERVER_ERROR,
+                ),
                 // Rate-limited (e.g. login throttle). Kept out of the default so
                 // it isn't mislabeled "Server error" in production; the client
                 // reads how long to wait from the Retry-After header preserved
@@ -98,6 +104,12 @@ return Application::configure(basePath: dirname(__DIR__))
                     ResponseMessage::TOO_MANY_ATTEMPTS,
                     null,
                     Response::HTTP_TOO_MANY_REQUESTS,
+                ),
+                // Tenant not found (accessing invalid subdomain)
+                $e instanceof TenantCouldNotBeIdentified => ApiResponse::error(
+                    'Tenant not found',
+                    null,
+                    Response::HTTP_NOT_FOUND,
                 ),
                 $e instanceof ModelNotFoundException,
                 $e instanceof NotFoundHttpException => ApiResponse::error(

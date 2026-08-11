@@ -136,14 +136,23 @@ class ModuleService
     {
         $names = $module->permissionNames();
 
-        foreach ($names as $name) {
-            Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
+        // Create permissions for both 'web' and 'sanctum' guards
+        foreach (['web', 'sanctum'] as $guard) {
+            foreach ($names as $name) {
+                Permission::firstOrCreate(['name' => $name, 'guard_name' => $guard]);
+            }
         }
 
-        // Grant the new CRUD permissions to the Admin role so the module is
-        // usable immediately (Super Admin already bypasses all gates).
-        $admin = Role::where('name', 'Admin')->first();
-        $admin?->givePermissionTo($names);
+        // Grant the new CRUD permissions to the Admin role for both guards
+        // so the module is usable immediately (Super Admin already bypasses all gates).
+        foreach (['web', 'sanctum'] as $guard) {
+            $admin = Role::where('name', 'Admin')->where('guard_name', $guard)->first();
+            if ($admin) {
+                $admin->givePermissionTo(
+                    Permission::whereIn('name', $names)->where('guard_name', $guard)->get()
+                );
+            }
+        }
     }
 
     private function deletePermissions(Module $module): void

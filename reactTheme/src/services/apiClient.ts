@@ -26,6 +26,7 @@ const apiClient = axios.create({
   },
   withCredentials: true,
   withXSRFToken: true,
+  timeout: 30000, // 30 second timeout
 })
 
 /**

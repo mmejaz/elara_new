@@ -220,7 +220,7 @@ function SettingsDrawer() {
             description="Tune font family and density for a clearer admin reading experience."
             color={draftSettings.primaryColor}
           />
-          <Space direction="vertical" size="large" className="w-full">
+          <Space orientation="vertical" size="large" className="w-full">
             <div>
               <Text strong className="!text-[13px]">
                 Font family
@@ -260,7 +260,7 @@ function SettingsDrawer() {
             description="Adjust header behavior, content framing, and control density."
             color={draftSettings.primaryColor}
           />
-          <Space direction="vertical" size="large" className="w-full">
+          <Space orientation="vertical" size="large" className="w-full">
             <ToggleRow
               title="Sticky header"
               description="Keep the top bar visible while scrolling."

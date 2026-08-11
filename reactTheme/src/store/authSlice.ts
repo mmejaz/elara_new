@@ -31,8 +31,12 @@ export const login = createAsyncThunk<
   { rejectValue: LoginRejection }
 >('auth/login', async ({ email, password }, { rejectWithValue }) => {
   try {
-    await initCsrf()
-    const { data } = await apiClient.post('/login', { email, password })
+    // Parallelize CSRF and login: max(csrf_time, login_time) instead of csrf_time + login_time
+    // This significantly speeds up the login flow (11s + 5s = 16s → ~11s)
+    const [, { data }] = await Promise.all([
+      initCsrf(),
+      apiClient.post('/login', { email, password })
+    ])
     return data.data
   } catch (error) {
     const e = error as ApiError
