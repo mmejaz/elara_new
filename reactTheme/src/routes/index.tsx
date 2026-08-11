@@ -114,6 +114,14 @@ const GlobalSettingsPage = lazy(() => import('../modules/globalsettings/pages/Gl
 const globalSettingsRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/globalsettings', component: GlobalSettingsPage })
 const TenantsPage = lazy(() => import('../modules/tenants/pages/TenantsPage'))
 const tenantsRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/tenants', component: TenantsPage, beforeLoad: centralOnly })
+const DepartmentsPage = lazy(() => import('../modules/departments/pages/DepartmentsPage'))
+const departmentsRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/departments', component: DepartmentsPage })
+const DesignationsPage = lazy(() => import('../modules/designations/pages/DesignationsPage'))
+const designationsRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/designations', component: DesignationsPage })
+const LeaveTypesPage = lazy(() => import('../modules/leavetypes/pages/LeaveTypesPage'))
+const leaveTypesRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/leavetypes', component: LeaveTypesPage })
+const DocumentTypesPage = lazy(() => import('../modules/documenttypes/pages/DocumentTypesPage'))
+const documentTypesRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/documenttypes', component: DocumentTypesPage })
 // __MODULE_ROUTE_DEFS__
 
 const routeTree = rootRoute.addChildren([
@@ -136,6 +144,10 @@ const routeTree = rootRoute.addChildren([
     gendersRoute,
     globalSettingsRoute,
     tenantsRoute,
+    departmentsRoute,
+    designationsRoute,
+    leaveTypesRoute,
+    documentTypesRoute,
     // __MODULE_ROUTES__
     notFoundRoute,
   ]),

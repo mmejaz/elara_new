@@ -22,3 +22,8 @@ coverage
 
 .env
 .env.local
+
+# Cypress
+cypress/videos
+cypress/screenshots
+cypress/downloads

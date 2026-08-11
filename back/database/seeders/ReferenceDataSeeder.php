@@ -3,11 +3,12 @@
 namespace Database\Seeders;
 
 use App\Models\Country;
-use App\Models\Gender;
 use Illuminate\Database\Seeder;
 
 /**
- * Universal reference lookups (genders, countries). Idempotent — firstOrCreate
+ * Universal reference lookups (genders, departments, designations, leave types,
+ * document types, countries).
+ * Idempotent — firstOrCreate
  * keyed on name — so it's safe on every deploy and every tenant re-seed. Runs in
  * both the central DatabaseSeeder and the per-tenant TenantDatabaseSeeder so the
  * Lookups management screens have sensible starter data instead of empty tables.
@@ -20,9 +21,11 @@ class ReferenceDataSeeder extends Seeder
 {
     public function run(): void
     {
-        foreach (['Male', 'Female', 'Other', 'Prefer not to say'] as $gender) {
-            Gender::firstOrCreate(['name' => $gender]);
-        }
+        $this->call(GenderSeeder::class);
+        $this->call(DepartmentSeeder::class);
+        $this->call(DesignationSeeder::class);
+        $this->call(LeaveTypeSeeder::class);
+        $this->call(DocumentTypeSeeder::class);
 
         foreach ($this->countries() as $country) {
             Country::firstOrCreate(['name' => $country]);

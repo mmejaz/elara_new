@@ -12,6 +12,10 @@ import countriesReducer from '../modules/countries/countriesSlice'
 import citiesReducer from '../modules/cities/citiesSlice'
 import gendersReducer from '../modules/genders/gendersSlice'
 import globalSettingsReducer from '../modules/globalsettings/globalSettingsSlice'
+import departmentsReducer from '../modules/departments/departmentsSlice'
+import designationsReducer from '../modules/designations/designationsSlice'
+import leaveTypesReducer from '../modules/leavetypes/leaveTypesSlice'
+import documentTypesReducer from '../modules/documenttypes/documentTypesSlice'
 // __MODULE_REDUCER_IMPORTS__
 
 export const store = configureStore({
@@ -27,6 +31,10 @@ export const store = configureStore({
     cities: citiesReducer,
     genders: gendersReducer,
     globalSettings: globalSettingsReducer,
+    departments: departmentsReducer,
+    designations: designationsReducer,
+    leaveTypes: leaveTypesReducer,
+    documentTypes: documentTypesReducer,
     // __MODULE_REDUCERS__
   },
 })
