@@ -1,6 +1,6 @@
-import { Alert, Button, Drawer, Form, Input } from 'antd'
+import { Alert, Button, Drawer, Form, Input, Select } from 'antd'
 import { closeAddDrawer } from '../organizationsSlice'
-import { useCreateOrganization } from '../queries'
+import { useCreateOrganization, useOrganizationOptions } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { notify, toast } from '../../../utils/toast'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
@@ -10,6 +10,7 @@ function AddOrganizationDrawer() {
   const open = useAppSelector((state) => state.organizations.addDrawerOpen)
   const [form] = Form.useForm()
   const mutation = useCreateOrganization()
+  const { data: organizations = [], isLoading: optionsLoading } = useOrganizationOptions()
 
   const handleFinish = (values: Record<string, unknown>) => {
     mutation.mutate(values, {
@@ -63,6 +64,17 @@ function AddOrganizationDrawer() {
       <Form form={form} layout="vertical" onFinish={handleFinish}>
         <Form.Item label="Name" name="name" rules={[{ required: true, message: 'Enter a name' }]}>
           <Input placeholder="Enter name" size="large" autoFocus />
+        </Form.Item>
+        <Form.Item label="Parent Organization" name="parent_id">
+          <Select
+            allowClear
+            showSearch
+            size="large"
+            loading={optionsLoading}
+            placeholder="None / Top Level Organization"
+            optionFilterProp="label"
+            options={organizations.map((o) => ({ value: o.id, label: o.name }))}
+          />
         </Form.Item>
       </Form>
     </Drawer>

@@ -95,9 +95,12 @@ class AuthService
         $resource = (new AuthUserResource($user))->resolve();
 
         return [
-            'user'        => $resource,
-            'roles'       => $resource['roles'],
-            'permissions' => $resource['permissions'],
+            'user'            => $resource,
+            'roles'           => $resource['roles'],
+            'permissions'     => $resource['permissions'],
+            // Tenant-level config the SPA needs up front — drives how the
+            // department form behaves (shared / scoped / flexible).
+            'department_mode' => \App\Support\DepartmentMode::current(),
         ];
     }
 }

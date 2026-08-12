@@ -23,6 +23,8 @@ class UpdateUserRequest extends FormRequest
             'email'    => ['required', 'email', 'unique:users,email,' . $id],
             'password' => ['nullable', 'string', Password::defaults()],
             'role'     => ['required', 'string', 'exists:roles,name', new AssignableRole],
+            'organization_ids'   => ['nullable', 'array'],
+            'organization_ids.*' => ['integer', 'exists:organizations,id'],
         ];
     }
 

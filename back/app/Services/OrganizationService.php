@@ -14,7 +14,17 @@ class OrganizationService
 
     public function paginate(array $params): LengthAwarePaginator
     {
-        $query = Organization::query();
+        // Eager-load the parent so the "Parent Organization" column never
+        // triggers an N+1 across the page's rows.
+        $query = Organization::query()->with('parent');
+
+        // Super Admins see every organization; everyone else is limited to the
+        // organizations they are assigned to (organization_user). This scopes
+        // both the management list and the header switcher.
+        $user = auth()->user();
+        if ($user && ! $user->seesAllOrganizations()) {
+            $query->whereIn('id', $user->organizations()->select('organizations.id'));
+        }
 
         if (! empty($params['search'])) {
             $query->where('name', 'like', '%' . $params['search'] . '%');
@@ -33,18 +43,24 @@ class OrganizationService
     public function create(array $data): OrganizationResource
     {
         return DB::transaction(function () use ($data) {
-            $record = Organization::create(['name' => $data['name']]);
+            $record = Organization::create([
+                'name'      => $data['name'],
+                'parent_id' => $data['parent_id'] ?? null,
+            ]);
 
-            return new OrganizationResource($record);
+            return new OrganizationResource($record->load('parent'));
         });
     }
 
     public function update(Organization $organization, array $data): OrganizationResource
     {
         return DB::transaction(function () use ($organization, $data) {
-            $organization->update(['name' => $data['name']]);
+            $organization->update([
+                'name'      => $data['name'],
+                'parent_id' => $data['parent_id'] ?? null,
+            ]);
 
-            return new OrganizationResource($organization);
+            return new OrganizationResource($organization->load('parent'));
         });
     }
 

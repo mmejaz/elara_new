@@ -20,6 +20,10 @@ class StoreUserRequest extends FormRequest
             'email'    => ['required', 'email', 'unique:users,email'],
             'password' => ['required', 'string', Password::defaults()],
             'role'     => ['required', 'string', 'exists:roles,name', new AssignableRole],
+            // Organizations this user may access (ignored for a Super Admin, who
+            // sees all). Empty = assigned to none.
+            'organization_ids'   => ['nullable', 'array'],
+            'organization_ids.*' => ['integer', 'exists:organizations,id'],
         ];
     }
 

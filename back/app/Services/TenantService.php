@@ -71,6 +71,9 @@ class TenantService
             'timezone' => $data['timezone'] ?? 'UTC',
             'currency' => $data['currency'] ?? 'USD',
             'language' => $data['language'] ?? 'en',
+            // How this client treats departments — chosen once at provisioning.
+            // Read in tenant context via App\Support\DepartmentMode::current().
+            'department_mode' => $data['department_mode'] ?? \App\Support\DepartmentMode::FLEXIBLE,
             // Consumed by TenantDatabaseSeeder. NOTE: stored in the tenant's
             // `data` JSON — in production, rotate/clear after provisioning.
             'admin_name'     => $data['admin_name'] ?? 'Administrator',

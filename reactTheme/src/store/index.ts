@@ -3,6 +3,7 @@ import apiClient from '../services/apiClient'
 import { clearClientCaches } from '../utils/session'
 import authReducer, { clearCredentials } from './authSlice'
 import uiReducer, { STORAGE_KEY, pickPersistedSettings } from './uiSlice'
+import orgReducer, { ORG_STORAGE_KEY } from './orgSlice'
 import usersReducer from '../modules/users/usersSlice'
 import rolesReducer from '../modules/roles/rolesSlice'
 import permissionsReducer from '../modules/permissions/permissionsSlice'
@@ -23,6 +24,7 @@ export const store = configureStore({
   reducer: {
     auth: authReducer,
     ui: uiReducer,
+    org: orgReducer,
     users: usersReducer,
     roles: rolesReducer,
     permissions: permissionsReducer,
@@ -54,6 +56,25 @@ store.subscribe(() => {
 
     try {
       localStorage.setItem(STORAGE_KEY, serialized)
+    } catch {
+      // Ignore write failures (private mode, quota, etc.).
+    }
+  }
+})
+
+// Persist the selected organization the same way, so the choice survives reloads.
+let lastOrg = ''
+
+store.subscribe(() => {
+  const id = store.getState().org.currentOrganizationId
+  const serialized = id === null ? '' : String(id)
+
+  if (serialized !== lastOrg) {
+    lastOrg = serialized
+
+    try {
+      if (id === null) localStorage.removeItem(ORG_STORAGE_KEY)
+      else localStorage.setItem(ORG_STORAGE_KEY, serialized)
     } catch {
       // Ignore write failures (private mode, quota, etc.).
     }

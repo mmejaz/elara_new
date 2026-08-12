@@ -12,7 +12,7 @@ class UserService
     /** Server-side paginated + searchable user list (name, email, or role). */
     public function paginate(array $params): LengthAwarePaginator
     {
-        $query = User::query()->with('roles');
+        $query = User::query()->with(['roles', 'organizations']);
 
         if (! empty($params['search'])) {
             $search = $params['search'];
@@ -56,8 +56,9 @@ class UserService
             ]);
 
             $user->assignRole($data['role']);
+            $user->organizations()->sync($data['organization_ids'] ?? []);
 
-            return new UserResource($user->load('roles'));
+            return new UserResource($user->load(['roles', 'organizations']));
         });
     }
 
@@ -74,7 +75,11 @@ class UserService
             $user->save();
             $user->syncRoles([$data['role']]);
 
-            return new UserResource($user->load('roles'));
+            if (array_key_exists('organization_ids', $data)) {
+                $user->organizations()->sync($data['organization_ids'] ?? []);
+            }
+
+            return new UserResource($user->load(['roles', 'organizations']));
         });
     }
 

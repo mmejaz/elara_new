@@ -12,6 +12,12 @@ class OrganizationResource extends JsonResource
         return [
             'id'         => $this->id,
             'name'       => $this->name,
+            'parent_id'  => $this->parent_id,
+            // Minimal parent summary for the table's "Parent Organization" column
+            // and the edit drawer's prefill. Null for a top-level organization.
+            'parent'     => $this->whenLoaded('parent', fn () => $this->parent
+                ? ['id' => $this->parent->id, 'name' => $this->parent->name]
+                : null),
             'created_at' => $this->created_at?->toDateString(),
         ];
     }

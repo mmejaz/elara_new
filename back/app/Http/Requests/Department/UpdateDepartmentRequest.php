@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Department;
 
 use App\Models\Department;
+use App\Support\DepartmentMode;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateDepartmentRequest extends FormRequest
@@ -18,8 +19,9 @@ class UpdateDepartmentRequest extends FormRequest
         $id = $this->route('department')->id;
 
         return [
-            'name'      => ['required', 'string', 'max:255', 'unique:departments,name,' . $id],
-            'parent_id' => [
+            'name'            => ['required', 'string', 'max:255', 'unique:departments,name,' . $id],
+            'organization_id' => DepartmentMode::organizationRule(),
+            'parent_id'       => [
                 'nullable',
                 'integer',
                 'exists:departments,id',

@@ -8,6 +8,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -32,6 +33,21 @@ class User extends Authenticatable
             'password' => 'hashed',
             'settings' => 'array',
         ];
+    }
+
+    /** Organizations this user is assigned to (empty for a Super Admin, who sees all). */
+    public function organizations(): BelongsToMany
+    {
+        return $this->belongsToMany(Organization::class);
+    }
+
+    /**
+     * Super Admins see every organization in the tenant; everyone else is
+     * limited to the organizations they are explicitly assigned to.
+     */
+    public function seesAllOrganizations(): bool
+    {
+        return $this->hasRole('Super Admin');
     }
 
     protected static function booted(): void

@@ -29,6 +29,48 @@ class AppServiceProvider extends ServiceProvider
         // Super Admin bypasses every permission / gate check.
         Gate::before(fn ($user, $ability) => $user->hasRole('Super Admin') ? true : null);
 
+        // The Store*/Update* form requests authorize with model-based abilities —
+        // e.g. can('create', Department::class), can('update', $department). The
+        // app ships no policies, so without this only Super Admin could ever pass
+        // and no permissioned role (Admin, etc.) could write anything. Map the
+        // ability + model to this app's permission names and let the permission
+        // system decide. Prefixes are mostly singular (department.create) but a
+        // few are plural (users.create, roles.create), so try both; return null
+        // when nothing matches so unrelated gates/policies still run.
+        Gate::before(function ($user, string $ability, array $arguments = []) {
+            $actions = [
+                'viewAny' => 'view', 'view' => 'view',
+                'create'  => 'create', 'update' => 'edit', 'delete' => 'delete',
+            ];
+
+            if (! isset($actions[$ability]) || empty($arguments)) {
+                return null;
+            }
+
+            $model = $arguments[0];
+            $class = is_object($model) ? $model::class : $model;
+
+            if (! is_string($class) || ! class_exists($class)) {
+                return null;
+            }
+
+            $base = Str::snake(class_basename($class));
+
+            foreach ([$base, Str::plural($base)] as $prefix) {
+                foreach (['web', 'sanctum'] as $guard) {
+                    try {
+                        if ($user->hasPermissionTo("{$prefix}.{$actions[$ability]}", $guard)) {
+                            return true;
+                        }
+                    } catch (\Spatie\Permission\Exceptions\PermissionDoesNotExist) {
+                        // No permission by that name/guard — try the next candidate.
+                    }
+                }
+            }
+
+            return null;
+        });
+
         // One password policy for the whole app. Requests use Password::defaults()
         // so admin-created users, tenant admins, and self-service change all share
         // it. Seeders create users directly (no validation), so seeded/default

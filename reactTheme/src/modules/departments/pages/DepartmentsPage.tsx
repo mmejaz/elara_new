@@ -8,7 +8,7 @@ import AddDepartmentDrawer from '../components/AddDepartmentDrawer'
 import EditDepartmentDrawer from '../components/EditDepartmentDrawer'
 import { openAddDrawer, openEditDrawer } from '../departmentsSlice'
 import { useDepartments, useDeleteDepartment } from '../queries'
-import { useAppDispatch } from '../../../store/hooks'
+import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 import { toast } from '../../../utils/toast'
 import type { Department } from '../types'
 
@@ -16,6 +16,7 @@ const { Text } = Typography
 
 function DepartmentsPage() {
   const dispatch = useAppDispatch()
+  const mode = useAppSelector((state) => state.auth.departmentMode)
   const table = useServerTable(15, 'Search Departments…')
   // isFetching (not isLoading): keepPreviousData keeps the previous page's
   // rows during a page switch, so isLoading stays false. isFetching is true
@@ -33,6 +34,14 @@ function DepartmentsPage() {
   const columns = useMemo<ColumnsType<Department>>(
     () => [
       { title: 'Name', dataIndex: 'name', sorter: true, render: (name) => <Text strong>{name}</Text> },
+      // Only meaningful when departments can belong to an organization. In
+      // shared mode every department is tenant-wide, so the column is hidden.
+      ...(mode !== 'shared' ? [{
+        title: 'Organization',
+        dataIndex: ['organization', 'name'],
+        render: (_: unknown, record: Department) =>
+          record.organization ? <Text>{record.organization.name}</Text> : <Tag color="cyan">Shared</Tag>,
+      }] : []),
       {
         title: 'Parent Department',
         dataIndex: ['parent', 'name'],
@@ -59,7 +68,7 @@ function DepartmentsPage() {
         ),
       },
     ],
-    [dispatch],
+    [dispatch, mode],
   )
 
   const { visibleColumns, control } = useColumnToggle(columns)

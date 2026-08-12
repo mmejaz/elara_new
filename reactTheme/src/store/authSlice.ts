@@ -3,10 +3,13 @@ import apiClient, { initCsrf } from '../services/apiClient'
 import type { ApiError } from '../types/api'
 import type { AuthUser } from '../types/models'
 
+export type DepartmentMode = 'shared' | 'scoped' | 'flexible'
+
 interface AuthPayload {
   user: AuthUser
   roles: string[]
   permissions: string[]
+  department_mode?: DepartmentMode
 }
 
 interface LoginRejection {
@@ -18,6 +21,8 @@ interface AuthState {
   user: AuthUser | null
   roles: string[]
   permissions: string[]
+  /** Tenant-level department behavior — drives the department form. */
+  departmentMode: DepartmentMode
   isAuthenticated: boolean
   loading: boolean
   error: string | null
@@ -67,6 +72,7 @@ const initialState: AuthState = {
   user: null,
   roles: [],
   permissions: [],
+  departmentMode: 'flexible',
   isAuthenticated: false,
   loading: false,
   error: null,
@@ -104,6 +110,7 @@ const authSlice = createSlice({
         state.user = action.payload.user
         state.roles = action.payload.roles ?? []
         state.permissions = action.payload.permissions ?? []
+        state.departmentMode = action.payload.department_mode ?? 'flexible'
         state.isAuthenticated = true
       })
       .addCase(login.rejected, (state, action) => {
@@ -121,6 +128,7 @@ const authSlice = createSlice({
         state.user = action.payload.user
         state.roles = action.payload.roles ?? []
         state.permissions = action.payload.permissions ?? []
+        state.departmentMode = action.payload.department_mode ?? 'flexible'
         state.isAuthenticated = true
         state.checked = true
       })

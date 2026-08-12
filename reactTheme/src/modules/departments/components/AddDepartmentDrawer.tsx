@@ -1,6 +1,7 @@
 import { Alert, Button, Drawer, Form, Input, Select } from 'antd'
 import { closeAddDrawer } from '../departmentsSlice'
 import { useCreateDepartment, useDepartmentOptions } from '../queries'
+import { useOrganizationOptions } from '../../organizations/queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { notify, toast } from '../../../utils/toast'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
@@ -8,9 +9,11 @@ import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 function AddDepartmentDrawer() {
   const dispatch = useAppDispatch()
   const open = useAppSelector((state) => state.departments.addDrawerOpen)
+  const mode = useAppSelector((state) => state.auth.departmentMode)
   const [form] = Form.useForm()
   const mutation = useCreateDepartment()
   const { data: departments = [], isLoading: optionsLoading } = useDepartmentOptions()
+  const { data: organizations = [], isLoading: orgLoading } = useOrganizationOptions()
 
   const handleFinish = (values: Record<string, unknown>) => {
     mutation.mutate(values, {
@@ -65,6 +68,24 @@ function AddDepartmentDrawer() {
         <Form.Item label="Name" name="name" rules={[{ required: true, message: 'Enter a name' }]}>
           <Input placeholder="Enter name" size="large" autoFocus />
         </Form.Item>
+        {mode !== 'shared' && (
+          <Form.Item
+            label="Organization"
+            name="organization_id"
+            rules={mode === 'scoped' ? [{ required: true, message: 'Select an organization' }] : []}
+            extra={mode === 'flexible' ? 'Leave empty to share this department across all organizations.' : undefined}
+          >
+            <Select
+              allowClear={mode === 'flexible'}
+              showSearch
+              size="large"
+              loading={orgLoading}
+              placeholder={mode === 'scoped' ? 'Select an organization' : 'None / Shared across all organizations'}
+              optionFilterProp="label"
+              options={organizations.map((o) => ({ value: o.id, label: o.name }))}
+            />
+          </Form.Item>
+        )}
         <Form.Item label="Parent Department" name="parent_id">
           <Select
             allowClear

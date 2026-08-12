@@ -15,7 +15,8 @@ class StoreOrganizationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'string', 'max:255', 'unique:organizations,name'],
+            'name'      => ['required', 'string', 'max:255', 'unique:organizations,name'],
+            'parent_id' => ['nullable', 'integer', 'exists:organizations,id'],
         ];
     }
 }

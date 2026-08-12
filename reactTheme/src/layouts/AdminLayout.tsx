@@ -26,6 +26,7 @@ import type { InputRef, MenuProps } from 'antd'
 import { Suspense, useMemo, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from '@tanstack/react-router'
 import ErrorBoundary from '../components/ErrorBoundary'
+import OrganizationSwitcher from '../components/OrganizationSwitcher'
 import Preloader from '../components/Preloader'
 import SettingsDrawer from '../components/SettingsDrawer'
 import SidebarContent from '../components/SidebarContent'
@@ -257,6 +258,8 @@ function AdminLayout() {
                   style={{ ...actionButtonStyle, color: primaryColor }}
                 />
               )}
+              {/* Organization context switcher — sits to the left of search. */}
+              <OrganizationSwitcher />
               {!isSearchOpen ? (
                 <Tooltip title="Search">
                   <Button

@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Spatie\Permission\Models\Role;
 
 /**
  * Runs INSIDE a freshly-provisioned tenant database (invoked by Stancl's
@@ -38,12 +39,20 @@ class TenantDatabaseSeeder extends Seeder
                 ],
             );
 
-            // "Admin", not "Super Admin": AppServiceProvider grants Super Admin a
-            // Gate::before bypass over every permission check, which is a level
-            // of power the central operator should keep. Admin is granted every
-            // permission by RolePermissionSeeder + ModuleSeeder, so a tenant
-            // owner still reaches everything inside their own workspace.
-            $admin->assignRole('Admin');
+            // The tenant OWNER is a Super Admin: they must see every organization
+            // and manage everything in their own workspace. Regular users get a
+            // narrower role (e.g. Admin/staff) and are limited to the
+            // organizations they're assigned to (organization_user).
+            //
+            // Assign BOTH guards' role: a bare role name resolves only the default
+            // (web) guard, but the SPA's API runs on auth:sanctum and checks the
+            // sanctum guard — without the sanctum role, permission-gated endpoints
+            // would 403.
+            $admin->syncRoles(
+                Role::where('name', 'Super Admin')
+                    ->whereIn('guard_name', ['web', 'sanctum'])
+                    ->get()
+            );
         }
     }
 }

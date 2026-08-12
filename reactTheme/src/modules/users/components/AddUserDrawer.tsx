@@ -3,6 +3,7 @@ import { Button, Drawer, Form, Input, Select, Skeleton } from 'antd'
 import { notify, toast } from '../../../utils/toast'
 import { closeAddDrawer } from '../usersSlice'
 import { useCreateUser, usePermissions, useRolesDetailed } from '../queries'
+import { useOrganizationOptions } from '../../organizations/queries'
 import PermissionPicker from '../../roles/components/PermissionPicker'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
@@ -13,6 +14,7 @@ function AddUserDrawer() {
   const [form] = Form.useForm()
 
   const { data: roles = [], isLoading: rolesLoading } = useRolesDetailed()
+  const { data: organizations = [], isLoading: orgsLoading } = useOrganizationOptions()
   const { data: permissions = [], isLoading: permissionsLoading } = usePermissions()
   const roleOptions = roles.map((role) => ({ value: role.name, label: role.name }))
   const mutation = useCreateUser()
@@ -129,6 +131,25 @@ function AddUserDrawer() {
             optionFilterProp="label"
           />
         </Form.Item>
+
+        {selectedRoleName !== 'Super Admin' && (
+          <Form.Item
+            label="Organizations"
+            name="organization_ids"
+            tooltip="Which organizations this user can access. Super Admins see all, so this is hidden for them."
+          >
+            <Select
+              mode="multiple"
+              allowClear
+              loading={orgsLoading}
+              options={organizations.map((o) => ({ value: o.id, label: o.name }))}
+              placeholder="Assign organizations (blank = none)"
+              size="large"
+              showSearch
+              optionFilterProp="label"
+            />
+          </Form.Item>
+        )}
 
         {selectedRoleName && (
           <Form.Item

@@ -3,6 +3,7 @@ import { Button, Drawer, Form, Input, Select } from 'antd'
 import { useEffect } from 'react'
 import { closeEditDrawer } from '../usersSlice'
 import { useRoles, useUpdateUser } from '../queries'
+import { useOrganizationOptions } from '../../organizations/queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { toast } from '../../../utils/toast'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
@@ -14,7 +15,9 @@ function EditUserDrawer() {
   const [form] = Form.useForm()
   const { data: roles = [], isLoading: rolesLoading } = useRoles()
   const roleOptions = roles.map((role: string) => ({ value: role, label: role }))
+  const { data: organizations = [], isLoading: orgsLoading } = useOrganizationOptions()
   const mutation = useUpdateUser()
+  const selectedRoleName = Form.useWatch('role', form)
 
   useEffect(() => {
     if (open && editingUser) {
@@ -22,6 +25,7 @@ function EditUserDrawer() {
         name: editingUser.name,
         email: editingUser.email,
         role: editingUser.roles?.[0],
+        organization_ids: editingUser.organization_ids ?? [],
         password: '',
       })
     }
@@ -111,6 +115,25 @@ function EditUserDrawer() {
             optionFilterProp="label"
           />
         </Form.Item>
+
+        {selectedRoleName !== 'Super Admin' && (
+          <Form.Item
+            label="Organizations"
+            name="organization_ids"
+            tooltip="Which organizations this user can access. Super Admins see all, so this is hidden for them."
+          >
+            <Select
+              mode="multiple"
+              allowClear
+              loading={orgsLoading}
+              options={organizations.map((o) => ({ value: o.id, label: o.name }))}
+              placeholder="Assign organizations (blank = none)"
+              size="large"
+              showSearch
+              optionFilterProp="label"
+            />
+          </Form.Item>
+        )}
       </Form>
     </Drawer>
   )

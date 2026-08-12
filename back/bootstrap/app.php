@@ -51,6 +51,12 @@ return Application::configure(basePath: dirname(__DIR__))
         // first, so this call must come after statefulApi() above.
         $middleware->prependToGroup('api', \App\Http\Middleware\InitializeTenancyIfTenantDomain::class);
 
+        // Same reasoning for the web group: Sanctum's /sanctum/csrf-cookie runs
+        // there and starts the database-driven session, which on a tenant domain
+        // must be read from the tenant DB (central has no sessions table). On
+        // central hosts the middleware is a no-op, so it is safe on both.
+        $middleware->prependToGroup('web', \App\Http\Middleware\InitializeTenancyIfTenantDomain::class);
+
         $middleware->validateCsrfTokens(except: [
             'api/*',
         ]);

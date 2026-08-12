@@ -1,5 +1,5 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons'
-import { Button, Popconfirm, Space, Tooltip, Typography } from 'antd'
+import { Button, Popconfirm, Space, Tag, Tooltip, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useMemo } from 'react'
 import PageHeader from '../../../components/PageHeader'
@@ -33,6 +33,16 @@ function OrganizationsPage() {
   const columns = useMemo<ColumnsType<Organization>>(
     () => [
       { title: 'Name', dataIndex: 'name', sorter: true, render: (name) => <Text strong>{name}</Text> },
+      {
+        title: 'Parent Organization',
+        dataIndex: ['parent', 'name'],
+        render: (_, record) =>
+          record.parent ? (
+            <Text>{record.parent.name}</Text>
+          ) : (
+            <Tag color="default">Top level</Tag>
+          ),
+      },
       {
         title: 'Actions',
         key: 'actions',

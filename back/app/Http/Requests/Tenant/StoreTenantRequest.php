@@ -33,6 +33,8 @@ class StoreTenantRequest extends FormRequest
             'currency'       => ['nullable', 'string', 'max:8'],
             'language'       => ['nullable', 'string', 'max:8'],
             'status'         => ['nullable', 'in:active,suspended'],
+            // Department behavior for this client, chosen at setup (default flexible).
+            'department_mode' => ['nullable', 'in:shared,scoped,flexible'],
         ];
     }
 

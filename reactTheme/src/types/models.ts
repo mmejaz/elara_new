@@ -19,6 +19,9 @@ export interface User {
   settings: Partial<UserSettings> | null
   avatar: string | null
   roles: string[]
+  /** Organizations this user is assigned to (absent/empty for a Super Admin). */
+  organizations?: { id: number; name: string }[]
+  organization_ids?: number[]
   created_at: string
 }
 
