@@ -35,6 +35,7 @@ class ModuleSeeder extends Seeder
                 ['name' => 'Permissions', 'slug' => 'permissions', 'icon' => 'KeyOutlined', 'resourceful' => true],
                 ['name' => 'Managed Modules', 'slug' => 'modules', 'icon' => 'AppstoreAddOutlined'],
                 ['name' => 'Module Builder', 'slug' => 'module-builder', 'icon' => 'BuildOutlined'],
+                ['name' => 'Tenants', 'slug' => 'tenants', 'icon' => 'CloudServerOutlined'],
                 ['name' => 'Global Setting', 'slug' => 'globalsettings', 'icon' => 'AppstoreOutlined', 'resourceful' => true],
             ],
         ],
@@ -55,6 +56,13 @@ class ModuleSeeder extends Seeder
                         ['name' => 'Country', 'slug' => 'countries', 'icon' => 'BankOutlined', 'resourceful' => true],
                         ['name' => 'City', 'slug' => 'cities', 'icon' => 'BookOutlined', 'resourceful' => true],
                         ['name' => 'Gender', 'slug' => 'genders', 'icon' => 'BookOutlined', 'resourceful' => true],
+                        ['name' => 'Department', 'slug' => 'departments', 'icon' => 'TeamOutlined', 'resourceful' => true],
+                        ['name' => 'Designation', 'slug' => 'designations', 'icon' => 'FileTextOutlined', 'resourceful' => true],
+                        ['name' => 'Leave Type', 'slug' => 'leavetypes', 'icon' => 'FileTextOutlined', 'resourceful' => true],
+                        ['name' => 'Document Type', 'slug' => 'documenttypes', 'icon' => 'CalendarOutlined', 'resourceful' => true],
+                        // name "Organization" (singular) → permissions organization.* (matches OrganizationApi);
+                        // slug "organizations" → matches the /organizations route.
+                        ['name' => 'Organization', 'slug' => 'organizations', 'icon' => 'BankOutlined', 'resourceful' => true],
                     ],
                 ],
             ],
@@ -75,6 +83,12 @@ class ModuleSeeder extends Seeder
         $order = 0;
 
         foreach ($nodes as $node) {
+            // Central-only modules (tenant provisioning, module generator) are
+            // never seeded into a tenant database. See config/central.php.
+            if (tenancy()->initialized && in_array($node['slug'], config('central.modules', []), true)) {
+                continue;
+            }
+
             $isGroup = ($node['type'] ?? 'item') === 'group';
             $resourceful = $node['resourceful'] ?? false;
 
@@ -107,10 +121,14 @@ class ModuleSeeder extends Seeder
     {
         $names = $module->permissionNames();
 
-        foreach ($names as $name) {
-            Permission::firstOrCreate(['name' => $name, 'guard_name' => 'web']);
+        // Create permissions for both 'web' and 'sanctum' guards
+        foreach (['web', 'sanctum'] as $guard) {
+            foreach ($names as $name) {
+                Permission::firstOrCreate(['name' => $name, 'guard_name' => $guard]);
+            }
         }
 
+        // Give permissions to the admin role (using its guard)
         $admin->givePermissionTo($names);
     }
 }

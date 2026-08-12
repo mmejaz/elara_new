@@ -52,7 +52,7 @@ function AddApplicationTypeDrawer() {
         type="info"
         showIcon
         className="!mb-4"
-        message="Before you start"
+        title="Before you start"
         description={
           <ul className="mt-1 list-disc pl-4 text-xs">
             <li>Fields marked with <span className="text-red-500">*</span> are required.</li>

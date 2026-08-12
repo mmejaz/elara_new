@@ -25,7 +25,7 @@ const ACTION_COLORS: Record<string, string> = {
 function PermissionsPage() {
   const dispatch = useAppDispatch()
   const table = useServerTable(15, 'Search permissions…')
-  const { data, isLoading } = usePermissionsPaginated(table.params)
+  const { data, isFetching } = usePermissionsPaginated(table.params)
 
   const columns = useMemo<ColumnsType<Permission>>(
     () => [
@@ -101,7 +101,7 @@ function PermissionsPage() {
       <DataTable<Permission>
         columns={visibleColumns}
         dataSource={data?.data ?? []}
-        loading={isLoading}
+        loading={isFetching}
         searchable={false}
         showColumnToggle={false}
         server={{

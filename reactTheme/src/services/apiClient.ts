@@ -1,26 +1,32 @@
 import axios from 'axios'
 
 /**
- * Multi-tenant: the tenant is resolved by domain, so every request must hit the
- * SAME subdomain the SPA is served from (acme.lvh.me → acme.lvh.me:8000) — that
- * is what sends the .lvh.me session cookie to the right tenant. Derive the
- * backend origin from the live hostname rather than a build-time env var, which
- * could only ever name one host. Fall back to the env var when there is no
- * `window` (SSR / non-jsdom tests).
+ * Tenants are identified by the request host, so the API has to be called on the
+ * same subdomain the SPA is being served from:
+ *
+ *   localhost:5173      -> localhost:8000       (central)
+ *   acme.localhost:5173 -> acme.localhost:8000  (tenant "acme")
+ *
+ * Protocol and port come from VITE_BACKEND_URL; only the hostname is taken from
+ * the browser. Hardcoding the env host instead would send every tenant's
+ * requests to the central domain, where their users don't exist.
  */
-const backendOrigin =
-  typeof window !== 'undefined' && window.location?.hostname
-    ? `${window.location.protocol}//${window.location.hostname}:8000`
-    : import.meta.env.VITE_BACKEND_URL
+const backendOrigin = () => {
+  const configured = new URL(import.meta.env.VITE_BACKEND_URL)
+  configured.hostname = window.location.hostname
+
+  return configured.origin
+}
 
 const apiClient = axios.create({
-  baseURL: `${backendOrigin}/api`,
+  baseURL: `${backendOrigin()}/api`,
   headers: {
     Accept: 'application/json',
     'Content-Type': 'application/json',
   },
   withCredentials: true,
   withXSRFToken: true,
+  timeout: 30000, // 30 second timeout
 })
 
 /**
@@ -37,7 +43,7 @@ apiClient.interceptors.request.use((config) => {
 })
 
 export const initCsrf = () =>
-  axios.get(`${backendOrigin}/sanctum/csrf-cookie`, {
+  axios.get(`${backendOrigin()}/sanctum/csrf-cookie`, {
     withCredentials: true,
   })
 

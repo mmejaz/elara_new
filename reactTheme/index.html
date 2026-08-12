@@ -5,6 +5,13 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>React Theme</title>
+    <!--
+      The ONLY hand-written CSS left in the project, and it is unavoidable: this
+      boot preloader paints BEFORE the JS bundle (and thus Tailwind's stylesheet)
+      loads, so utility classes would be unstyled here — and a spinner needs
+      @keyframes, which cannot be expressed as an inline style attribute. Every
+      other style in the app is Tailwind.
+    -->
     <style>
       #app-preloader {
         position: fixed;
@@ -43,8 +50,10 @@
       }
     </style>
   </head>
-  <body>
-    <div id="root"></div>
+  <body
+    class="min-h-screen bg-white font-sans text-gray-800 antialiased [font-family:var(--font-sans)] [text-rendering:optimizeLegibility] [font-synthesis:none] dark:bg-[#0a0a0a] dark:text-slate-200"
+  >
+    <div id="root" class="min-h-screen"></div>
     <div id="app-preloader">
       <div class="ring"></div>
       <div class="brand">React Theme</div>

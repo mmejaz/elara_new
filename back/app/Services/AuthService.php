@@ -90,7 +90,7 @@ class AuthService
 
     private function userPayload(User $user): array
     {
-        $user->load('roles');
+        $user->load(['roles.permissions', 'files']);
 
         $resource = (new AuthUserResource($user))->resolve();
 

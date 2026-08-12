@@ -8,9 +8,11 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
+use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentified;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -33,37 +35,21 @@ return Application::configure(basePath: dirname(__DIR__))
         },
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Hardening headers on every response (API + error pages).
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);
+
         $middleware->statefulApi();
 
-        // Every API route is tenant-scoped: users, sessions, cache and jobs all
-        // live in the tenant database. Initialize tenancy by domain BEFORE the
-        // stateful/session middleware (prepended ahead of statefulApi's
-        // EnsureFrontendRequestsAreStateful) so the database-driven session is
-        // read from the tenant DB, then block the central domain from tenant
-        // routes. This covers routes/api.php (login) and the auto-loaded
-        // routes/modules/*.php group alike — no edits inside routes/modules/.
-        $middleware->api(prepend: [
-            \Stancl\Tenancy\Middleware\InitializeTenancyByDomain::class,
-            \Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains::class,
-        ]);
+        // Global ceiling on every /api route (the `login` limiter still applies
+        // its stricter per-email/IP limit on top). Uses the `api` limiter
+        // registered in AppServiceProvider.
+        $middleware->throttleApi();
 
-        // Appended so it runs after tenancy init AND after the session has
-        // started: reject any session established under a different tenant.
-        $middleware->api(append: [
-            \App\Http\Middleware\EnsureUserBelongsToTenant::class,
-        ]);
-
-        // The stateful web surface is tenant-scoped too — notably Sanctum's
-        // /sanctum/csrf-cookie, whose database-driven session must be read from
-        // the tenant DB (the central DB has no sessions table). Same ordering:
-        // tenancy before the web group's StartSession, guard after it.
-        $middleware->web(prepend: [
-            \Stancl\Tenancy\Middleware\InitializeTenancyByDomain::class,
-            \Stancl\Tenancy\Middleware\PreventAccessFromCentralDomains::class,
-        ]);
-        $middleware->web(append: [
-            \App\Http\Middleware\EnsureUserBelongsToTenant::class,
-        ]);
+        // Tenancy must resolve BEFORE Sanctum's stateful group starts the
+        // session, so that the session (and the users table behind auth) is
+        // read from the tenant database. prependToGroup runs last-prepended
+        // first, so this call must come after statefulApi() above.
+        $middleware->prependToGroup('api', \App\Http\Middleware\InitializeTenancyIfTenantDomain::class);
 
         $middleware->validateCsrfTokens(except: [
             'api/*',
@@ -73,6 +59,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role'       => \Spatie\Permission\Middleware\RoleMiddleware::class,
+            'central'    => \App\Http\Middleware\PreventAccessFromTenantDomains::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -87,7 +74,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null; // let web/other handling proceed
             }
 
-            return match (true) {
+            $response = match (true) {
                 $e instanceof ValidationException => ApiResponse::error(
                     ResponseMessage::VALIDATION_FAILED,
                     $e->errors(),
@@ -104,9 +91,28 @@ return Application::configure(basePath: dirname(__DIR__))
                     null,
                     Response::HTTP_FORBIDDEN,
                 ),
+                $e instanceof \Spatie\Permission\Exceptions\PermissionDoesNotExist => ApiResponse::error(
+                    'Permission error',
+                    null,
+                    Response::HTTP_INTERNAL_SERVER_ERROR,
+                ),
+                // Rate-limited (e.g. login throttle). Kept out of the default so
+                // it isn't mislabeled "Server error" in production; the client
+                // reads how long to wait from the Retry-After header preserved
+                // below.
+                $e instanceof ThrottleRequestsException => ApiResponse::error(
+                    ResponseMessage::TOO_MANY_ATTEMPTS,
+                    null,
+                    Response::HTTP_TOO_MANY_REQUESTS,
+                ),
+                // Tenant not found (accessing invalid subdomain)
+                $e instanceof TenantCouldNotBeIdentified => ApiResponse::error(
+                    'Tenant not found',
+                    null,
+                    Response::HTTP_NOT_FOUND,
+                ),
                 $e instanceof ModelNotFoundException,
-                $e instanceof NotFoundHttpException,
-                $e instanceof \Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException => ApiResponse::error(
+                $e instanceof NotFoundHttpException => ApiResponse::error(
                     ResponseMessage::NOT_FOUND,
                     null,
                     Response::HTTP_NOT_FOUND,
@@ -117,5 +123,14 @@ return Application::configure(basePath: dirname(__DIR__))
                     $e instanceof HttpExceptionInterface ? $e->getStatusCode() : Response::HTTP_INTERNAL_SERVER_ERROR,
                 ),
             };
+
+            // Carry HTTP-exception headers (Retry-After, X-RateLimit-*, …) onto
+            // the envelope — rebuilding the response above would otherwise drop
+            // them, leaving a 429 with no "try again in N seconds" signal.
+            if ($e instanceof HttpExceptionInterface) {
+                $response->headers->add($e->getHeaders());
+            }
+
+            return $response;
         });
     })->create();

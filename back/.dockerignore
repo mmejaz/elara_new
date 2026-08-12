@@ -4,3 +4,7 @@ node_modules/
 .env
 storage/logs/*
 bootstrap/cache/*.php
+# Symlink created by `artisan storage:link` inside the container. It points at
+# the container-absolute /var/www/html/storage/app/public, which the build
+# context cannot resolve ("invalid file request public/storage").
+public/storage

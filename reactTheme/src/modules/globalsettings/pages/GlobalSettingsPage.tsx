@@ -5,8 +5,8 @@ import {
   PlusOutlined,
   SettingOutlined,
 } from '@ant-design/icons'
-import { Button, Card, Col, Empty, Pagination, Popconfirm, Row, Space, Spin, Tag, Tooltip, Typography } from 'antd'
-import { useState } from 'react'
+import { Button, Card, Col, Empty, Pagination, Popconfirm, Row, Space, Spin, theme, Tooltip, Typography } from 'antd'
+import { useState, type CSSProperties } from 'react'
 import PageHeader from '../../../components/PageHeader'
 import { useServerTable } from '../../../components/DataTable'
 import AddGlobalSettingDrawer from '../components/AddGlobalSettingDrawer'
@@ -26,6 +26,7 @@ const LATEST_RECORD_PARAMS = { page: 1, per_page: 1 }
 function GlobalSettingsPage() {
   const dispatch = useAppDispatch()
   const primaryColor = useAppSelector((state) => state.ui.primaryColor)
+  const { token } = theme.useToken()
   const table = useServerTable(15, 'Search applications…')
   const { data, isLoading } = useGlobalSettings(table.params)
   const remove = useDeleteGlobalSetting()
@@ -74,61 +75,94 @@ function GlobalSettingsPage() {
         </Card>
       ) : (
         <>
-          <Row gutter={[12, 12]}>
-            {apps.map((app) => (
-              <Col key={app.id} xs={24} sm={12} lg={8}>
-                <Card styles={{ body: { padding: 18 } }} className="h-full">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-3">
-                      <div
-                        className="grid size-11 shrink-0 place-items-center rounded-lg text-lg"
-                        style={{ background: hexToRgba(primaryColor, 0.12), color: primaryColor }}
-                      >
-                        <AppstoreOutlined />
+          <Row gutter={[16, 16]}>
+            {apps.map((app) => {
+              const fieldCount = app.fields_count ?? 0
+              const configured = (app.records_count ?? 0) > 0
+
+              return (
+                <Col key={app.id} xs={24} sm={12} lg={6}>
+                  {/* --gs-accent lets the hover border follow the themeable primary
+                      color, which a static Tailwind class can't express. */}
+                  <Card
+                    className="group h-full transition duration-200 hover:-translate-y-0.5 hover:!border-[var(--gs-accent)] hover:shadow-md"
+                    style={{ '--gs-accent': primaryColor } as CSSProperties}
+                    styles={{ body: { padding: 20, height: '100%' } }}
+                  >
+                    <div className="flex h-full flex-col">
+                      <div className="flex items-start justify-between gap-2">
+                        <div
+                          className="grid size-11 shrink-0 place-items-center rounded-lg text-lg"
+                          style={{ background: hexToRgba(primaryColor, 0.12), color: primaryColor }}
+                        >
+                          <AppstoreOutlined />
+                        </div>
+
+                        {/* Dimmed rather than hidden: a hover-only reveal would put
+                            these out of reach on touch devices. */}
+                        <Space
+                          size={0}
+                          className="opacity-60 transition-opacity group-hover:opacity-100 focus-within:opacity-100"
+                        >
+                          <Tooltip title="Edit fields">
+                            <Button
+                              type="text"
+                              size="small"
+                              icon={<EditOutlined />}
+                              onClick={() => dispatch(openEditDrawer(app))}
+                            />
+                          </Tooltip>
+                          <Popconfirm title="Delete this application?" onConfirm={() => handleDelete(app.id)}>
+                            <Tooltip title="Delete">
+                              <Button type="text" size="small" danger icon={<DeleteOutlined />} />
+                            </Tooltip>
+                          </Popconfirm>
+                        </Space>
                       </div>
-                      <div className="min-w-0">
-                        <Text strong className="!block !truncate">
-                          {app.name}
-                        </Text>
-                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                          <Tag color="blue" className="!text-xs">
-                            {app.fields_count ?? 0} fields
-                          </Tag>
-                          {(app.records_count ?? 0) > 0 ? (
-                            <Tag color="success" className="!text-xs">Configured</Tag>
-                          ) : (
-                            <Tag className="!text-xs">Not set</Tag>
-                          )}
+
+                      <div className="mt-4 min-w-0 flex-1">
+                        <Tooltip title={app.name}>
+                          <Text strong className="!block !truncate !text-base">
+                            {app.name}
+                          </Text>
+                        </Tooltip>
+
+                        <div className="mt-1.5 flex items-center gap-2">
+                          <Text type="secondary" className="!text-xs">
+                            {fieldCount} {fieldCount === 1 ? 'field' : 'fields'}
+                          </Text>
+                          <span
+                            className="size-1 shrink-0 rounded-full"
+                            style={{ background: token.colorTextQuaternary }}
+                          />
+                          <span className="inline-flex items-center gap-1.5">
+                            <span
+                              className="size-1.5 shrink-0 rounded-full"
+                              style={{ background: configured ? token.colorSuccess : token.colorTextQuaternary }}
+                            />
+                            <Text type="secondary" className="!text-xs">
+                              {configured ? 'Configured' : 'Not set'}
+                            </Text>
+                          </span>
                         </div>
                       </div>
+
+                      {/* The flex-1 block above pushes this to the bottom, so the
+                          actions line up across the row even if a card grows. */}
+                      <Button
+                        className="!mt-5"
+                        block
+                        icon={<SettingOutlined />}
+                        disabled={fieldCount === 0}
+                        onClick={() => setValuesAppId(app.id)}
+                      >
+                        {configured ? 'Edit values' : 'Add values'}
+                      </Button>
                     </div>
-
-                    <Space size={0}>
-                      <Tooltip title="Edit fields">
-                        <Button
-                          type="text"
-                          icon={<EditOutlined />}
-                          onClick={() => dispatch(openEditDrawer(app))}
-                        />
-                      </Tooltip>
-                      <Popconfirm title="Delete this application?" onConfirm={() => handleDelete(app.id)}>
-                        <Button type="text" danger icon={<DeleteOutlined />} />
-                      </Popconfirm>
-                    </Space>
-                  </div>
-
-                  <Button
-                    className="!mt-4"
-                    block
-                    icon={<SettingOutlined />}
-                    disabled={(app.fields_count ?? 0) === 0}
-                    onClick={() => setValuesAppId(app.id)}
-                  >
-                    {(app.records_count ?? 0) > 0 ? 'Edit values' : 'Add values'}
-                  </Button>
-                </Card>
-              </Col>
-            ))}
+                  </Card>
+                </Col>
+              )
+            })}
           </Row>
 
           {total > table.pageSize && (

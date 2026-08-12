@@ -17,7 +17,7 @@ const { Text } = Typography
 function CountriesPage() {
   const dispatch = useAppDispatch()
   const table = useServerTable(15, 'Search Countries…')
-  const { data, isLoading } = useCountries(table.params)
+  const { data, isFetching } = useCountries(table.params)
   const remove = useDeleteCountry()
 
   const handleDelete = (id: number) =>
@@ -68,7 +68,7 @@ function CountriesPage() {
       <DataTable<Country>
         columns={visibleColumns}
         dataSource={data?.data ?? []}
-        loading={isLoading}
+        loading={isFetching}
         showColumnToggle={false}
         searchable={false}
         server={{

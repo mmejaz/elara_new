@@ -16,11 +16,36 @@ class AuthController extends Controller
 {
     public function __construct(private AuthService $authService) {}
 
+    /**
+     * Public endpoint to verify tenant exists. Called by frontend on app load.
+     * Returns 200 if tenant is valid, 404 if not found.
+     */
+    public function verifyTenant(Request $request)
+    {
+        $tenant = tenant();
+
+        if (!$tenant) {
+            return ApiResponse::error(
+                'Tenant not found',
+                null,
+                404,
+            );
+        }
+
+        return ApiResponse::success([
+            'id' => $tenant->id,
+            'name' => $tenant->name,
+        ], 'Tenant verified');
+    }
+
     public function login(LoginRequest $request)
     {
         $payload = $this->authService->login($request->email, $request->password);
 
-        $request->session()->regenerate();
+        // Only regenerate session if it's available (web routes, not API-only)
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
 
         // Bind the session to the tenant it was established under, so it cannot
         // be replayed against another tenant subdomain (see
@@ -34,8 +59,11 @@ class AuthController extends Controller
     {
         $this->authService->logout();
 
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
+        // Only invalidate session if it's available (web routes, not API-only)
+        if ($request->hasSession()) {
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
         return ApiResponse::success(null, ResponseMessage::LOGOUT_SUCCESS);
     }

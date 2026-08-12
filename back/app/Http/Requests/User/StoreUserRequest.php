@@ -2,13 +2,15 @@
 
 namespace App\Http\Requests\User;
 
+use App\Rules\AssignableRole;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
 
 class StoreUserRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return auth()->user()->can('create', User::class);
     }
 
     public function rules(): array
@@ -16,8 +18,8 @@ class StoreUserRequest extends FormRequest
         return [
             'name'     => ['required', 'string', 'max:255'],
             'email'    => ['required', 'email', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8'],
-            'role'     => ['required', 'string', 'exists:roles,name'],
+            'password' => ['required', 'string', Password::defaults()],
+            'role'     => ['required', 'string', 'exists:roles,name', new AssignableRole],
         ];
     }
 

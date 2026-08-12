@@ -2,13 +2,15 @@
 
 namespace App\Http\Requests\Country;
 
+use App\Models\Country;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateCountryRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $country = $this->route('country');
+        return auth()->user()->can('update', $country);
     }
 
     public function rules(): array

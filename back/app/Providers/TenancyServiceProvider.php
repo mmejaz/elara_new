@@ -27,14 +27,15 @@ class TenancyServiceProvider extends ServiceProvider
                 JobPipeline::make([
                     Jobs\CreateDatabase::class,
                     Jobs\MigrateDatabase::class,
-                    // Jobs\SeedDatabase::class,
+                    Jobs\SeedDatabase::class,
 
-                    // Your own jobs to prepare the tenant.
-                    // Provision API keys, create S3 buckets, anything you want!
+                    // Clear the transient admin_password from central tenants.data
+                    // once the tenant admin has been seeded (must run last).
+                    \App\Jobs\ClearTenantAdminPassword::class,
 
                 ])->send(function (Events\TenantCreated $event) {
                     return $event->tenant;
-                })->shouldBeQueued(false), // `false` by default, but you probably want to make this `true` for production.
+                })->shouldBeQueued(env('QUEUE_TENANT_JOBS', false)), // Set QUEUE_TENANT_JOBS=true in production
             ],
             Events\SavingTenant::class => [],
             Events\TenantSaved::class => [],

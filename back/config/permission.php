@@ -168,7 +168,7 @@ return [
      * setting is false here for optimum safety.
      */
 
-    'display_permission_in_exception' => false,
+    'display_permission_in_exception' => env('APP_DEBUG', false),
 
     /*
      * When set to true, the required role names are added to exception messages.

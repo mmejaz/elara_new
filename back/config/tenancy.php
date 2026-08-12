@@ -2,11 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Models\Tenant;
 use Stancl\Tenancy\Database\Models\Domain;
 
 return [
-    'tenant_model' => Tenant::class,
+    'tenant_model' => \App\Models\Tenant::class,
     'id_generator' => Stancl\Tenancy\UUIDGenerator::class,
 
     'domain_model' => Domain::class,
@@ -17,7 +16,8 @@ return [
      * Only relevant if you're using the domain or subdomain identification middleware.
      */
     'central_domains' => [
-        'lvh.me',
+        '127.0.0.1',
+        'localhost',
     ],
 
     /**
@@ -26,11 +26,7 @@ return [
      *
      * To configure their behavior, see the config keys below.
      */
-    // Tests run against a single throwaway database and resolve tenants by
-    // domain only (to exercise routing and the org/session guards) without
-    // swapping the connection — so no bootstrappers there. Everywhere else the
-    // full set is active.
-    'bootstrappers' => env('APP_ENV') === 'testing' ? [] : [
+    'bootstrappers' => [
         Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper::class,
@@ -197,7 +193,7 @@ return [
      * Parameters used by the tenants:seed command.
      */
     'seeder_parameters' => [
-        '--class' => 'DatabaseSeeder', // root seeder class
-        // '--force' => true, // This needs to be true to seed tenant databases in production
+        '--class' => 'Database\\Seeders\\TenantDatabaseSeeder', // runs INSIDE each tenant DB
+        '--force' => true,
     ],
 ];

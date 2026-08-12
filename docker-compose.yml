@@ -1,5 +1,4 @@
 services:
-
   # Laravel Backend
   backend:
     build:
@@ -11,6 +10,33 @@ services:
     volumes:
       - ./back:/var/www/html
       # Mounted so the Module Builder generator can scaffold frontend files.
+      - ./reactTheme:/var/www/reactTheme
+    depends_on:
+      - db
+    networks:
+      - elara_network
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+
+  # Queue worker. Tenant provisioning (CreateDatabase -> MigrateDatabase ->
+  # SeedDatabase) is dispatched with shouldBeQueued(true), so without this
+  # service new tenants are created in the central DB but never get a database.
+  queue:
+    build:
+      context: ./back
+      dockerfile: Dockerfile
+    container_name: elara_queue
+    restart: unless-stopped
+    working_dir: /var/www/html
+    # `queue:listen`, not `queue:work`: work boots the framework once and keeps
+    # it in memory, so edits to seeders/jobs are silently ignored until the
+    # container is restarted — tenants then get provisioned by stale code.
+    # listen reboots per job, which is what you want while developing.
+    # Switch to `queue:work` (with a deploy-time restart) in production.
+    command: php artisan queue:listen --tries=1 --timeout=300
+    volumes:
+      - ./back:/var/www/html
       - ./reactTheme:/var/www/reactTheme
     depends_on:
       - db
@@ -64,9 +90,8 @@ services:
       - "3307:3306"
     volumes:
       - elara_db_data:/var/lib/mysql
-      # Grants elara_user rights over `tenant%` databases on a fresh init so the
-      # provisioning command can create/migrate/drop tenant databases.
-      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+      # Grants elara_user rights over the `tenant%` databases Stancl creates.
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
     networks:
       - elara_network
 

@@ -12,18 +12,12 @@ export default defineConfig({
     },
   },
   server: {
-    // Bind on all interfaces so wildcard tenant subdomains (acme.lvh.me, …)
-    // reach the dev server from the host and from inside Docker.
     host: true,
     port: 5173,
     strictPort: false,
-    // Accept any *.lvh.me host (Vite blocks unknown Host headers by default).
-    allowedHosts: ['.lvh.me'],
-    // The page is served from a tenant subdomain but the HMR websocket needs a
-    // stable, resolvable host; lvh.me → 127.0.0.1 works from any subdomain.
-    hmr: {
-      host: 'lvh.me',
-    },
+    // Tenants are reached at <tenant>.localhost:5173. Vite blocks unknown Host
+    // headers by default, so the leading-dot entry whitelists the subdomains.
+    allowedHosts: ['.localhost'],
     // Bind-mounted source in Docker (esp. on Windows/WSL) doesn't emit native
     // file-change events into the container, so HMR misses edits. Poll instead.
     watch: {

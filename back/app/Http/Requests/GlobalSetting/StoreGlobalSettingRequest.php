@@ -2,13 +2,14 @@
 
 namespace App\Http\Requests\GlobalSetting;
 
+use App\Models\GlobalSetting;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreGlobalSettingRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return auth()->user()->can('create', GlobalSetting::class);
     }
 
     public function rules(): array

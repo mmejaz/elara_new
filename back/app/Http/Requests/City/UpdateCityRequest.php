@@ -2,13 +2,15 @@
 
 namespace App\Http\Requests\City;
 
+use App\Models\City;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateCityRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $city = $this->route('city');
+        return auth()->user()->can('update', $city);
     }
 
     public function rules(): array

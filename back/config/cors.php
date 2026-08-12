@@ -4,27 +4,22 @@ return [
 
     'paths' => ['api/*', 'sanctum/csrf-cookie'],
 
-    'allowed_methods' => ['*'],
+    'allowed_methods' => ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
 
-    // Each tenant is served from its own subdomain, so the SPA origin varies
-    // (acme.lvh.me, beta.lvh.me, …). A fixed origin cannot match them all — the
-    // credentialed request is blocked and login fails. Match any tenant
-    // subdomain via a pattern instead; `allowed_origins` stays available for an
-    // explicit extra origin (a fixed FRONTEND_URL) if one is set.
-    'allowed_origins' => array_filter([env('FRONTEND_URL')]),
+    'allowed_origins' => [env('FRONTEND_URL', 'http://localhost:5173')],
 
+    // Tenant SPAs are served from a subdomain of the frontend host
+    // (acme.localhost:5173), so the exact-match list above can't cover them.
+    // FRONTEND_ORIGIN_PATTERN is a full regex delimited for preg_match.
     'allowed_origins_patterns' => [
-        // http://<tenant>.lvh.me[:port] — the local wildcard dev domain.
-        '#^https?://[a-z0-9-]+\.lvh\.me(:\d+)?$#',
-        // http://localhost[:port] — dev alias mapped to a single tenant.
-        '#^https?://localhost(:\d+)?$#',
+        env('FRONTEND_ORIGIN_PATTERN', '#^http://([a-z0-9-]+\.)?localhost:5173$#'),
     ],
 
-    'allowed_headers' => ['*'],
+    'allowed_headers' => ['Accept', 'Accept-Language', 'Content-Type', 'X-CSRF-TOKEN', 'X-XSRF-TOKEN', 'Authorization', 'X-Requested-With'],
 
-    'exposed_headers' => [],
+    'exposed_headers' => ['Authorization'],
 
-    'max_age' => 0,
+    'max_age' => 3600,
 
     'supports_credentials' => true,
 

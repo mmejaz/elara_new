@@ -1,12 +1,14 @@
 import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { App as AntApp, ConfigProvider, theme } from 'antd'
+import { App as AntApp, ConfigProvider, Spin, theme } from 'antd'
 import { useEffect } from 'react'
 import { Provider } from 'react-redux'
 import { queryClient } from '../services/queryClient'
 import { store } from '../store'
 import { ToastHost } from '../utils/toast'
 import { useAppSelector } from '../store/hooks'
+import { useTenantVerification } from '../hooks/useTenantVerification'
+import { isCentralHost } from '../utils/tenantUtils'
 
 // Maps the `fontScale` UI setting onto a concrete AntD base font size.
 const FONT_SIZE_BY_SCALE = { compact: 13, comfortable: 14, large: 16 }
@@ -49,11 +51,74 @@ function ThemeProvider({ children }) {
   )
 }
 
+/**
+ * Wraps the app to verify tenant exists (for non-central hosts).
+ * STRICTLY blocks rendering until verification completes.
+ * Non-existent or unreachable tenants are redirected to central domain.
+ */
+function TenantVerificationProvider({ children }) {
+  const { status, isLoading } = useTenantVerification()
+  const isCentral = isCentralHost()
+
+  // For tenant subdomains, MUST verify before rendering anything
+  if (!isCentral) {
+    if (isLoading) {
+      // Still verifying - show black screen with spinner, no app content
+      return (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '100vh',
+            backgroundColor: '#000',
+          }}
+        >
+          <Spin size="large" />
+        </div>
+      )
+    }
+
+    if (status === 'not-found' || status === 'error') {
+      // Tenant doesn't exist OR verification failed - redirect to central domain
+      // This prevents non-existent/invalid tenants from ever showing login page
+      setTimeout(() => {
+        window.location.href = 'http://localhost:5173'
+      }, 800)
+
+      return (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            minHeight: '100vh',
+            backgroundColor: '#000',
+            color: '#fff',
+            flexDirection: 'column',
+            gap: '16px',
+          }}
+        >
+          <div>{status === 'not-found' ? 'Tenant not found' : 'Access denied'}</div>
+          <div style={{ fontSize: '12px', color: '#888' }}>Redirecting to home...</div>
+        </div>
+      )
+    }
+  }
+
+  // Only render children if:
+  // 1. We're on central domain (no verification needed), OR
+  // 2. Tenant verification succeeded (status === 'verified')
+  return children
+}
+
 function AppProviders({ children }) {
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <TenantVerificationProvider>{children}</TenantVerificationProvider>
+        </ThemeProvider>
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </Provider>

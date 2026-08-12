@@ -2,13 +2,15 @@
 
 namespace App\Http\Requests\GlobalSetting;
 
+use App\Models\GlobalSetting;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateGlobalSettingRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $globalSetting = $this->route('globalSetting');
+        return auth()->user()->can('update', $globalSetting);
     }
 
     public function rules(): array

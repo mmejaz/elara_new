@@ -1,6 +1,6 @@
 import { Typography } from 'antd'
 import type { MouseEventHandler, ReactNode } from 'react'
-import loginBackground from '../../../assets/images/auth/login-background.png'
+import loginBackground from '../../../assets/images/auth/login-background.webp'
 
 const { Paragraph, Title } = Typography
 
@@ -32,12 +32,14 @@ function AuthPanel({
         src={loginBackground}
         alt=""
         aria-hidden="true"
+        decoding="async"
+        fetchPriority="high"
         className="absolute inset-0 h-full w-full object-cover"
       />
       <div className="absolute inset-0 bg-black/20" />
 
       <section className="relative grid min-h-[540px] w-full max-w-[900px] grid-cols-2 overflow-hidden rounded-[24px] border-[5px] border-white bg-transparent shadow-[0_34px_90px_rgba(0,0,0,0.38)] before:absolute before:inset-y-0 before:right-0 before:left-1/2 before:z-0 before:bg-white before:content-[''] max-xl:min-h-[510px] max-lg:min-h-[480px] max-md:min-h-0 max-md:grid-cols-1 max-md:rounded-[20px] max-md:border-4 max-md:before:hidden">
-        <aside className="relative z-20 flex min-h-full flex-col justify-between overflow-hidden bg-transparent px-8 py-8 max-lg:px-6 max-lg:py-7 max-md:min-h-[300px] max-md:p-6 max-sm:min-h-[240px] max-sm:p-5">
+        <aside className="relative z-20 flex min-h-full flex-col justify-between overflow-hidden bg-transparent px-8 py-8 max-lg:px-6 max-lg:py-7 max-md:order-2 max-md:min-h-[160px] max-md:p-6 max-sm:min-h-[132px] max-sm:p-5">
           <div className="absolute inset-0 z-0 bg-gradient-to-b from-black/10 via-black/15 to-black/35" />
           <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_18%_92%,rgba(0,0,0,0.32),transparent_42%)]" />
 
@@ -60,9 +62,9 @@ function AuthPanel({
           </div>
         </aside>
 
-        <div className="relative z-10 grid min-h-full grid-rows-[64px_1fr_48px] justify-items-center rounded-r-[18px] bg-white px-10 max-lg:px-7 max-md:min-h-[470px] max-md:grid-rows-[60px_1fr_48px] max-md:rounded-b-[16px] max-md:rounded-tr-none max-md:px-[22px] max-md:py-[22px] max-sm:min-h-[450px] max-sm:px-4 max-sm:py-4">
-          <div className="self-center inline-flex items-center gap-[9px] text-[15px] font-bold text-[#111111]">
-            <span className="inline-block h-[18px] w-[18px] rounded-full bg-[image:radial-gradient(circle_at_50%_50%,transparent_34%,#111111_36%,#111111_44%,transparent_46%),repeating-conic-gradient(from_0deg,#111111_0deg_18deg,transparent_18deg_30deg)]" />
+        <div className="relative z-10 grid min-h-full grid-rows-[64px_1fr_48px] justify-items-center rounded-r-[18px] bg-white px-10 dark:bg-slate-900 max-lg:px-7 max-md:order-1 max-md:min-h-[470px] max-md:grid-rows-[60px_1fr_48px] max-md:rounded-b-none max-md:rounded-t-[16px] max-md:px-[22px] max-md:py-[22px] max-sm:min-h-[450px] max-sm:px-4 max-sm:py-4">
+          <div className="self-center inline-flex items-center gap-[9px] text-[15px] font-bold text-[#111111] dark:text-white">
+            <span className="inline-block h-[18px] w-[18px] rounded-full bg-[image:radial-gradient(circle_at_50%_50%,transparent_34%,#111111_36%,#111111_44%,transparent_46%),repeating-conic-gradient(from_0deg,#111111_0deg_18deg,transparent_18deg_30deg)] dark:bg-[image:radial-gradient(circle_at_50%_50%,transparent_34%,#ffffff_36%,#ffffff_44%,transparent_46%),repeating-conic-gradient(from_0deg,#ffffff_0deg_18deg,transparent_18deg_30deg)]" />
             <span>React Theme</span>
           </div>
 
@@ -70,12 +72,12 @@ function AuthPanel({
             <div className="mb-6 text-center max-lg:mb-5 max-sm:mb-4">
               <Title
                 level={2}
-                className="!m-0 !mb-2 !font-serif !text-[32px] !font-medium !leading-[1.05] !tracking-[0] !text-[#050505] max-lg:!text-[29px] max-md:!text-[28px] max-sm:!text-[26px]"
+                className="!m-0 !mb-2 !font-serif !text-[32px] !font-medium !leading-[1.05] !tracking-[0] !text-[#050505] dark:!text-white max-lg:!text-[29px] max-md:!text-[28px] max-sm:!text-[26px]"
               >
                 {title}
               </Title>
               {subtitle && (
-                <Paragraph className="!m-0 !text-xs !leading-normal !text-[#333333]">
+                <Paragraph className="!m-0 !text-xs !leading-normal !text-[#333333] dark:!text-slate-400">
                   {subtitle}
                 </Paragraph>
               )}
@@ -86,13 +88,13 @@ function AuthPanel({
 
           <div className="flex flex-wrap items-center justify-center gap-1.5 self-center text-center text-[11px] text-[#8b8b92] max-sm:text-[10px]">
             {footerText && (
-              <Typography.Text className="!text-[11px] !text-[#8b8b92] max-sm:!text-[10px]">
+              <Typography.Text className="!text-[11px] !text-[#8b8b92] dark:!text-slate-500 max-sm:!text-[10px]">
                 {footerText}
               </Typography.Text>
             )}
             {footerAction ? (
               <Typography.Link
-                className="!text-[11px] !font-semibold !text-[#66666d] max-sm:!text-[10px]"
+                className="!text-[11px] !font-semibold !text-[#66666d] dark:!text-slate-300 max-sm:!text-[10px]"
                 onClick={footerAction}
               >
                 {footerActionText}
@@ -100,7 +102,7 @@ function AuthPanel({
             ) : (
               <Typography.Text
                 strong
-                className="!text-[11px] !text-[#66666d] max-sm:!text-[10px]"
+                className="!text-[11px] !text-[#66666d] dark:!text-slate-300 max-sm:!text-[10px]"
               >
                 {footerActionText}
               </Typography.Text>

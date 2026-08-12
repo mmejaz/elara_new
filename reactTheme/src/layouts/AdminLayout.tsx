@@ -31,13 +31,15 @@ import SettingsDrawer from '../components/SettingsDrawer'
 import SidebarContent from '../components/SidebarContent'
 import { buildSearchableItems, searchableItems as staticSearchableItems } from '../config/navigation'
 import { useModuleTree } from '../hooks/useModuleTree'
-import { logout } from '../store/authSlice'
+import { clearCredentials, logout } from '../store/authSlice'
+import { clearClientCaches } from '../utils/session'
 import {
   openSettingsDrawer,
   setSidebarCollapsed,
   toggleSidebar,
 } from '../store/uiSlice'
 import { hexToRgba } from '../utils/color'
+import { slimScroll } from '../styles/scrollbar'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
 
 const { Header, Content, Sider } = Layout
@@ -130,10 +132,18 @@ function AdminLayout() {
       icon: <LogoutOutlined />,
       label: 'Logout',
       danger: true,
-      // Placeholder logout — clears the dummy user and routes to the login
-      // placeholder. Replace with a real sign-out call when auth is added.
       onClick: async () => {
-        await dispatch(logout())
+        // Ask the server to invalidate the session, but log out client-side
+        // regardless of the result — a failed/again-401 logout must not strand
+        // the user in an "authenticated" shell. Then drop cached user data so
+        // the next account on this browser starts clean.
+        try {
+          await dispatch(logout()).unwrap()
+        } catch {
+          // ignore — we clear locally below either way
+        }
+        dispatch(clearCredentials())
+        clearClientCaches()
         navigate({ to: '/login', replace: true })
       },
     },
@@ -289,7 +299,7 @@ function AdminLayout() {
                   />
 
                   <div
-                    className="slim-scroll absolute left-0 right-0 top-full z-[1000] mt-2 max-h-80 overflow-y-auto rounded-xl border bg-white p-2 shadow-[0_6px_18px_rgba(15,23,42,0.12)] dark:border-[#303030] dark:bg-[#141414] dark:shadow-[0_6px_18px_rgba(0,0,0,0.35)]"
+                    className={`${slimScroll} absolute left-0 right-0 top-full z-[1000] mt-2 max-h-80 overflow-y-auto rounded-xl border bg-white p-2 shadow-[0_6px_18px_rgba(15,23,42,0.12)] dark:border-[#303030] dark:bg-[#141414] dark:shadow-[0_6px_18px_rgba(0,0,0,0.35)]`}
                     style={{ borderColor: colorBorderSecondary }}
                   >
                     {searchSuggestions.length ? (

@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 namespace App\Models;
 
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
@@ -9,22 +7,20 @@ use Stancl\Tenancy\Database\Concerns\HasDatabase;
 use Stancl\Tenancy\Database\Concerns\HasDomains;
 use Stancl\Tenancy\Database\Models\Tenant as BaseTenant;
 
+/**
+ * A tenant = one customer with its own database + domain(s).
+ *
+ * Wizard fields (name, email, phone, timezone, currency, language, status,
+ * logo_path, and the transient admin_email/admin_password consumed by the tenant
+ * seeder) are stored in the `data` JSON column via Stancl's virtual-column
+ * pattern — no schema change needed to add a field.
+ */
 class Tenant extends BaseTenant implements TenantWithDatabase
 {
     use HasDatabase, HasDomains;
 
-    /**
-     * Real table columns. Anything not listed here is stored in the `data` JSON
-     * column by the package; `name` and `status` are promoted to real columns
-     * (see the add_name_and_status_to_tenants_table migration) so they can be
-     * queried and indexed.
-     */
-    public static function getCustomColumns(): array
+    public function isActive(): bool
     {
-        return [
-            'id',
-            'name',
-            'status',
-        ];
+        return ($this->status ?? 'active') === 'active';
     }
 }
