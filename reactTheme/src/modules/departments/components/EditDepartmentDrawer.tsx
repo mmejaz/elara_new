@@ -1,7 +1,7 @@
-import { Button, Drawer, Form, Input } from 'antd'
-import { useEffect } from 'react'
+import { Button, Drawer, Form, Input, Select } from 'antd'
+import { useEffect, useMemo } from 'react'
 import { closeEditDrawer } from '../departmentsSlice'
-import { useUpdateDepartment } from '../queries'
+import { useDepartmentOptions, useUpdateDepartment } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { toast } from '../../../utils/toast'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
@@ -12,10 +12,31 @@ function EditDepartmentDrawer() {
   const editing = useAppSelector((state) => state.departments.editing)
   const [form] = Form.useForm()
   const mutation = useUpdateDepartment()
+  const { data: departments = [], isLoading: optionsLoading } = useDepartmentOptions()
 
   useEffect(() => {
-    if (editing) form.setFieldsValue({ name: editing.name })
+    if (editing) form.setFieldsValue({ name: editing.name, parent_id: editing.parent_id ?? undefined })
   }, [editing, form])
+
+  // A department may not be parented to itself or to any of its own descendants
+  // (that would create a cycle). Exclude the whole subtree from the picker.
+  const parentOptions = useMemo(() => {
+    if (!editing) return departments.map((d) => ({ value: d.id, label: d.name }))
+
+    const excluded = new Set<number>([editing.id])
+    let grew = true
+    while (grew) {
+      grew = false
+      for (const d of departments) {
+        if (d.parent_id != null && excluded.has(d.parent_id) && !excluded.has(d.id)) {
+          excluded.add(d.id)
+          grew = true
+        }
+      }
+    }
+
+    return departments.filter((d) => !excluded.has(d.id)).map((d) => ({ value: d.id, label: d.name }))
+  }, [editing, departments])
 
   const handleFinish = (values: Record<string, unknown>) => {
     if (!editing) return
@@ -56,6 +77,17 @@ function EditDepartmentDrawer() {
       <Form form={form} layout="vertical" requiredMark={false} onFinish={handleFinish}>
         <Form.Item label="Name" name="name" rules={[{ required: true, message: 'Enter a name' }]}>
           <Input placeholder="Enter name" size="large" autoFocus />
+        </Form.Item>
+        <Form.Item label="Parent Department" name="parent_id">
+          <Select
+            allowClear
+            showSearch
+            size="large"
+            loading={optionsLoading}
+            placeholder="None / Top Level Department"
+            optionFilterProp="label"
+            options={parentOptions}
+          />
         </Form.Item>
       </Form>
     </Drawer>

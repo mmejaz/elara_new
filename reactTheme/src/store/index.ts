@@ -16,6 +16,7 @@ import departmentsReducer from '../modules/departments/departmentsSlice'
 import designationsReducer from '../modules/designations/designationsSlice'
 import leaveTypesReducer from '../modules/leavetypes/leaveTypesSlice'
 import documentTypesReducer from '../modules/documenttypes/documentTypesSlice'
+import organizationsReducer from '../modules/organizations/organizationsSlice'
 // __MODULE_REDUCER_IMPORTS__
 
 export const store = configureStore({
@@ -35,6 +36,7 @@ export const store = configureStore({
     designations: designationsReducer,
     leaveTypes: leaveTypesReducer,
     documentTypes: documentTypesReducer,
+    organizations: organizationsReducer,
     // __MODULE_REDUCERS__
   },
 })

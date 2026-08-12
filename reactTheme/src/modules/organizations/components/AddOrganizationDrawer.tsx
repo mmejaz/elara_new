@@ -1,21 +1,20 @@
-import { Alert, Button, Drawer, Form, Input, Select } from 'antd'
-import { closeAddDrawer } from '../departmentsSlice'
-import { useCreateDepartment, useDepartmentOptions } from '../queries'
+import { Alert, Button, Drawer, Form, Input } from 'antd'
+import { closeAddDrawer } from '../organizationsSlice'
+import { useCreateOrganization } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { notify, toast } from '../../../utils/toast'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 
-function AddDepartmentDrawer() {
+function AddOrganizationDrawer() {
   const dispatch = useAppDispatch()
-  const open = useAppSelector((state) => state.departments.addDrawerOpen)
+  const open = useAppSelector((state) => state.organizations.addDrawerOpen)
   const [form] = Form.useForm()
-  const mutation = useCreateDepartment()
-  const { data: departments = [], isLoading: optionsLoading } = useDepartmentOptions()
+  const mutation = useCreateOrganization()
 
   const handleFinish = (values: Record<string, unknown>) => {
     mutation.mutate(values, {
       onSuccess: () => {
-        notify.success('Department created', 'The record was created successfully.')
+        notify.success('Organization created', 'The record was created successfully.')
         form.resetFields()
         dispatch(closeAddDrawer())
       },
@@ -35,7 +34,7 @@ function AddDepartmentDrawer() {
 
   return (
     <Drawer
-      title="Add Department"
+      title="Add Organization"
       placement="right"
       size={480}
       open={open}
@@ -65,20 +64,9 @@ function AddDepartmentDrawer() {
         <Form.Item label="Name" name="name" rules={[{ required: true, message: 'Enter a name' }]}>
           <Input placeholder="Enter name" size="large" autoFocus />
         </Form.Item>
-        <Form.Item label="Parent Department" name="parent_id">
-          <Select
-            allowClear
-            showSearch
-            size="large"
-            loading={optionsLoading}
-            placeholder="None / Top Level Department"
-            optionFilterProp="label"
-            options={departments.map((d) => ({ value: d.id, label: d.name }))}
-          />
-        </Form.Item>
       </Form>
     </Drawer>
   )
 }
 
-export default AddDepartmentDrawer
+export default AddOrganizationDrawer

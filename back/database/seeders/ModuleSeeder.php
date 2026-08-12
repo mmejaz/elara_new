@@ -60,6 +60,9 @@ class ModuleSeeder extends Seeder
                         ['name' => 'Designation', 'slug' => 'designations', 'icon' => 'FileTextOutlined', 'resourceful' => true],
                         ['name' => 'Leave Type', 'slug' => 'leavetypes', 'icon' => 'FileTextOutlined', 'resourceful' => true],
                         ['name' => 'Document Type', 'slug' => 'documenttypes', 'icon' => 'CalendarOutlined', 'resourceful' => true],
+                        // name "Organization" (singular) → permissions organization.* (matches OrganizationApi);
+                        // slug "organizations" → matches the /organizations route.
+                        ['name' => 'Organization', 'slug' => 'organizations', 'icon' => 'BankOutlined', 'resourceful' => true],
                     ],
                 ],
             ],

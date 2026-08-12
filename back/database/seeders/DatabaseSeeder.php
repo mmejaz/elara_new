@@ -30,10 +30,15 @@ class DatabaseSeeder extends Seeder
         );
 
         // Idempotent — each of these upserts by a natural key (role/permission
-        // name, module slug, setting name), so re-seeding never duplicates.
+        // name, module slug, setting name, organization name), so re-seeding
+        // never duplicates.
         $this->call(RolePermissionSeeder::class);
         $this->call(ModuleSeeder::class);
         $this->call(GlobalSettingSeeder::class);
+        // The one default Organization. Central master data — seeded here (not in
+        // ReferenceDataSeeder) so it is created once for the install and is not
+        // duplicated into every tenant database.
+        $this->call(OrganizationSeeder::class);
         $this->call(ReferenceDataSeeder::class);
     }
 }

@@ -19,6 +19,21 @@ export function useDepartments(params: ServerTableParams) {
   })
 }
 
+/**
+ * Flat list of all departments for the "Parent Department" picker. Uses the same
+ * index endpoint with a large page size; shares the ['departments'] key prefix so
+ * create/update/delete invalidations refresh it too.
+ */
+export function useDepartmentOptions() {
+  return useQuery({
+    queryKey: ['departments', 'options'],
+    queryFn: async (): Promise<Department[]> => {
+      const { data } = await apiClient.get('/departments', { params: { per_page: 1000 } })
+      return data.data
+    },
+  })
+}
+
 export function useCreateDepartment() {
   const queryClient = useQueryClient()
   return useMutation({

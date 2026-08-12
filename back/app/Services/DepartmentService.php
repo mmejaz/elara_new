@@ -14,7 +14,9 @@ class DepartmentService
 
     public function paginate(array $params): LengthAwarePaginator
     {
-        $query = Department::query();
+        // Eager-load the parent so the "Parent Department" column never triggers
+        // an N+1 across the page's rows.
+        $query = Department::query()->with('parent');
 
         if (! empty($params['search'])) {
             $query->where('name', 'like', '%' . $params['search'] . '%');
@@ -33,18 +35,24 @@ class DepartmentService
     public function create(array $data): DepartmentResource
     {
         return DB::transaction(function () use ($data) {
-            $record = Department::create(['name' => $data['name']]);
+            $record = Department::create([
+                'name'      => $data['name'],
+                'parent_id' => $data['parent_id'] ?? null,
+            ]);
 
-            return new DepartmentResource($record);
+            return new DepartmentResource($record->load('parent'));
         });
     }
 
     public function update(Department $department, array $data): DepartmentResource
     {
         return DB::transaction(function () use ($department, $data) {
-            $department->update(['name' => $data['name']]);
+            $department->update([
+                'name'      => $data['name'],
+                'parent_id' => $data['parent_id'] ?? null,
+            ]);
 
-            return new DepartmentResource($department);
+            return new DepartmentResource($department->load('parent'));
         });
     }
 

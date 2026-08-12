@@ -122,6 +122,8 @@ const LeaveTypesPage = lazy(() => import('../modules/leavetypes/pages/LeaveTypes
 const leaveTypesRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/leavetypes', component: LeaveTypesPage })
 const DocumentTypesPage = lazy(() => import('../modules/documenttypes/pages/DocumentTypesPage'))
 const documentTypesRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/documenttypes', component: DocumentTypesPage })
+const OrganizationsPage = lazy(() => import('../modules/organizations/pages/OrganizationsPage'))
+const organizationsRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/organizations', component: OrganizationsPage })
 // __MODULE_ROUTE_DEFS__
 
 const routeTree = rootRoute.addChildren([
@@ -148,6 +150,7 @@ const routeTree = rootRoute.addChildren([
     designationsRoute,
     leaveTypesRoute,
     documentTypesRoute,
+    organizationsRoute,
     // __MODULE_ROUTES__
     notFoundRoute,
   ]),
