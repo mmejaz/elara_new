@@ -44,6 +44,9 @@ class ModuleSeeder extends Seeder
             'children' => [
                 ['name' => 'Profile', 'slug' => 'profile', 'icon' => 'UserOutlined'],
                 ['name' => 'Reports', 'slug' => 'reports', 'icon' => 'FileTextOutlined'],
+                // Read-only in-app documentation reader. Not resourceful → no
+                // permissions; visible to any authenticated user.
+                ['name' => 'User Guide', 'slug' => 'user-guide', 'icon' => 'ReadOutlined'],
             ],
         ],
         [

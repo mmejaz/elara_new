@@ -40,5 +40,10 @@ class DatabaseSeeder extends Seeder
         // duplicated into every tenant database.
         $this->call(OrganizationSeeder::class);
         $this->call(ReferenceDataSeeder::class);
+
+        // Last: provision the default `localhost` tenant (its own database) so the
+        // SPA is usable straight after a fresh install. Central-only; runs
+        // synchronously. See DefaultTenantSeeder.
+        $this->call(DefaultTenantSeeder::class);
     }
 }
