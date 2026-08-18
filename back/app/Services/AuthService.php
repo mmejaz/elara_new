@@ -19,7 +19,22 @@ class AuthService
             ]);
         }
 
-        return $this->userPayload(Auth::user());
+        $user = Auth::user();
+
+        // Deactivated / blocked accounts can't sign in. Check AFTER the password
+        // so we don't reveal an account's status to someone who can't authenticate.
+        if (! $user->isActive()) {
+            Auth::guard('web')->logout();
+
+            $label = $user->status === \App\Models\User::STATUS_BLOCKED ? 'blocked' : 'deactivated';
+            $reason = $user->status_reason ? " Reason: {$user->status_reason}" : '';
+
+            throw ValidationException::withMessages([
+                'email' => ["Your account has been {$label}.{$reason}"],
+            ]);
+        }
+
+        return $this->userPayload($user);
     }
 
     public function logout(): void
@@ -101,6 +116,22 @@ class AuthService
             // Tenant-level config the SPA needs up front — drives how the
             // department form behaves (shared / scoped / flexible).
             'department_mode' => \App\Support\DepartmentMode::current(),
+            // When a Super Admin is viewing the app AS another user, the SPA
+            // shows a "return to your account" banner. `impersonator` is the real
+            // account's name so the banner can say who you'll return to.
+            'impersonation'   => $this->impersonationState(),
+        ];
+    }
+
+    /** Current impersonation status, from lab404/laravel-impersonate. */
+    private function impersonationState(): array
+    {
+        $manager = app(\Lab404\Impersonate\Services\ImpersonateManager::class);
+        $active = $manager->isImpersonating();
+
+        return [
+            'active'       => $active,
+            'impersonator' => $active ? $manager->getImpersonator()?->name : null,
         ];
     }
 }

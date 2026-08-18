@@ -8,7 +8,7 @@ import { store } from '../store'
 import { ToastHost } from '../utils/toast'
 import { useAppSelector } from '../store/hooks'
 import { useTenantVerification } from '../hooks/useTenantVerification'
-import { isCentralHost } from '../utils/tenantUtils'
+import { centralOrigin, isCentralHost } from '../utils/tenantUtils'
 
 // Maps the `fontScale` UI setting onto a concrete AntD base font size.
 const FONT_SIZE_BY_SCALE = { compact: 13, comfortable: 14, large: 16 }
@@ -57,7 +57,7 @@ function ThemeProvider({ children }) {
  * Non-existent or unreachable tenants are redirected to central domain.
  */
 function TenantVerificationProvider({ children }) {
-  const { status, isLoading } = useTenantVerification()
+  const { status, isLoading, redirectHost } = useTenantVerification()
   const isCentral = isCentralHost()
 
   // For tenant subdomains, MUST verify before rendering anything
@@ -82,8 +82,10 @@ function TenantVerificationProvider({ children }) {
     if (status === 'not-found' || status === 'error') {
       // Tenant doesn't exist OR verification failed - redirect to central domain
       // This prevents non-existent/invalid tenants from ever showing login page
+      // replace() rather than href so the dead subdomain doesn't sit in history
+      // and send the user straight back here on Back.
       setTimeout(() => {
-        window.location.href = 'http://localhost:5173'
+        window.location.replace(centralOrigin(redirectHost))
       }, 800)
 
       return (

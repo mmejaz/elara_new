@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Lab404\Impersonate\Models\Impersonate;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
@@ -19,7 +20,30 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasApiTokens, Notifiable, HasRoles, HasFiles;
+    use HasFactory, HasApiTokens, Notifiable, HasRoles, HasFiles, Impersonate;
+
+    /** Account status values. Anything other than ACTIVE blocks login. */
+    public const STATUS_ACTIVE = 'active';
+    public const STATUS_DEACTIVATED = 'deactivated';
+    public const STATUS_BLOCKED = 'blocked';
+
+    /** True when the account may sign in. */
+    public function isActive(): bool
+    {
+        return ($this->status ?? self::STATUS_ACTIVE) === self::STATUS_ACTIVE;
+    }
+
+    /** Only a Super Admin may impersonate — the package checks this in take(). */
+    public function canImpersonate(): bool
+    {
+        return $this->hasRole('Super Admin');
+    }
+
+    /** A Super Admin can't be impersonated (no impersonating an equal). */
+    public function canBeImpersonated(): bool
+    {
+        return ! $this->hasRole('Super Admin');
+    }
 
     /**
      * Get the attributes that should be cast.
@@ -32,10 +56,15 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'settings' => 'array',
+            'status_changed_at' => 'datetime',
         ];
     }
 
-    /** Organizations this user is assigned to (empty for a Super Admin, who sees all). */
+    /**
+     * Organizations this user belongs to. Every user is assigned at least one
+     * (the tenant owner included). A Super Admin still SEES all organizations
+     * regardless of assignment — see seesAllOrganizations().
+     */
     public function organizations(): BelongsToMany
     {
         return $this->belongsToMany(Organization::class);

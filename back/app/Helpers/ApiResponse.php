@@ -44,6 +44,32 @@ class ApiResponse
         ], $status);
     }
 
+    /**
+     * A failure the client resolves by navigating somewhere else. Kept in the
+     * same envelope as error() — `success` is still false and the status is a
+     * real error code — because a 3xx would be followed by XHR transparently,
+     * hiding the failure from the SPA.
+     *
+     * `host` is the bare hostname, for clients that keep their own scheme and
+     * port and swap only the host.
+     */
+    public static function redirect(
+        string $url,
+        string $host,
+        string $message,
+        int $status = Response::HTTP_NOT_FOUND
+    ): JsonResponse {
+        return response()->json([
+            'success' => false,
+            'message' => $message,
+            'data'    => [
+                'redirect_url' => $url,
+                'central_host' => $host,
+            ],
+            'errors'  => null,
+        ], $status);
+    }
+
     public static function error(
         string $message,
         mixed $errors = null,

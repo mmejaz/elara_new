@@ -7,10 +7,14 @@ export interface UserSettings {
   profile_public: boolean
 }
 
+export type UserStatus = 'active' | 'deactivated' | 'blocked'
+
 export interface User {
   id: number
   name: string
   email: string
+  status?: UserStatus
+  status_reason?: string | null
   phone: string | null
   designation: string | null
   country: string | null

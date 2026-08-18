@@ -2,6 +2,9 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import apiClient from '../../services/apiClient'
 import type { ServerTableParams } from '../../components/DataTable'
 import type { User } from '../../types/models'
+import { useAppDispatch } from '../../store/hooks'
+import { fetchUser } from '../../store/authSlice'
+import { clearClientCaches } from '../../utils/session'
 
 interface Paginated<T> {
   data: T[]
@@ -100,6 +103,53 @@ export function useDeleteUser() {
     mutationFn: (id: number) => apiClient.delete(`/users/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users'] })
+      queryClient.invalidateQueries({ queryKey: ['users-paginated'] })
+      queryClient.invalidateQueries({ queryKey: ['users-stats'] })
+    },
+  })
+}
+
+// ─── Impersonation ───────────────────────────────────────────────────────────
+// Starting/stopping swaps the authenticated user on the server. Clearing all
+// client caches + refetching the current user makes the whole app reload as the
+// new identity (sidebar, lists, profile), rather than showing the previous
+// user's cached data.
+
+export function useImpersonate() {
+  const queryClient = useQueryClient()
+  const dispatch = useAppDispatch()
+
+  return useMutation({
+    mutationFn: (userId: number) => apiClient.post(`/users/${userId}/impersonate`),
+    onSuccess: async () => {
+      clearClientCaches()
+      queryClient.clear()
+      await dispatch(fetchUser())
+    },
+  })
+}
+
+export function useStopImpersonating() {
+  const queryClient = useQueryClient()
+  const dispatch = useAppDispatch()
+
+  return useMutation({
+    mutationFn: () => apiClient.post('/impersonate/stop'),
+    onSuccess: async () => {
+      clearClientCaches()
+      queryClient.clear()
+      await dispatch(fetchUser())
+    },
+  })
+}
+
+export function useUpdateUserStatus() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({ id, status, reason }: { id: number; status: string; reason?: string }) =>
+      apiClient.post(`/users/${id}/status`, { status, reason }),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['users-paginated'] })
       queryClient.invalidateQueries({ queryKey: ['users-stats'] })
     },

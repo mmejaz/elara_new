@@ -5,12 +5,20 @@ import type { AuthUser } from '../types/models'
 
 export type DepartmentMode = 'shared' | 'scoped' | 'flexible'
 
+export interface ImpersonationState {
+  active: boolean
+  impersonator: string | null
+}
+
 interface AuthPayload {
   user: AuthUser
   roles: string[]
   permissions: string[]
   department_mode?: DepartmentMode
+  impersonation?: ImpersonationState
 }
+
+const NO_IMPERSONATION: ImpersonationState = { active: false, impersonator: null }
 
 interface LoginRejection {
   message: string
@@ -23,6 +31,8 @@ interface AuthState {
   permissions: string[]
   /** Tenant-level department behavior — drives the department form. */
   departmentMode: DepartmentMode
+  /** Set when a Super Admin is viewing the app as another user. */
+  impersonation: ImpersonationState
   isAuthenticated: boolean
   loading: boolean
   error: string | null
@@ -73,6 +83,7 @@ const initialState: AuthState = {
   roles: [],
   permissions: [],
   departmentMode: 'flexible',
+  impersonation: NO_IMPERSONATION,
   isAuthenticated: false,
   loading: false,
   error: null,
@@ -111,6 +122,7 @@ const authSlice = createSlice({
         state.roles = action.payload.roles ?? []
         state.permissions = action.payload.permissions ?? []
         state.departmentMode = action.payload.department_mode ?? 'flexible'
+        state.impersonation = action.payload.impersonation ?? NO_IMPERSONATION
         state.isAuthenticated = true
       })
       .addCase(login.rejected, (state, action) => {
@@ -129,6 +141,7 @@ const authSlice = createSlice({
         state.roles = action.payload.roles ?? []
         state.permissions = action.payload.permissions ?? []
         state.departmentMode = action.payload.department_mode ?? 'flexible'
+        state.impersonation = action.payload.impersonation ?? NO_IMPERSONATION
         state.isAuthenticated = true
         state.checked = true
       })

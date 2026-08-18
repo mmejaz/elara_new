@@ -8,5 +8,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/users/stats', [UserController::class, 'stats'])->middleware('permission:users.view');
     Route::post('/users', [UserController::class, 'store'])->middleware('permission:users.create');
     Route::put('/users/{user}', [UserController::class, 'update'])->middleware('permission:users.edit');
+    Route::post('/users/{user}/status', [UserController::class, 'updateStatus'])->middleware('permission:users.edit');
     Route::delete('/users/{user}', [UserController::class, 'destroy'])->middleware('permission:users.delete');
 });

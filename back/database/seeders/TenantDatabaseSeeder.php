@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Role;
@@ -25,6 +26,9 @@ class TenantDatabaseSeeder extends Seeder
             ModuleSeeder::class,
             GlobalSettingSeeder::class,
             ReferenceDataSeeder::class,
+            // Every tenant needs at least one organization or the OrganizationSwitcher
+            // has nothing to select on first login.
+            OrganizationSeeder::class,
         ]);
 
         // First admin for this tenant, from the creation wizard.
@@ -53,6 +57,12 @@ class TenantDatabaseSeeder extends Seeder
                     ->whereIn('guard_name', ['web', 'sanctum'])
                     ->get()
             );
+
+            // Every user must belong to at least one organization — the tenant
+            // owner included. OrganizationSeeder (called above) guarantees the
+            // Default Organization exists; attach it without removing any others.
+            $defaultOrg = Organization::firstOrCreate(['name' => 'Default Organization']);
+            $admin->organizations()->syncWithoutDetaching([$defaultOrg->id]);
         }
     }
 }

@@ -7,6 +7,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.3",
+        "lab404/laravel-impersonate": "^1.7",
         "laravel/ai": "*",
         "laravel/framework": "^13.8",
         "laravel/mcp": "*",

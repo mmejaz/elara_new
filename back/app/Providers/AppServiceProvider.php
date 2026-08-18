@@ -77,6 +77,8 @@ class AppServiceProvider extends ServiceProvider
         // passwords are unaffected.
         Password::defaults(fn () => Password::min(8)->mixedCase()->numbers()->symbols());
 
+        $this->auditImpersonation();
+
         // In production, force every generated URL (redirects, signed URLs,
         // assets) to HTTPS so nothing is downgraded behind a TLS-terminating
         // proxy. Skipped locally so http://localhost keeps working.
@@ -85,6 +87,37 @@ class AppServiceProvider extends ServiceProvider
         }
 
         $this->configureRateLimiters();
+    }
+
+    /**
+     * Audit trail for impersonation — logs who acted as whom, and when, on both
+     * start (TakeImpersonation) and end (LeaveImpersonation).
+     */
+    private function auditImpersonation(): void
+    {
+        \Illuminate\Support\Facades\Event::listen(
+            \Lab404\Impersonate\Events\TakeImpersonation::class,
+            function ($event): void {
+                \Illuminate\Support\Facades\Log::info('impersonation.started', [
+                    'tenant'          => function_exists('tenant') ? optional(tenant())->id : null,
+                    'impersonator_id' => $event->impersonator->getKey(),
+                    'impersonator'    => $event->impersonator->email ?? null,
+                    'impersonated_id' => $event->impersonated->getKey(),
+                    'impersonated'    => $event->impersonated->email ?? null,
+                ]);
+            },
+        );
+
+        \Illuminate\Support\Facades\Event::listen(
+            \Lab404\Impersonate\Events\LeaveImpersonation::class,
+            function ($event): void {
+                \Illuminate\Support\Facades\Log::info('impersonation.ended', [
+                    'tenant'          => function_exists('tenant') ? optional(tenant())->id : null,
+                    'impersonator_id' => $event->impersonator->getKey(),
+                    'impersonated_id' => $event->impersonated->getKey(),
+                ]);
+            },
+        );
     }
 
     /**

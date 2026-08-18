@@ -22,6 +22,15 @@ return [
     ],
 
     /**
+     * Where a visitor is sent when the host names a tenant that doesn't exist.
+     *
+     * This is the SPA origin — the app, not the API. Unset falls back to the
+     * first central_domains entry on the scheme and port of FRONTEND_URL, which
+     * is right for the split dev setup (Vite on :5173, API on :8000).
+     */
+    'central_url' => env('CENTRAL_URL'),
+
+    /**
      * Tenancy bootstrappers are executed when tenancy is initialized.
      * Their responsibility is making Laravel features tenant-aware.
      *

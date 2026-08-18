@@ -2,6 +2,7 @@
 
 use App\Constants\ResponseMessage;
 use App\Helpers\ApiResponse;
+use App\Support\CentralDomain;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -12,7 +13,7 @@ use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Validation\ValidationException;
-use Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentified;
+use Stancl\Tenancy\Contracts\TenantCouldNotBeIdentifiedException;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -66,6 +67,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role'       => \Spatie\Permission\Middleware\RoleMiddleware::class,
             'central'    => \App\Http\Middleware\PreventAccessFromTenantDomains::class,
+            // Forbids a route while impersonating (clean 403 JSON, not the
+            // package's 302 redirect) — stops an impersonator from changing the
+            // target user's credentials/profile.
+            'no.impersonation' => \App\Http\Middleware\AbortIfImpersonating::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -75,6 +80,31 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Normalize every API error into the standard ApiResponse envelope, so
         // framework-thrown exceptions match controller responses one-for-one.
+        // An unknown tenant domain is not an error the visitor can act on, so send
+        // them to the central app rather than showing a failure page. Registered
+        // ahead of the API envelope handler below because it also covers web
+        // routes, which that handler bails out of.
+        $exceptions->render(function (TenantCouldNotBeIdentifiedException $e, Request $request) {
+            // A browser asking for a page belongs on the SPA, not on the API
+            // origin — the backend's own `/` is tenant-only (routes/tenant.php)
+            // and 404s on a central host. In production both resolve to the
+            // same origin, so this only matters for the split dev setup.
+            if (! $request->is('api/*')) {
+                return redirect()->away(CentralDomain::url());
+            }
+
+            // XHR follows a 302 transparently, so the SPA would receive central's
+            // response (typically a 401) and read it as an ordinary auth failure.
+            // Return the envelope instead and let the client navigate — see the
+            // response interceptor in reactTheme/src/store/index.ts.
+            return ApiResponse::redirect(
+                CentralDomain::url(),
+                CentralDomain::host(),
+                'Tenant not found',
+                Response::HTTP_NOT_FOUND,
+            );
+        });
+
         $exceptions->render(function (\Throwable $e, Request $request) {
             if (! $request->is('api/*')) {
                 return null; // let web/other handling proceed
@@ -111,12 +141,8 @@ return Application::configure(basePath: dirname(__DIR__))
                     null,
                     Response::HTTP_TOO_MANY_REQUESTS,
                 ),
-                // Tenant not found (accessing invalid subdomain)
-                $e instanceof TenantCouldNotBeIdentified => ApiResponse::error(
-                    'Tenant not found',
-                    null,
-                    Response::HTTP_NOT_FOUND,
-                ),
+                // Tenant identification failures are handled by the dedicated
+                // renderer above, which redirects instead of erroring.
                 $e instanceof ModelNotFoundException,
                 $e instanceof NotFoundHttpException => ApiResponse::error(
                     ResponseMessage::NOT_FOUND,

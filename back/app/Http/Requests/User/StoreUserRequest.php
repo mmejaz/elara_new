@@ -22,7 +22,8 @@ class StoreUserRequest extends FormRequest
             'role'     => ['required', 'string', 'exists:roles,name', new AssignableRole],
             // Organizations this user may access (ignored for a Super Admin, who
             // sees all). Empty = assigned to none.
-            'organization_ids'   => ['nullable', 'array'],
+            // Every user must belong to at least one organization.
+            'organization_ids'   => ['required', 'array', 'min:1'],
             'organization_ids.*' => ['integer', 'exists:organizations,id'],
         ];
     }
@@ -38,6 +39,8 @@ class StoreUserRequest extends FormRequest
             'password.min'      => 'Password must be at least 8 characters.',
             'role.required'     => 'Please select a role.',
             'role.exists'       => 'The selected role does not exist.',
+            'organization_ids.required' => 'Please assign at least one organization.',
+            'organization_ids.min'      => 'Please assign at least one organization.',
         ];
     }
 }

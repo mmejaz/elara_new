@@ -10,6 +10,9 @@ import { isCentralHost } from '../utils/tenantUtils'
 export const useTenantVerification = () => {
   const [status, setStatus] = useState<'loading' | 'verified' | 'not-found' | 'error'>('loading')
   const [tenantInfo, setTenantInfo] = useState<{ id: string; name: string } | null>(null)
+  // Where to send the visitor when the tenant doesn't exist. The backend returns
+  // this next to the 404 so the central host isn't duplicated in the client.
+  const [redirectHost, setRedirectHost] = useState<string | null>(null)
 
   useEffect(() => {
     const verifyTenant = async () => {
@@ -19,8 +22,13 @@ export const useTenantVerification = () => {
         return
       }
 
+      // Declared outside the try so the catch below can still read it — when it
+      // was scoped to the try block, every failure threw a ReferenceError here
+      // and left status stuck on 'loading', hanging the app on its spinner
+      // instead of redirecting.
+      const startTime = performance.now()
+
       try {
-        const startTime = performance.now()
         const response = await apiClient.get('/verify-tenant', {
           timeout: 8000, // 8 second timeout for tenant verification
         })
@@ -35,6 +43,8 @@ export const useTenantVerification = () => {
       } catch (error: any) {
         const duration = (performance.now() - startTime).toFixed(0)
         console.error(`[Tenant Verification] Error after ${duration}ms:`, error.response?.status, error.message)
+
+        setRedirectHost(error.response?.data?.data?.central_host ?? null)
 
         // 404 means tenant not found - block access
         if (error.response?.status === 404) {
@@ -51,5 +61,5 @@ export const useTenantVerification = () => {
     verifyTenant()
   }, [])
 
-  return { status, tenantInfo, isLoading: status === 'loading' }
+  return { status, tenantInfo, redirectHost, isLoading: status === 'loading' }
 }

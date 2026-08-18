@@ -23,7 +23,8 @@ class UpdateUserRequest extends FormRequest
             'email'    => ['required', 'email', 'unique:users,email,' . $id],
             'password' => ['nullable', 'string', Password::defaults()],
             'role'     => ['required', 'string', 'exists:roles,name', new AssignableRole],
-            'organization_ids'   => ['nullable', 'array'],
+            // Every user must belong to at least one organization.
+            'organization_ids'   => ['required', 'array', 'min:1'],
             'organization_ids.*' => ['integer', 'exists:organizations,id'],
         ];
     }
@@ -33,6 +34,8 @@ class UpdateUserRequest extends FormRequest
         return [
             'email.unique' => 'This email is already taken.',
             'role.exists'  => 'The selected role is invalid.',
+            'organization_ids.required' => 'Please assign at least one organization.',
+            'organization_ids.min'      => 'Please assign at least one organization.',
         ];
     }
 }

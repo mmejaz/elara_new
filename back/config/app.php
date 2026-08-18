@@ -56,6 +56,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Frontend URL
+    |--------------------------------------------------------------------------
+    |
+    | Origin the SPA is served from. Shares the FRONTEND_URL env var with the
+    | CORS allow-list, so the two can't drift apart. Used to build the URL a
+    | browser is sent to when it asks for a tenant that doesn't exist.
+    |
+    */
+
+    'frontend_url' => env('FRONTEND_URL', 'http://localhost:5173'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

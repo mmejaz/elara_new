@@ -83,6 +83,24 @@ class UserService
         });
     }
 
+    /**
+     * Change a user's account status (active / deactivated / blocked), recording
+     * the reason and who did it. Set via direct assignment — not mass-assignment —
+     * so status can never be flipped through the ordinary user-update endpoint.
+     */
+    public function setStatus(User $user, string $status, ?string $reason, User $actor): UserResource
+    {
+        return DB::transaction(function () use ($user, $status, $reason, $actor) {
+            $user->status = $status;
+            $user->status_reason = $status === User::STATUS_ACTIVE ? null : $reason;
+            $user->status_changed_at = now();
+            $user->status_changed_by = $actor->getKey();
+            $user->save();
+
+            return new UserResource($user->load(['roles', 'organizations']));
+        });
+    }
+
     public function delete(User $user): void
     {
         DB::transaction(fn () => $user->delete());

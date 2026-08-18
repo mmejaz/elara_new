@@ -1,6 +1,7 @@
 import { configureStore } from '@reduxjs/toolkit'
 import apiClient from '../services/apiClient'
 import { clearClientCaches } from '../utils/session'
+import { centralOrigin } from '../utils/tenantUtils'
 import authReducer, { clearCredentials } from './authSlice'
 import uiReducer, { STORAGE_KEY, pickPersistedSettings } from './uiSlice'
 import orgReducer, { ORG_STORAGE_KEY } from './orgSlice'
@@ -89,6 +90,27 @@ store.subscribe(() => {
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    // The tenant went away mid-session (deleted while someone was logged in);
+    // TenantVerificationProvider only covers the check at load. The backend
+    // can't answer with a 302 here — XHR would follow it and we'd read central's
+    // 401 as an ordinary logged-out response — so it returns a 404 carrying the
+    // central host and we navigate ourselves.
+    const redirectHost = error?.response?.data?.data?.central_host
+
+    if (
+      error?.response?.status === 404 &&
+      typeof redirectHost === 'string' &&
+      redirectHost &&
+      window.location.hostname !== redirectHost
+    ) {
+      clearClientCaches()
+      window.location.replace(centralOrigin(redirectHost))
+
+      // Leave the promise unsettled: navigation is underway and rejecting here
+      // would flash an error toast on the page being torn down.
+      return new Promise(() => {})
+    }
+
     if (error?.response?.status === 401 && store.getState().auth.isAuthenticated) {
       store.dispatch(clearCredentials())
       clearClientCaches()

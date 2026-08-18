@@ -10,6 +10,7 @@ import AdminLayout from '../layouts/AdminLayout'
 import AuthLayout from '../layouts/AuthLayout'
 import AuthGuard from '../components/AuthGuard'
 import NotFoundPage from '../components/NotFoundPage'
+import { validateTableSearch } from '../components/DataTable'
 import { isCentralHost } from '../utils/tenant'
 
 // Lazy-load every page so each route is its own chunk. Pages live inside their
@@ -95,7 +96,7 @@ const indexRoute = createRoute({
 const dashboardRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/dashboard', component: DashboardPage })
 const analyticsRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/analytics', component: AnalyticsPage })
 const attendanceRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/attendance', component: AttendancePage })
-const usersRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/users', component: UsersPage })
+const usersRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/users', component: UsersPage, validateSearch: validateTableSearch })
 const rolesRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/roles', component: RolesPage })
 const permissionsRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/permissions', component: PermissionsPage })
 const modulesRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/modules', component: ModulesPage })

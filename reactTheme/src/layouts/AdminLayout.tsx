@@ -26,6 +26,8 @@ import type { InputRef, MenuProps } from 'antd'
 import { Suspense, useMemo, useRef, useState } from 'react'
 import { Outlet, useLocation, useNavigate } from '@tanstack/react-router'
 import ErrorBoundary from '../components/ErrorBoundary'
+import ImpersonationBanner from '../components/ImpersonationBanner'
+import ModuleAccessGuard from '../components/ModuleAccessGuard'
 import OrganizationSwitcher from '../components/OrganizationSwitcher'
 import Preloader from '../components/Preloader'
 import SettingsDrawer from '../components/SettingsDrawer'
@@ -236,6 +238,7 @@ function AdminLayout() {
       </Drawer>
 
       <Layout>
+        <ImpersonationBanner />
         <Header
           className={`z-10 border-b ${settings.stickyHeader ? 'sticky top-0' : ''}`}
           style={{
@@ -457,7 +460,10 @@ function AdminLayout() {
             {/* resetKey clears a caught error when the user navigates away. */}
             <ErrorBoundary resetKey={location.pathname}>
               <Suspense fallback={<Preloader />}>
-                <Outlet />
+                {/* Blocks direct-URL access to modules hidden in Managed Modules. */}
+                <ModuleAccessGuard>
+                  <Outlet />
+                </ModuleAccessGuard>
               </Suspense>
             </ErrorBoundary>
           </div>

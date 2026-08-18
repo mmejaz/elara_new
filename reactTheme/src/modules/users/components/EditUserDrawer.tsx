@@ -17,7 +17,6 @@ function EditUserDrawer() {
   const roleOptions = roles.map((role: string) => ({ value: role, label: role }))
   const { data: organizations = [], isLoading: orgsLoading } = useOrganizationOptions()
   const mutation = useUpdateUser()
-  const selectedRoleName = Form.useWatch('role', form)
 
   useEffect(() => {
     if (open && editingUser) {
@@ -116,24 +115,22 @@ function EditUserDrawer() {
           />
         </Form.Item>
 
-        {selectedRoleName !== 'Super Admin' && (
-          <Form.Item
-            label="Organizations"
-            name="organization_ids"
-            tooltip="Which organizations this user can access. Super Admins see all, so this is hidden for them."
-          >
-            <Select
-              mode="multiple"
-              allowClear
-              loading={orgsLoading}
-              options={organizations.map((o) => ({ value: o.id, label: o.name }))}
-              placeholder="Assign organizations (blank = none)"
-              size="large"
-              showSearch
-              optionFilterProp="label"
-            />
-          </Form.Item>
-        )}
+        <Form.Item
+          label="Organizations"
+          name="organization_ids"
+          rules={[{ required: true, message: 'Assign at least one organization' }]}
+          tooltip="Every user must belong to at least one organization. A Super Admin still sees all organizations regardless of assignment."
+        >
+          <Select
+            mode="multiple"
+            loading={orgsLoading}
+            options={organizations.map((o) => ({ value: o.id, label: o.name }))}
+            placeholder="Assign at least one organization"
+            size="large"
+            showSearch
+            optionFilterProp="label"
+          />
+        </Form.Item>
       </Form>
     </Drawer>
   )

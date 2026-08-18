@@ -1,25 +1,34 @@
 import {
+  ApartmentOutlined,
+  CheckCircleOutlined,
   DeleteOutlined,
   EditOutlined,
+  MoreOutlined,
+  PauseCircleOutlined,
   PlusOutlined,
   SafetyCertificateOutlined,
+  StopOutlined,
   TeamOutlined,
   UserAddOutlined,
   UserOutlined,
+  UserSwitchOutlined,
 } from '@ant-design/icons'
-import { Avatar, Button, Popconfirm, Row, Space, Tag, Tooltip, Typography } from 'antd'
+import { App, Avatar, Button, Dropdown, Row, Space, Tag, Tooltip, Typography } from 'antd'
+import type { MenuProps } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import PageHeader from '../../../components/PageHeader'
 import StatCard from '../../../components/StatCard'
-import DataTable, { useColumnToggle, useServerTable } from '../../../components/DataTable'
+import DataTable, { useColumnToggle, useUrlTable } from '../../../components/DataTable'
 import AddUserDrawer from '../components/AddUserDrawer'
 import EditUserDrawer from '../components/EditUserDrawer'
-import { useUsersPaginated, useUserStats, useRoles, useDeleteUser } from '../queries'
+import { useUsersPaginated, useUserStats, useRoles, useDeleteUser, useImpersonate, useUpdateUserStatus } from '../queries'
+import UserStatusModal from '../components/UserStatusModal'
 import { openAddDrawer, openEditDrawer } from '../usersSlice'
 import { hexToRgba } from '../../../utils/color'
 import { toast } from '../../../utils/toast'
+import { serverMessage } from '../../../utils/formErrors'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 import type { User } from '../../../types/models'
 
@@ -27,13 +36,25 @@ const { Text } = Typography
 
 function UsersPage() {
   const dispatch = useAppDispatch()
+  const { modal } = App.useApp()
   const primaryColor = useAppSelector((state) => state.ui.primaryColor)
-  const table = useServerTable(15, 'Search users by name, email, or role…')
+  const currentUserId = useAppSelector((state) => state.auth.user?.id)
+  const canImpersonate = useAppSelector((state) => state.auth.roles.includes('Super Admin'))
+  const canManageStatus = useAppSelector((state) => state.auth.permissions.includes('users.edit'))
+  const table = useUrlTable(15, 'Search users by name, email, or role…')
+
+  // Deactivate/block open a reason modal; reactivate is a direct action.
+  const [statusTarget, setStatusTarget] = useState<{
+    user: User
+    status: 'deactivated' | 'blocked'
+  } | null>(null)
+  const updateStatus = useUpdateUserStatus()
 
   const { data, isFetching } = useUsersPaginated(table.params)
   const { data: stats } = useUserStats()
   const { data: roles = [] } = useRoles()
   const removeUser = useDeleteUser()
+  const impersonate = useImpersonate()
 
   const handleDelete = (id: number) =>
     removeUser.mutate(id, {
@@ -88,6 +109,41 @@ function UsersPage() {
           ),
       },
       {
+        title: 'Status',
+        dataIndex: 'status',
+        width: 130,
+        render: (status: string = 'active', user) => {
+          const map = {
+            active: { color: 'success', label: 'Active' },
+            deactivated: { color: 'warning', label: 'Deactivated' },
+            blocked: { color: 'error', label: 'Blocked' },
+          } as const
+          const s = map[status as keyof typeof map] ?? map.active
+          const tag = <Tag color={s.color}>{s.label}</Tag>
+          return user.status_reason ? (
+            <Tooltip title={user.status_reason}>{tag}</Tooltip>
+          ) : (
+            tag
+          )
+        },
+      },
+      {
+        title: 'Organizations',
+        dataIndex: 'organizations',
+        render: (orgs: { id: number; name: string }[] | undefined) =>
+          orgs?.length ? (
+            <Space size={[4, 4]} wrap>
+              {orgs.map((org) => (
+                <Tag key={org.id} color="cyan" icon={<ApartmentOutlined />}>
+                  {org.name}
+                </Tag>
+              ))}
+            </Space>
+          ) : (
+            <Text type="secondary">—</Text>
+          ),
+      },
+      {
         title: 'Created',
         dataIndex: 'created_at',
         sorter: true,
@@ -96,29 +152,100 @@ function UsersPage() {
       {
         title: 'Actions',
         key: 'actions',
-        width: 110,
-        render: (_, user) => (
-          <Space>
-            <Tooltip title="Edit user">
-              <Button
-                type="text"
-                icon={<EditOutlined />}
-                onClick={() => dispatch(openEditDrawer(user))}
-              />
-            </Tooltip>
-            <Popconfirm
-              title="Delete this user?"
-              okText="Delete"
-              okButtonProps={{ danger: true }}
-              onConfirm={() => handleDelete(user.id)}
-            >
-              <Button type="text" danger icon={<DeleteOutlined />} />
-            </Popconfirm>
-          </Space>
-        ),
+        width: 90,
+        align: 'center',
+        render: (_, user) => {
+          // Same guards as before: never act on yourself or a Super Admin.
+          const canTarget = user.id !== currentUserId && !user.roles?.includes('Super Admin')
+          const isActive = (user.status ?? 'active') === 'active'
+          const items: MenuProps['items'] = []
+
+          if (canImpersonate && canTarget) {
+            items.push({
+              key: 'impersonate',
+              icon: <UserSwitchOutlined />,
+              label: 'Impersonate',
+              onClick: () =>
+                impersonate.mutate(user.id, {
+                  onSuccess: () => toast.success(`You are now viewing as ${user.name}.`),
+                  onError: (error) =>
+                    toast.error(serverMessage(error, 'Unable to impersonate this user')),
+                }),
+            })
+          }
+
+          if (canManageStatus && canTarget) {
+            if (isActive) {
+              items.push(
+                {
+                  key: 'deactivate',
+                  icon: <PauseCircleOutlined />,
+                  label: 'Deactivate',
+                  onClick: () => setStatusTarget({ user, status: 'deactivated' }),
+                },
+                {
+                  key: 'block',
+                  icon: <StopOutlined />,
+                  label: 'Block',
+                  danger: true,
+                  onClick: () => setStatusTarget({ user, status: 'blocked' }),
+                },
+              )
+            } else {
+              items.push({
+                key: 'reactivate',
+                icon: <CheckCircleOutlined />,
+                label: 'Reactivate',
+                onClick: () =>
+                  modal.confirm({
+                    title: `Reactivate ${user.name}?`,
+                    okText: 'Reactivate',
+                    onOk: () =>
+                      updateStatus.mutate(
+                        { id: user.id, status: 'active' },
+                        {
+                          onSuccess: () => toast.success(`${user.name} has been reactivated.`),
+                          onError: (error) =>
+                            toast.error(serverMessage(error, 'Unable to reactivate')),
+                        },
+                      ),
+                  }),
+              })
+            }
+          }
+
+          items.push(
+            {
+              key: 'edit',
+              icon: <EditOutlined />,
+              label: 'Edit',
+              onClick: () => dispatch(openEditDrawer(user)),
+            },
+            { type: 'divider' },
+            {
+              key: 'delete',
+              icon: <DeleteOutlined />,
+              label: 'Delete',
+              danger: true,
+              onClick: () =>
+                modal.confirm({
+                  title: 'Delete this user?',
+                  okText: 'Delete',
+                  okButtonProps: { danger: true },
+                  onOk: () => handleDelete(user.id),
+                }),
+            },
+          )
+
+          return (
+            <Dropdown menu={{ items }} trigger={['click']} placement="bottomRight">
+              <Button type="text" icon={<MoreOutlined />} aria-label="Row actions" />
+            </Dropdown>
+          )
+        },
       },
     ],
-    [dispatch, primaryColor],
+    [dispatch, primaryColor, modal, canImpersonate, canManageStatus, currentUserId, impersonate.mutate, updateStatus.mutate, handleDelete],
   )
 
   const { visibleColumns, control } = useColumnToggle(columns)
@@ -168,6 +295,11 @@ function UsersPage() {
 
       <AddUserDrawer />
       <EditUserDrawer />
+      <UserStatusModal
+        user={statusTarget?.user ?? null}
+        status={statusTarget?.status ?? null}
+        onClose={() => setStatusTarget(null)}
+      />
     </Space>
   )
 }

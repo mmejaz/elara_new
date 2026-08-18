@@ -2,6 +2,7 @@ import { PushpinOutlined, SettingOutlined, SearchOutlined } from '@ant-design/ic
 import { Button, Card, Checkbox, Input, Popover, Space, Table, Tabs, Tooltip } from 'antd'
 import type { TableProps } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
+import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
 
 export interface ServerTableParams {
@@ -71,6 +72,143 @@ export function useServerTable(
   }
 
   return { params, page, pageSize, search, searchInput, onChange }
+}
+
+// ─── URL-synced table state ────────────────────────────────────────────────────
+
+const DEFAULT_PER_PAGE = 15
+
+/** The table state we mirror into the route's query string. `q` is the search
+ *  term (kept short for a tidy URL); it maps to the API's `search` param. */
+export interface TableSearch {
+  page: number
+  per_page: number
+  q: string
+  sort_by?: string
+  sort_dir?: 'asc' | 'desc'
+}
+
+// Coerce raw URL params into a SPARSE, sanitized search: defaults and malformed
+// values are dropped so the query string stays tidy. TanStack Router serializes
+// exactly what this returns, so a pristine table lives at a bare `/users` rather
+// than `/users?page=1&per_page=15&q=`. The hook fills the defaults back in on read.
+function sparseTableSearch(raw: Record<string, unknown>, defaultPageSize: number): Partial<TableSearch> {
+  const out: Partial<TableSearch> = {}
+  const page = Number(raw.page)
+  if (Number.isFinite(page) && page > 1) out.page = Math.floor(page) // page 1 is the default → omit
+  const perPage = Number(raw.per_page)
+  if (Number.isFinite(perPage) && perPage >= 1 && Math.floor(perPage) !== defaultPageSize) {
+    out.per_page = Math.floor(perPage)
+  }
+  if (typeof raw.q === 'string' && raw.q) out.q = raw.q
+  const sortBy = typeof raw.sort_by === 'string' && raw.sort_by ? raw.sort_by : undefined
+  if (sortBy) {
+    out.sort_by = sortBy
+    // A direction without a column is meaningless — only keep the pair.
+    if (raw.sort_dir === 'asc' || raw.sort_dir === 'desc') out.sort_dir = raw.sort_dir
+  }
+  return out
+}
+
+/**
+ * Route-level search validator — sanitizes the raw URL params and drops anything
+ * that is a default or malformed, keeping shareable links tidy. Declare it on any
+ * table route so the params survive navigation and refreshes:
+ *
+ *   createRoute({ path: '/users', validateSearch: validateTableSearch, ... })
+ */
+export function validateTableSearch(raw: Record<string, unknown>): Partial<TableSearch> {
+  return sparseTableSearch(raw, DEFAULT_PER_PAGE)
+}
+
+/**
+ * URL-backed twin of {@link useServerTable}: identical return shape, but
+ * page / search / sort live in the route's query string — so the view is
+ * shareable, survives a refresh, and plays with the browser's back/forward.
+ *
+ * The route must declare `validateSearch: validateTableSearch`. Only sync
+ * non-sensitive filters this way (names, emails, roles are fine — never tokens
+ * or personal identifiers).
+ *
+ *   const table = useUrlTable(15, 'Search…')
+ *   const { data } = useThings(table.params)
+ *   <PageHeader extra={table.searchInput} />
+ *   <DataTable server={{ ...table }} />
+ */
+export function useUrlTable(
+  defaultPageSize = DEFAULT_PER_PAGE,
+  searchPlaceholder = 'Search…',
+  debounceMs = 350,
+) {
+  const navigate = useNavigate()
+  const raw = useSearch({ strict: false }) as Partial<TableSearch>
+
+  // The URL is sparse — fill the defaults back in for the effective state.
+  const page = typeof raw.page === 'number' && raw.page > 0 ? raw.page : 1
+  const pageSize = typeof raw.per_page === 'number' && raw.per_page > 0 ? raw.per_page : defaultPageSize
+  const q = typeof raw.q === 'string' ? raw.q : ''
+  const sortBy = typeof raw.sort_by === 'string' && raw.sort_by ? raw.sort_by : undefined
+  const sortDir = sortBy && (raw.sort_dir === 'asc' || raw.sort_dir === 'desc') ? raw.sort_dir : undefined
+
+  // Instant value for the input; the URL is written on a debounce so typing
+  // stays smooth and history isn't flooded with a step per keystroke.
+  const [input, setInput] = useState(q)
+
+  // Re-sync the box when the URL changes from the outside (back/forward, a
+  // pasted link, filters cleared elsewhere).
+  useEffect(() => {
+    setInput(q)
+  }, [q])
+
+  const setSearch = (patch: Partial<TableSearch>) => {
+    const next = { page, per_page: pageSize, q, sort_by: sortBy, sort_dir: sortDir, ...patch }
+    // `replace` keeps paging/searching out of the history stack — one Back
+    // press leaves the page rather than rewinding every keystroke. The cast is
+    // needed because this route-agnostic hook navigates without a static `from`,
+    // so the search reducer's type widens to `never`.
+    navigate({
+      replace: true,
+      search: (() => sparseTableSearch(next as Record<string, unknown>, defaultPageSize)) as never,
+    })
+  }
+
+  // Debounce the typed value into the URL, resetting to the first page.
+  useEffect(() => {
+    if (input === q) return
+    const id = setTimeout(() => setSearch({ q: input, page: 1 }), debounceMs)
+    return () => clearTimeout(id)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- setSearch/q are derived from the URL we're writing
+  }, [input, debounceMs])
+
+  const searchInput = (
+    <Input
+      allowClear
+      prefix={<SearchOutlined />}
+      placeholder={searchPlaceholder}
+      value={input}
+      onChange={(e) => setInput(e.target.value)}
+      style={{ maxWidth: 280 }}
+    />
+  )
+
+  const params: ServerTableParams = {
+    page,
+    per_page: pageSize,
+    search: q || undefined,
+    sort_by: sortBy,
+    sort_dir: sortDir,
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- generic table row
+  const onChange: NonNullable<TableProps<any>['onChange']> = (pag, _filters, sorter) => {
+    const s = Array.isArray(sorter) ? sorter[0] : sorter
+    const sort = s?.order
+      ? { sort_by: s.field as string, sort_dir: (s.order === 'ascend' ? 'asc' : 'desc') as 'asc' | 'desc' }
+      : { sort_by: undefined, sort_dir: undefined }
+    setSearch({ page: pag.current ?? 1, per_page: pag.pageSize ?? defaultPageSize, ...sort })
+  }
+
+  return { params, page, pageSize, search: input, searchInput, onChange }
 }
 
 // A stable identity for a column (for show/hide + React keys).

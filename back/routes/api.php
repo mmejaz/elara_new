@@ -22,11 +22,16 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Profile
     Route::get('/profile/access', [AuthController::class, 'access']);
-    Route::put('/profile', [AuthController::class, 'updateProfile']);
-    Route::put('/profile/password', [AuthController::class, 'updatePassword']);
     Route::put('/profile/settings', [AuthController::class, 'updateSettings']);
-    Route::post('/profile/avatar', [AuthController::class, 'updateAvatar'])->middleware('throttle:30,1');
-    Route::delete('/profile/avatar', [AuthController::class, 'deleteAvatar']);
+
+    // Identity/credential changes are blocked while impersonating, so an
+    // impersonator can never alter the target user's account or password.
+    Route::middleware('no.impersonation')->group(function () {
+        Route::put('/profile', [AuthController::class, 'updateProfile']);
+        Route::put('/profile/password', [AuthController::class, 'updatePassword']);
+        Route::post('/profile/avatar', [AuthController::class, 'updateAvatar'])->middleware('throttle:30,1');
+        Route::delete('/profile/avatar', [AuthController::class, 'deleteAvatar']);
+    });
 });
 
 // Feature module routes live in routes/modules/{Module}Api.php and are
