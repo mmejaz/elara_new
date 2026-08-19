@@ -1,8 +1,9 @@
-# Technology Stack
+# Backend Technology Stack
 
-> **Status:** Current · **Last updated:** 2026-08-13 · **Owner:** Engineering
+> **Status:** Current · **Last updated:** 2026-08-19 · **Owner:** Engineering
 
-Exact versions from `back/composer.json` and `reactTheme/package.json`.
+Exact versions from `back/composer.json`. (Frontend counterpart:
+[frontend.md](frontend.md).)
 
 ## Backend
 
@@ -19,24 +20,6 @@ Exact versions from `back/composer.json` and `reactTheme/package.json`.
 | Tests | phpunit/phpunit (dev) | ^12.5 | Feature/unit tests |
 | Fakes | fakerphp/faker (dev) | ^1.23 | Factories |
 | Database | MySQL | 8.0 | Central + per-tenant DBs |
-
-## Frontend
-
-| Component | Technology | Version | Purpose |
-|---|---|---|---|
-| Language | TypeScript | ^6.0 | Typed React |
-| UI runtime | React | ^19.2 | SPA |
-| Build tool | Vite | ^8.0 | Dev server + bundler |
-| UI kit | Ant Design | ^6.4 | Components |
-| Icons/Charts | @ant-design/icons, @ant-design/charts | ^6.1 / ^2.6 | Iconography, charts |
-| Styling | Tailwind CSS | ^4.3 | Utility CSS |
-| Server state | @tanstack/react-query | ^5.10 | Data fetching/caching |
-| Routing | @tanstack/react-router | ^1.17 | Route tree |
-| Client state | @reduxjs/toolkit + react-redux | ^2.12 / ^9.3 | UI state |
-| HTTP | axios | ^1.17 | API calls (cookie + XSRF) |
-| Dates | dayjs | ^1.11 | Date handling |
-| Unit tests | Vitest + Testing Library | ^4.1 | Component/unit tests |
-| E2E | Cypress | ^15.20 | End-to-end |
 
 ## Infrastructure
 

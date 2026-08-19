@@ -80,3 +80,68 @@
 .ug-markdown hr { border: none; border-top: 1px solid rgba(127,127,127,0.22); margin: 1.4em 0; }
 .ug-markdown img,
 .ug-markdown svg { max-width: 100%; }
+
+/* ── Diagrams: hover "Zoom" affordance + click-to-open ───────────────────── */
+.ug-diagram { position: relative; }
+
+.ug-diagram-zoomable { cursor: zoom-in; }
+
+.ug-zoom-btn {
+  position: absolute;
+  top: 10px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: inherit;
+  background: rgba(127,127,127,0.14);
+  border: 1px solid rgba(127,127,127,0.28);
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+.ug-diagram:hover .ug-zoom-btn { opacity: 1; }
+.ug-zoom-btn:hover { background: rgba(127,127,127,0.26); }
+/* Touch devices have no hover — keep the button visible there. */
+@media (hover: none) {
+  .ug-zoom-btn { opacity: 1; }
+}
+
+/* ── Diagram zoom modal ──────────────────────────────────────────────────── */
+.ug-diagram-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(127,127,127,0.2);
+}
+.ug-zoom-level {
+  min-width: 46px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+}
+.ug-zoom-hint {
+  margin-left: auto;
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+.ug-diagram-stage {
+  height: 76vh;
+  overflow: auto;
+  cursor: grab;
+  touch-action: none;
+}
+.ug-diagram-stage:active { cursor: grabbing; }
+
+.ug-diagram-holder {
+  transform-origin: top left;
+  width: max-content;
+  padding: 20px;
+}
+.ug-diagram-holder svg { max-width: none; }
