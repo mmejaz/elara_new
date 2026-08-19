@@ -135,6 +135,10 @@ const DocumentTypesPage = lazy(() => import('../modules/documenttypes/pages/Docu
 const documentTypesRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/documenttypes', component: DocumentTypesPage })
 const OrganizationsPage = lazy(() => import('../modules/organizations/pages/OrganizationsPage'))
 const organizationsRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/organizations', component: OrganizationsPage })
+const UserGuidePage = lazy(() => import('../modules/user-guide/pages/UserGuidePage'))
+const userGuideRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/user-guide', component: UserGuidePage })
+const DeveloperGuidePage = lazy(() => import('../modules/user-guide/pages/DeveloperGuidePage'))
+const developerGuideRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/developer-guide', component: DeveloperGuidePage })
 // __MODULE_ROUTE_DEFS__
 
 const routeTree = rootRoute.addChildren([
@@ -162,6 +166,8 @@ const routeTree = rootRoute.addChildren([
     leaveTypesRoute,
     documentTypesRoute,
     organizationsRoute,
+    userGuideRoute,
+    developerGuideRoute,
     // __MODULE_ROUTES__
     notFoundRoute,
   ]),
