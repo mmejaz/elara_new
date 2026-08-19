@@ -211,6 +211,44 @@ export function useUrlTable(
   return { params, page, pageSize, search: input, searchInput, onChange }
 }
 
+/**
+ * Sync an Add/Edit drawer with the URL so it's deep-linkable (a la useUrlTable):
+ *
+ *   ?add=true   → the Add drawer
+ *   ?edit=<id>  → the Edit drawer for that record
+ *
+ * The URL is the single source of truth: buttons call openAdd/openEdit and the
+ * drawer's own close calls close(); a small effect on the page mirrors those
+ * params into whatever open-state the drawer reads. Existing table params are
+ * preserved. The route must include add/edit in its validateSearch (see
+ * validateTableSearch usage). Pairs with useUrlTable — the page/search stay in
+ * the URL too, so a pasted ?edit link reloads the same page and the record is
+ * found in the list.
+ */
+export function useUrlDrawer() {
+  const navigate = useNavigate()
+  const s = useSearch({ strict: false }) as { add?: boolean; edit?: number }
+
+  const add = s.add === true
+  const editId = typeof s.edit === 'number' ? s.edit : null
+
+  // Clear both drawer params, then apply the patch — only one drawer is ever
+  // open. `replace` keeps opening/closing a drawer out of the history stack.
+  const write = (patch: { add?: true; edit?: number }) =>
+    navigate({
+      replace: true,
+      search: ((prev: Record<string, unknown>) => ({ ...prev, add: undefined, edit: undefined, ...patch })) as never,
+    })
+
+  return {
+    add,
+    editId,
+    openAdd: () => write({ add: true }),
+    openEdit: (id: number) => write({ edit: id }),
+    close: () => write({}),
+  }
+}
+
 // A stable identity for a column (for show/hide + React keys).
 function columnKey(col: Record<string, unknown>, index: number): string {
   return String(col.key ?? col.dataIndex ?? index)

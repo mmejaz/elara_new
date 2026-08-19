@@ -1,15 +1,15 @@
 import { LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons'
 import { Button, Drawer, Form, Input, Select } from 'antd'
 import { useEffect } from 'react'
-import { closeEditDrawer } from '../usersSlice'
 import { useRoles, useUpdateUser } from '../queries'
 import { useOrganizationOptions } from '../../organizations/queries'
+import { useUrlDrawer } from '../../../components/DataTable'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { toast } from '../../../utils/toast'
-import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useAppSelector } from '../../../store/hooks'
 
 function EditUserDrawer() {
-  const dispatch = useAppDispatch()
+  const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.users.editDrawerOpen)
   const editingUser = useAppSelector((state) => state.users.editingUser)
   const [form] = Form.useForm()
@@ -37,7 +37,7 @@ function EditUserDrawer() {
       {
         onSuccess: () => {
           toast.success('User updated successfully')
-          dispatch(closeEditDrawer())
+          drawer.close()
         },
         onError: (error) => {
           if (!applyServerErrors(error, form)) {
@@ -50,7 +50,7 @@ function EditUserDrawer() {
 
   const handleClose = () => {
     if (mutation.isPending) return
-    dispatch(closeEditDrawer())
+    drawer.close()
   }
 
   return (

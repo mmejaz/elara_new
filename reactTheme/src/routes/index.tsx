@@ -96,7 +96,17 @@ const indexRoute = createRoute({
 const dashboardRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/dashboard', component: DashboardPage })
 const analyticsRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/analytics', component: AnalyticsPage })
 const attendanceRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/attendance', component: AttendancePage })
-const usersRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/users', component: UsersPage, validateSearch: validateTableSearch })
+// Table params + deep-linkable drawer state (?add=true / ?edit=<id>).
+const validateUsersSearch = (raw: Record<string, unknown>) => {
+  const out: Record<string, unknown> = { ...validateTableSearch(raw) }
+  if (raw.add === true || raw.add === 'true') out.add = true
+  const edit = typeof raw.edit === 'number'
+    ? raw.edit
+    : (typeof raw.edit === 'string' && /^\d+$/.test(raw.edit) ? Number(raw.edit) : undefined)
+  if (edit) out.edit = edit
+  return out
+}
+const usersRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/users', component: UsersPage, validateSearch: validateUsersSearch })
 const rolesRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/roles', component: RolesPage })
 const permissionsRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/permissions', component: PermissionsPage })
 const modulesRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/modules', component: ModulesPage })

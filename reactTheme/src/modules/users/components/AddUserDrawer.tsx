@@ -1,15 +1,15 @@
 import { LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons'
 import { Button, Drawer, Form, Input, Select, Skeleton } from 'antd'
 import { notify, toast } from '../../../utils/toast'
-import { closeAddDrawer } from '../usersSlice'
 import { useCreateUser, usePermissions, useRolesDetailed } from '../queries'
 import { useOrganizationOptions } from '../../organizations/queries'
+import { useUrlDrawer } from '../../../components/DataTable'
 import PermissionPicker from '../../roles/components/PermissionPicker'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
-import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useAppSelector } from '../../../store/hooks'
 
 function AddUserDrawer() {
-  const dispatch = useAppDispatch()
+  const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.users.addDrawerOpen)
   const [form] = Form.useForm()
 
@@ -29,7 +29,7 @@ function AddUserDrawer() {
       onSuccess: () => {
         notify.success('User created', 'The user account was created successfully.')
         form.resetFields()
-        dispatch(closeAddDrawer())
+        drawer.close()
       },
       onError: (error) => {
         if (!applyServerErrors(error, form)) {
@@ -42,7 +42,7 @@ function AddUserDrawer() {
   const handleClose = () => {
     if (mutation.isPending) return
     form.resetFields()
-    dispatch(closeAddDrawer())
+    drawer.close()
   }
 
   return (

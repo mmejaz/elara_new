@@ -17,15 +17,15 @@ import { App, Avatar, Button, Dropdown, Row, Space, Tag, Tooltip, Typography } f
 import type { MenuProps } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import dayjs from 'dayjs'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import PageHeader from '../../../components/PageHeader'
 import StatCard from '../../../components/StatCard'
-import DataTable, { useColumnToggle, useUrlTable } from '../../../components/DataTable'
+import DataTable, { useColumnToggle, useUrlDrawer, useUrlTable } from '../../../components/DataTable'
 import AddUserDrawer from '../components/AddUserDrawer'
 import EditUserDrawer from '../components/EditUserDrawer'
 import { useUsersPaginated, useUserStats, useRoles, useDeleteUser, useImpersonate, useUpdateUserStatus } from '../queries'
 import UserStatusModal from '../components/UserStatusModal'
-import { openAddDrawer, openEditDrawer } from '../usersSlice'
+import { openAddDrawer, openEditDrawer, closeAddDrawer, closeEditDrawer } from '../usersSlice'
 import { hexToRgba } from '../../../utils/color'
 import { toast } from '../../../utils/toast'
 import { serverMessage } from '../../../utils/formErrors'
@@ -42,6 +42,11 @@ function UsersPage() {
   const canImpersonate = useAppSelector((state) => state.auth.roles.includes('Super Admin'))
   const canManageStatus = useAppSelector((state) => state.auth.permissions.includes('users.edit'))
   const table = useUrlTable(15, 'Search users by name, email, or role…')
+  // Drawers are deep-linkable: ?add=true / ?edit=<id> (see the URL→drawer effect).
+  const drawer = useUrlDrawer()
+  const addDrawerOpen = useAppSelector((state) => state.users.addDrawerOpen)
+  const editDrawerOpen = useAppSelector((state) => state.users.editDrawerOpen)
+  const editingUser = useAppSelector((state) => state.users.editingUser)
 
   // Deactivate/block open a reason modal; reactivate is a direct action.
   const [statusTarget, setStatusTarget] = useState<{
@@ -53,6 +58,22 @@ function UsersPage() {
   const { data, isFetching } = useUsersPaginated(table.params)
   const { data: stats } = useUserStats()
   const { data: roles = [] } = useRoles()
+
+  // The URL drives the drawers. ?add=true opens Add; ?edit=<id> opens Edit for
+  // the matching row on the current page (its page/search are in the URL too, so
+  // a pasted link reloads the same list). No param → both drawers closed.
+  useEffect(() => {
+    if (drawer.add) {
+      if (!addDrawerOpen) dispatch(openAddDrawer())
+    } else if (drawer.editId != null) {
+      const match = data?.data.find((u) => u.id === drawer.editId)
+      if (match && editingUser?.id !== match.id) dispatch(openEditDrawer(match))
+    } else {
+      if (addDrawerOpen) dispatch(closeAddDrawer())
+      if (editDrawerOpen) dispatch(closeEditDrawer())
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drawer.add, drawer.editId, data])
   const removeUser = useDeleteUser()
   const impersonate = useImpersonate()
 
@@ -219,7 +240,7 @@ function UsersPage() {
               key: 'edit',
               icon: <EditOutlined />,
               label: 'Edit',
-              onClick: () => dispatch(openEditDrawer(user)),
+              onClick: () => drawer.openEdit(user.id),
             },
             { type: 'divider' },
             {
@@ -266,7 +287,7 @@ function UsersPage() {
         extra={
           <Space>
             {table.searchInput}
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => dispatch(openAddDrawer())}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => drawer.openAdd()}>
               Add User
             </Button>
           </Space>
