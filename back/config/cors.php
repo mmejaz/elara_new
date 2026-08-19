@@ -13,6 +13,8 @@ return [
     // FRONTEND_ORIGIN_PATTERN is a full regex delimited for preg_match.
     'allowed_origins_patterns' => [
         env('FRONTEND_ORIGIN_PATTERN', '#^http://([a-z0-9-]+\.)?localhost:5173$#'),
+        // The central app is served on the loopback IP (127.0.0.1:5173).
+        '#^http://127\.0\.0\.1:5173$#',
     ],
 
     'allowed_headers' => ['Accept', 'Accept-Language', 'Content-Type', 'X-CSRF-TOKEN', 'X-XSRF-TOKEN', 'Authorization', 'X-Requested-With'],
