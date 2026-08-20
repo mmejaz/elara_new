@@ -1,22 +1,43 @@
 import { EditOutlined, PlusOutlined, SafetyCertificateOutlined } from '@ant-design/icons'
 import { Button, Space, Tag, Tooltip, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import PageHeader from '../../../components/PageHeader'
-import DataTable, { useColumnToggle, useServerTable } from '../../../components/DataTable'
+import DataTable, { useColumnToggle, useUrlDrawer, useUrlTable } from '../../../components/DataTable'
 import AddRoleDrawer from '../components/AddRoleDrawer'
 import EditRoleDrawer from '../components/EditRoleDrawer'
-import { openAddDrawer, openEditDrawer } from '../rolesSlice'
+import { openAddDrawer, openEditDrawer, closeAddDrawer, closeEditDrawer } from '../rolesSlice'
 import { usePaginatedRoles } from '../queries'
-import { useAppDispatch } from '../../../store/hooks'
+import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 import type { Role } from '../../../types/models'
 
 const { Text } = Typography
 
 function RolesPage() {
   const dispatch = useAppDispatch()
-  const table = useServerTable(15, 'Search roles…')
+  const table = useUrlTable(15, 'Search roles…')
+  // Drawers are deep-linkable: ?add=true / ?edit=<id> (see the URL→drawer effect).
+  const drawer = useUrlDrawer()
+  const addDrawerOpen = useAppSelector((state) => state.roles.addDrawerOpen)
+  const editDrawerOpen = useAppSelector((state) => state.roles.editDrawerOpen)
+  const editingRole = useAppSelector((state) => state.roles.editingRole)
   const { data, isFetching } = usePaginatedRoles(table.params)
+
+  // The URL drives the drawers. ?add=true opens Add; ?edit=<id> opens Edit for
+  // the matching row on the current page (its page/search are in the URL too, so
+  // a pasted link reloads the same list). No param → both drawers closed.
+  useEffect(() => {
+    if (drawer.add) {
+      if (!addDrawerOpen) dispatch(openAddDrawer())
+    } else if (drawer.editId != null) {
+      const match = data?.data.find((r) => r.id === drawer.editId)
+      if (match && editingRole?.id !== match.id) dispatch(openEditDrawer(match))
+    } else {
+      if (addDrawerOpen) dispatch(closeAddDrawer())
+      if (editDrawerOpen) dispatch(closeEditDrawer())
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drawer.add, drawer.editId, data])
 
   const columns = useMemo<ColumnsType<Role>>(
     () => [
@@ -48,13 +69,14 @@ function RolesPage() {
             <Button
               type="text"
               icon={<EditOutlined />}
-              onClick={() => dispatch(openEditDrawer(role))}
+              onClick={() => drawer.openEdit(role.id)}
             />
           </Tooltip>
         ),
       },
     ],
-    [dispatch],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [drawer.openEdit],
   )
 
   const { visibleColumns, control } = useColumnToggle(columns)
@@ -71,7 +93,7 @@ function RolesPage() {
             <Button
               type="primary"
               icon={<PlusOutlined />}
-              onClick={() => dispatch(openAddDrawer())}
+              onClick={() => drawer.openAdd()}
             >
               Add Role
             </Button>

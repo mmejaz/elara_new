@@ -9,9 +9,20 @@ use Spatie\Permission\Models\Permission;
 
 class PermissionService
 {
+    /**
+     * Every permission is seeded under BOTH the `web` and `sanctum` guards (the
+     * API checks on sanctum, the web guard backs the SPA session). For display —
+     * the permission picker and the permissions list — we only want each
+     * permission once, so scope to a single guard. Names are identical across
+     * guards, so a role's syncPermissions(names) still resolves per guard.
+     */
+    private const DISPLAY_GUARD = 'web';
+
     public function getAllNames(): array
     {
-        return Permission::pluck('name')->toArray();
+        return Permission::where('guard_name', self::DISPLAY_GUARD)
+            ->pluck('name')
+            ->toArray();
     }
 
     /**
@@ -21,7 +32,8 @@ class PermissionService
      */
     public function paginate(array $params): LengthAwarePaginator
     {
-        $query = Permission::query()->with('roles');
+        $query = Permission::query()->with('roles')
+            ->where('guard_name', self::DISPLAY_GUARD);
 
         if (! empty($params['search'])) {
             $query->where('name', 'like', '%' . $params['search'] . '%');

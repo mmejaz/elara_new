@@ -50,14 +50,68 @@ class ModuleService
         return new ModuleResource($module);
     }
 
-    /** Nested, ordered, visible tree for the sidebar. */
+    /**
+     * Slugs every signed-in user may reach regardless of permissions —
+     * self-service pages. Mirrors the frontend ModuleAccessGuard allow-list.
+     */
+    private const ALWAYS_ALLOWED = ['profile'];
+
+    /**
+     * Nested, ordered, visible tree for the sidebar, PRUNED to what the current
+     * user may access. A leaf item survives only if the user holds its
+     * "{module}.view" permission (or it is an always-allowed self-service page);
+     * a parent/group survives only if at least one descendant does. Super Admin
+     * (Gate::before) sees the whole tree, including modules that have no
+     * permission of their own (e.g. system tools).
+     */
     public function tree()
     {
-        return ModuleResource::collection(
-            Module::roots()->visible()->ordered()
-                ->with('childrenRecursive')
-                ->get()
-        );
+        $roots = Module::roots()->visible()->ordered()
+            ->with('childrenRecursive')
+            ->get();
+
+        $user = auth()->user();
+
+        // Super Admin bypasses every gate → full tree, untouched.
+        if ($user && $user->hasRole('Super Admin')) {
+            return ModuleResource::collection($roots);
+        }
+
+        // Permission NAMES the user holds (guard-agnostic — the same role lives
+        // under both `web` and `sanctum`, so flatten to a name set).
+        $permitted = $user
+            ? $user->getAllPermissions()->pluck('name')->unique()->flip()
+            : collect();
+
+        return ModuleResource::collection($this->pruneForPermissions($roots, $permitted));
+    }
+
+    /**
+     * Recursively drop modules the user cannot view. Parents are judged AFTER
+     * their children, so a group keeps its slot only when something inside it
+     * survived.
+     */
+    private function pruneForPermissions($modules, $permitted)
+    {
+        return $modules
+            ->filter(function (Module $module) use ($permitted) {
+                $keptChildren = $this->pruneForPermissions($module->childrenRecursive, $permitted);
+                $module->setRelation('childrenRecursive', $keptChildren);
+
+                // A container with any surviving child always stays.
+                if ($keptChildren->isNotEmpty()) {
+                    return true;
+                }
+
+                // Self-service pages are always reachable.
+                if (in_array($module->slug, self::ALWAYS_ALLOWED, true)) {
+                    return true;
+                }
+
+                // Leaf: keep only if the user holds this module's view permission.
+                return $permitted->has(Str::snake($module->name) . '.view');
+            })
+            ->values();
     }
 
     /**

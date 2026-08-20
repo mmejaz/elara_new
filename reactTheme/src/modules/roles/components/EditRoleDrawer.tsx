@@ -1,14 +1,14 @@
 import { Button, Drawer, Form, Input, Skeleton } from 'antd'
 import { toast } from '../../../utils/toast'
 import { useEffect } from 'react'
-import { closeEditDrawer } from '../rolesSlice'
 import { useUpdateRole, usePermissions } from '../queries'
+import { useUrlDrawer } from '../../../components/DataTable'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import PermissionPicker from './PermissionPicker'
-import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useAppSelector } from '../../../store/hooks'
 
 function EditRoleDrawer() {
-  const dispatch = useAppDispatch()
+  const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.roles.editDrawerOpen)
   const editingRole = useAppSelector((state) => state.roles.editingRole)
   const [form] = Form.useForm()
@@ -32,7 +32,7 @@ function EditRoleDrawer() {
       {
         onSuccess: () => {
           toast.success('Role updated successfully')
-          dispatch(closeEditDrawer())
+          drawer.close()
         },
         onError: (error) => {
           if (!applyServerErrors(error, form)) {
@@ -46,7 +46,7 @@ function EditRoleDrawer() {
   const handleClose = () => {
     if (mutation.isPending) return
     form.resetFields()
-    dispatch(closeEditDrawer())
+    drawer.close()
   }
 
   return (

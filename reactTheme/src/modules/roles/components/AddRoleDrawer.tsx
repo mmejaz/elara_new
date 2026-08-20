@@ -1,13 +1,13 @@
 import { Button, Drawer, Form, Input, Skeleton } from 'antd'
 import { notify, toast } from '../../../utils/toast'
-import { closeAddDrawer } from '../rolesSlice'
 import { useCreateRole, usePermissions } from '../queries'
+import { useUrlDrawer } from '../../../components/DataTable'
 import PermissionPicker from './PermissionPicker'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
-import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useAppSelector } from '../../../store/hooks'
 
 function AddRoleDrawer() {
-  const dispatch = useAppDispatch()
+  const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.roles.addDrawerOpen)
   const [form] = Form.useForm()
 
@@ -19,7 +19,7 @@ function AddRoleDrawer() {
       onSuccess: () => {
         notify.success('Role created', 'The role was created successfully.')
         form.resetFields()
-        dispatch(closeAddDrawer())
+        drawer.close()
       },
       onError: (error) => {
         if (!applyServerErrors(error, form)) {
@@ -32,7 +32,7 @@ function AddRoleDrawer() {
   const handleClose = () => {
     if (mutation.isPending) return
     form.resetFields()
-    dispatch(closeAddDrawer())
+    drawer.close()
   }
 
   return (

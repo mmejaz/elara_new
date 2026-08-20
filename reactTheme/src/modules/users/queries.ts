@@ -2,8 +2,6 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tansta
 import apiClient from '../../services/apiClient'
 import type { ServerTableParams } from '../../components/DataTable'
 import type { User } from '../../types/models'
-import { useAppDispatch } from '../../store/hooks'
-import { fetchUser } from '../../store/authSlice'
 import { clearClientCaches } from '../../utils/session'
 
 interface Paginated<T> {
@@ -113,36 +111,33 @@ export function useDeleteUser() {
 }
 
 // ─── Impersonation ───────────────────────────────────────────────────────────
-// Starting/stopping swaps the authenticated user on the server. Clearing all
-// client caches + refetching the current user makes the whole app reload as the
-// new identity (sidebar, lists, profile), rather than showing the previous
-// user's cached data.
+// Starting/stopping swaps the authenticated user on the server, so the whole app
+// must reload as the new identity (sidebar, lists, profile). We do a HARD reload
+// to the home route rather than a soft cache-swap: the current page may be one
+// the target identity can't access (e.g. impersonating a user without
+// `users.view` while on /users), and a soft swap lets that page's still-mounted
+// queries refetch and 403 during the transition. A full reload unmounts
+// everything first, so no forbidden requests fire and every store/cache/menu
+// rebuilds cleanly. clearClientCaches() also drops the persisted module-tree so
+// the previous identity's menu doesn't flash before /modules/tree refetches.
+
+function reloadAsNewIdentity() {
+  clearClientCaches()
+  // Land on '/', which redirects to the first page the new identity may see.
+  window.location.assign('/')
+}
 
 export function useImpersonate() {
-  const queryClient = useQueryClient()
-  const dispatch = useAppDispatch()
-
   return useMutation({
     mutationFn: (userId: number) => apiClient.post(`/users/${userId}/impersonate`),
-    onSuccess: async () => {
-      clearClientCaches()
-      queryClient.clear()
-      await dispatch(fetchUser())
-    },
+    onSuccess: reloadAsNewIdentity,
   })
 }
 
 export function useStopImpersonating() {
-  const queryClient = useQueryClient()
-  const dispatch = useAppDispatch()
-
   return useMutation({
     mutationFn: () => apiClient.post('/impersonate/stop'),
-    onSuccess: async () => {
-      clearClientCaches()
-      queryClient.clear()
-      await dispatch(fetchUser())
-    },
+    onSuccess: reloadAsNewIdentity,
   })
 }
 

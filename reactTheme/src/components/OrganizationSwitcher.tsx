@@ -1,6 +1,6 @@
 import { ApartmentOutlined, AppstoreOutlined, CaretDownOutlined, CheckOutlined } from '@ant-design/icons'
 import { Dropdown, Typography } from 'antd'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useOrganizationOptions } from '../modules/organizations/queries'
 import { setCurrentOrganization } from '../store/orgSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
@@ -16,16 +16,51 @@ const { Text } = Typography
 function OrganizationSwitcher() {
   const dispatch = useAppDispatch()
   const currentId = useAppSelector((state) => state.org.currentOrganizationId)
+  const userId = useAppSelector((state) => state.auth.user?.id)
+  const isSuperAdmin = useAppSelector((state) => state.auth.roles.includes('Super Admin'))
+  // The switcher reads the org list from the admin `/organizations` endpoint,
+  // which is gated by `organization.view`. A user without it (e.g. a role scoped
+  // to a single module) can't call it — fetching anyway 403s. Gate on the same
+  // permission: skip the request and hide the control for those users.
+  const canViewOrgs = useAppSelector(
+    (state) =>
+      state.auth.roles.includes('Super Admin') ||
+      state.auth.permissions.includes('organization.view'),
+  )
   const primaryColor = useAppSelector((state) => state.ui.primaryColor)
   const isDark = useAppSelector((state) => state.ui.themeMode === 'dark')
   const [open, setOpen] = useState(false)
 
-  const { data: organizations = [], isLoading } = useOrganizationOptions()
+  const { data: organizations = [], isLoading } = useOrganizationOptions(canViewOrgs)
+
+  // Default the active organization to the signed-in user's assigned org. This
+  // matters most for impersonation: when you view the app AS another user, the
+  // persisted org context belongs to the previous account, so reset it to the
+  // impersonated user's own org. Runs once per user (tracked by id), after their
+  // orgs have loaded, and only when the current selection isn't valid for them —
+  // so a manual choice afterward is never overridden.
+  const appliedForUser = useRef<number | null>(null)
+  useEffect(() => {
+    if (isLoading || userId == null) return
+    if (appliedForUser.current === userId) return
+    appliedForUser.current = userId
+
+    const stillValid = currentId != null && organizations.some((o) => o.id === currentId)
+    if (stillValid) return
+
+    // Regular users are scoped to their assigned orgs → default to the first.
+    // Super Admins see everything → default to "All organizations" (null).
+    const next = !isSuperAdmin && organizations.length > 0 ? organizations[0].id : null
+    if (next !== currentId) dispatch(setCurrentOrganization(next))
+  }, [userId, isLoading, organizations, currentId, isSuperAdmin, dispatch])
 
   const current = useMemo(
     () => organizations.find((o) => o.id === currentId) ?? null,
     [organizations, currentId],
   )
+
+  // Nothing to switch and no permission to load orgs → don't render the control.
+  if (!canViewOrgs) return null
 
   const border = isDark ? '#303030' : '#f0f0f0'
   const bg = isDark ? '#141414' : '#ffffff'

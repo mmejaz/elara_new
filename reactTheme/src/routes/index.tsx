@@ -96,8 +96,9 @@ const indexRoute = createRoute({
 const dashboardRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/dashboard', component: DashboardPage })
 const analyticsRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/analytics', component: AnalyticsPage })
 const attendanceRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/attendance', component: AttendancePage })
-// Table params + deep-linkable drawer state (?add=true / ?edit=<id>).
-const validateUsersSearch = (raw: Record<string, unknown>) => {
+// Table params + deep-linkable drawer state (?add=true / ?edit=<id>). Shared by
+// every list route that has Add/Edit drawers (users, roles, …).
+const validateDrawerTableSearch = (raw: Record<string, unknown>) => {
   const out: Record<string, unknown> = { ...validateTableSearch(raw) }
   if (raw.add === true || raw.add === 'true') out.add = true
   const edit = typeof raw.edit === 'number'
@@ -106,8 +107,8 @@ const validateUsersSearch = (raw: Record<string, unknown>) => {
   if (edit) out.edit = edit
   return out
 }
-const usersRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/users', component: UsersPage, validateSearch: validateUsersSearch })
-const rolesRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/roles', component: RolesPage })
+const usersRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/users', component: UsersPage, validateSearch: validateDrawerTableSearch })
+const rolesRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/roles', component: RolesPage, validateSearch: validateDrawerTableSearch })
 const permissionsRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/permissions', component: PermissionsPage })
 const modulesRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/modules', component: ModulesPage })
 const moduleBuilderRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/module-builder', component: ModuleBuilderPage, beforeLoad: centralOnly })
