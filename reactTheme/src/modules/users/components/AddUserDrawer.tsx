@@ -13,9 +13,10 @@ function AddUserDrawer() {
   const open = useAppSelector((state) => state.users.addDrawerOpen)
   const [form] = Form.useForm()
 
-  const { data: roles = [], isLoading: rolesLoading } = useRolesDetailed()
-  const { data: organizations = [], isLoading: orgsLoading } = useOrganizationOptions()
-  const { data: permissions = [], isLoading: permissionsLoading } = usePermissions()
+  // Only fetch the drawer's reference data once it's actually open.
+  const { data: roles = [], isLoading: rolesLoading } = useRolesDetailed(open)
+  const { data: organizations = [], isLoading: orgsLoading } = useOrganizationOptions(open)
+  const { data: permissions = [], isLoading: permissionsLoading } = usePermissions(open)
   const roleOptions = roles.map((role) => ({ value: role.name, label: role.name }))
   const mutation = useCreateUser()
 

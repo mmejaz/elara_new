@@ -42,15 +42,16 @@ class AuthController extends Controller
     {
         $payload = $this->authService->login($request->email, $request->password);
 
-        // Only regenerate session if it's available (web routes, not API-only)
+        // Only touch the session if one is available (i.e. a stateful SPA origin;
+        // never on a token/API-only call, where there is no session store).
         if ($request->hasSession()) {
             $request->session()->regenerate();
-        }
 
-        // Bind the session to the tenant it was established under, so it cannot
-        // be replayed against another tenant subdomain (see
-        // EnsureUserBelongsToTenant + the shared .lvh.me cookie).
-        $request->session()->put('tenant_id', tenant('id'));
+            // Bind the session to the tenant it was established under, so it
+            // cannot be replayed against another tenant subdomain (see
+            // EnsureUserBelongsToTenant + the shared .lvh.me cookie).
+            $request->session()->put('tenant_id', tenant('id'));
+        }
 
         return ApiResponse::success($payload, ResponseMessage::LOGIN_SUCCESS);
     }

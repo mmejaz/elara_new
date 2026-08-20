@@ -15,7 +15,7 @@ function EditUserDrawer() {
   const [form] = Form.useForm()
   const { data: roles = [], isLoading: rolesLoading } = useRoles()
   const roleOptions = roles.map((role: string) => ({ value: role, label: role }))
-  const { data: organizations = [], isLoading: orgsLoading } = useOrganizationOptions()
+  const { data: organizations = [], isLoading: orgsLoading } = useOrganizationOptions(open)
   const mutation = useUpdateUser()
 
   useEffect(() => {

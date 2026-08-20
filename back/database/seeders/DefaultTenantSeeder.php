@@ -10,10 +10,10 @@ use Stancl\Tenancy\Jobs\MigrateDatabase;
 use Stancl\Tenancy\Jobs\SeedDatabase;
 
 /**
- * Provisions ONE default tenant on the `localhost` domain so the SPA at
- * localhost:5173 is usable straight after a fresh install. `localhost` is a
- * tenant domain in this app (the central console lives on 127.0.0.1), so without
- * this the SPA would 500 with "tenant not found" right after migrate:fresh.
+ * Provisions ONE demo tenant on the `tenant.localhost` subdomain so multi-tenancy
+ * is testable straight after a fresh install (visit http://tenant.localhost:5173).
+ * `localhost` and `127.0.0.1` are BOTH central domains (see config/tenancy.php),
+ * so tenants live on subdomains instead.
  *
  * Idempotent: the tenant row + domain are firstOrCreate'd; the tenant database is
  * (re)provisioned only when needed. Provisioning jobs run SYNCHRONOUSLY
@@ -37,7 +37,7 @@ class DefaultTenantSeeder extends Seeder
             ],
         );
 
-        $tenant->domains()->firstOrCreate(['domain' => 'localhost']);
+        $tenant->domains()->firstOrCreate(['domain' => 'tenant.localhost']);
 
         $central = config('tenancy.database.central_connection');
         $dbName  = $tenant->database()->getName();

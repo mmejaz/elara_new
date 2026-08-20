@@ -52,7 +52,7 @@ const { Text } = Typography
 const notifications = [
   {
     id: 'welcome',
-    title: 'Welcome to React Theme',
+    title: 'Welcome to Elara 360',
     description: 'Customize colors and layout from the settings drawer.',
     time: 'Now',
   },

@@ -61,12 +61,15 @@ export function useRoles() {
   return useQuery({ queryKey: ['roles'], queryFn: fetchRoles })
 }
 
-export function useRolesDetailed() {
-  return useQuery({ queryKey: ['roles-list'], queryFn: fetchRolesDetailed })
+// `enabled` lets callers defer the fetch until it's actually needed — e.g. the
+// Add User drawer only loads role detail + permissions once it's opened, instead
+// of on every Users-page render while the drawer is closed.
+export function useRolesDetailed(enabled = true) {
+  return useQuery({ queryKey: ['roles-list'], queryFn: fetchRolesDetailed, enabled })
 }
 
-export function usePermissions() {
-  return useQuery({ queryKey: ['permissions'], queryFn: fetchPermissions })
+export function usePermissions(enabled = true) {
+  return useQuery({ queryKey: ['permissions'], queryFn: fetchPermissions, enabled })
 }
 
 export function useCreateUser() {

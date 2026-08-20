@@ -74,7 +74,7 @@ function SidebarContent({ collapsed = false, onNavigate }: SidebarContentProps) 
             userSelect: 'none',
           }}
         >
-          {collapsed ? 'R' : 'React Theme'}
+          {collapsed ? 'E' : 'Elara 360'}
         </span>
       </div>
 

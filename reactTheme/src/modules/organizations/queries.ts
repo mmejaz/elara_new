@@ -24,13 +24,14 @@ export function useOrganizations(params: ServerTableParams) {
  * same index endpoint with a large page size; shares the ['organizations'] key
  * prefix so create/update/delete invalidations refresh it too.
  */
-export function useOrganizationOptions() {
+export function useOrganizationOptions(enabled = true) {
   return useQuery({
     queryKey: ['organizations', 'options'],
     queryFn: async (): Promise<Organization[]> => {
       const { data } = await apiClient.get('/organizations', { params: { per_page: 1000 } })
       return data.data
     },
+    enabled,
   })
 }
 

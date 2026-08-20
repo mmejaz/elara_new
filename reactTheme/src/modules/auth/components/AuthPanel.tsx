@@ -65,7 +65,7 @@ function AuthPanel({
         <div className="relative z-10 grid min-h-full grid-rows-[64px_1fr_48px] justify-items-center rounded-r-[18px] bg-white px-10 dark:bg-slate-900 max-lg:px-7 max-md:order-1 max-md:min-h-[470px] max-md:grid-rows-[60px_1fr_48px] max-md:rounded-b-none max-md:rounded-t-[16px] max-md:px-[22px] max-md:py-[22px] max-sm:min-h-[450px] max-sm:px-4 max-sm:py-4">
           <div className="self-center inline-flex items-center gap-[9px] text-[15px] font-bold text-[#111111] dark:text-white">
             <span className="inline-block h-[18px] w-[18px] rounded-full bg-[image:radial-gradient(circle_at_50%_50%,transparent_34%,#111111_36%,#111111_44%,transparent_46%),repeating-conic-gradient(from_0deg,#111111_0deg_18deg,transparent_18deg_30deg)] dark:bg-[image:radial-gradient(circle_at_50%_50%,transparent_34%,#ffffff_36%,#ffffff_44%,transparent_46%),repeating-conic-gradient(from_0deg,#ffffff_0deg_18deg,transparent_18deg_30deg)]" />
-            <span>React Theme</span>
+            <span>Elara 360</span>
           </div>
 
           <div className="w-full max-w-[300px] self-center -translate-y-2 max-lg:max-w-[280px] max-md:max-w-[330px] max-md:translate-y-0">
