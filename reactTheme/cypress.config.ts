@@ -13,7 +13,22 @@ export default defineConfig({
     // The SPA is a client-rendered redirect app; test-isolation retries handle
     // the occasional first-paint race without inflating timeouts everywhere.
     retries: { runMode: 2, openMode: 0 },
+    // Chromium/Electron can crash ("tab closed unexpectedly") when the browser
+    // process runs out of memory across a long spec. Let Cypress reclaim memory
+    // between tests, and keep fewer command snapshots in memory.
+    experimentalMemoryManagement: true,
+    numTestsKeptInMemory: 5,
     setupNodeEvents(on, config) {
+      // Stabilize the browser process: disabling the GPU is the standard fix for
+      // the Electron renderer crashing on macOS, and helps Chrome headless too.
+      on('before:browser:launch', (browser, launchOptions) => {
+        if (browser.family === 'chromium') {
+          launchOptions.args.push('--disable-gpu')
+          launchOptions.args.push('--disable-dev-shm-usage')
+        }
+        return launchOptions
+      })
+
       on('task', {
         // The Module Builder has no delete endpoint, so a created module can only
         // be removed at the DB level. This hard-deletes test rows (slug LIKE

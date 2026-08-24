@@ -12,14 +12,14 @@ class UserService
     /** Server-side paginated + searchable user list (name, email, or role). */
     public function paginate(array $params): LengthAwarePaginator
     {
-        $query = User::query()->with(['roles', 'organizations']);
+        $query = User::query()->with(['roles', 'organizations', 'department']);
 
         if (! empty($params['search'])) {
             $search = $params['search'];
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', '%' . $search . '%')
-                    ->orWhere('email', 'like', '%' . $search . '%')
-                    ->orWhereHas('roles', fn ($r) => $r->where('name', 'like', '%' . $search . '%'));
+                $q->where('name', 'like', '%'.$search.'%')
+                    ->orWhere('email', 'like', '%'.$search.'%')
+                    ->orWhereHas('roles', fn ($r) => $r->where('name', 'like', '%'.$search.'%'));
             });
         }
 
@@ -40,8 +40,8 @@ class UserService
         $withRole = User::whereHas('roles')->count();
 
         return [
-            'total'        => $total,
-            'with_role'    => $withRole,
+            'total' => $total,
+            'with_role' => $withRole,
             'without_role' => max(0, $total - $withRole),
         ];
     }
@@ -50,15 +50,17 @@ class UserService
     {
         return DB::transaction(function () use ($data) {
             $user = User::create([
-                'name'     => $data['name'],
-                'email'    => $data['email'],
+                'name' => $data['name'],
+                'email' => $data['email'],
                 'password' => $data['password'],
+                'department_id' => $data['department_id'] ?? null,
+                'joining_date' => $data['joining_date'] ?? null,
             ]);
 
             $user->assignRole($data['role']);
             $user->organizations()->sync($data['organization_ids'] ?? []);
 
-            return new UserResource($user->load(['roles', 'organizations']));
+            return new UserResource($user->load(['roles', 'organizations', 'department']));
         });
     }
 
@@ -72,6 +74,14 @@ class UserService
                 $user->password = $data['password'];
             }
 
+            if (array_key_exists('department_id', $data)) {
+                $user->department_id = $data['department_id'];
+            }
+
+            if (array_key_exists('joining_date', $data)) {
+                $user->joining_date = $data['joining_date'];
+            }
+
             $user->save();
             $user->syncRoles([$data['role']]);
 
@@ -79,8 +89,13 @@ class UserService
                 $user->organizations()->sync($data['organization_ids'] ?? []);
             }
 
-            return new UserResource($user->load(['roles', 'organizations']));
+            return new UserResource($user->load(['roles', 'organizations', 'department']));
         });
+    }
+
+    public function delete(User $user): void
+    {
+        DB::transaction(fn () => $user->delete());
     }
 
     /**
@@ -99,10 +114,5 @@ class UserService
 
             return new UserResource($user->load(['roles', 'organizations']));
         });
-    }
-
-    public function delete(User $user): void
-    {
-        DB::transaction(fn () => $user->delete());
     }
 }

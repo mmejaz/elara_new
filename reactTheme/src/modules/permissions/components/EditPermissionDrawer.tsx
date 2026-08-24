@@ -1,15 +1,15 @@
 import { Button, Drawer, Form, Input, Select } from 'antd'
 import { toast } from '../../../utils/toast'
 import { useEffect } from 'react'
-import { closeEditDrawer } from '../permissionsSlice'
 import { useUpdatePermission } from '../queries'
+import { useUrlDrawer } from '../../../components/DataTable'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
-import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useAppSelector } from '../../../store/hooks'
 
 const ACTIONS = ['view', 'create', 'edit', 'delete', 'export', 'manage']
 
 function EditPermissionDrawer() {
-  const dispatch = useAppDispatch()
+  const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.permissions.editDrawerOpen)
   const editingPermission = useAppSelector((state) => state.permissions.editingPermission)
   const [form] = Form.useForm()
@@ -34,7 +34,7 @@ function EditPermissionDrawer() {
     mutation.mutate({ id: editingPermission.id, name }, {
       onSuccess: () => {
         toast.success('Permission updated successfully')
-        dispatch(closeEditDrawer())
+        drawer.close()
       },
       onError: (error) => {
         if (!applyServerErrors(error, form)) {
@@ -47,7 +47,7 @@ function EditPermissionDrawer() {
   const handleClose = () => {
     if (mutation.isPending) return
     form.resetFields()
-    dispatch(closeEditDrawer())
+    drawer.close()
   }
 
   return (

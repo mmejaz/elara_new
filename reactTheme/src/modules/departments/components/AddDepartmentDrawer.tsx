@@ -3,7 +3,7 @@ import { closeAddDrawer } from '../departmentsSlice'
 import { useCreateDepartment, useDepartmentOptions } from '../queries'
 import { useOrganizationOptions } from '../../organizations/queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
-import { notify, toast } from '../../../utils/toast'
+import { toast } from '../../../utils/toast'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 
 function AddDepartmentDrawer() {
@@ -18,7 +18,7 @@ function AddDepartmentDrawer() {
   const handleFinish = (values: Record<string, unknown>) => {
     mutation.mutate(values, {
       onSuccess: () => {
-        notify.success('Department created', 'The record was created successfully.')
+        toast.success('Department created successfully')
         form.resetFields()
         dispatch(closeAddDrawer())
       },

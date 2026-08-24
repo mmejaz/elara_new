@@ -1,5 +1,5 @@
 import { Alert, Button, Checkbox, Drawer, Form, Input, Radio, Select, Tag, TreeSelect, Typography } from 'antd'
-import { notify, toast } from '../../../utils/toast'
+import { toast } from '../../../utils/toast'
 import {
   AppstoreOutlined,
   BankOutlined,
@@ -9,12 +9,12 @@ import {
   TeamOutlined,
 } from '@ant-design/icons'
 import { useMemo } from 'react'
-import { closeAddDrawer } from '../moduleBuilderSlice'
 import { useCreateModule } from '../../../hooks/useModules'
+import { useUrlDrawer } from '../../../components/DataTable'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { useModuleTree } from '../../../hooks/useModuleTree'
 import { buildParentOptions } from '../navTree'
-import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useAppSelector } from '../../../store/hooks'
 
 const { Text } = Typography
 
@@ -38,7 +38,7 @@ const MODULE_TYPES = [
 ]
 
 function AddModuleDrawer() {
-  const dispatch = useAppDispatch()
+  const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.moduleBuilder.addDrawerOpen)
   const [form] = Form.useForm()
   const mutation = useCreateModule()
@@ -62,9 +62,9 @@ function AddModuleDrawer() {
 
     mutation.mutate(payload, {
       onSuccess: () => {
-        notify.success('Module created', 'The module was created successfully.')
+        toast.success('Module created successfully')
         form.resetFields()
-        dispatch(closeAddDrawer())
+        drawer.close()
       },
       onError: (error) => {
         if (!applyServerErrors(error, form)) {
@@ -77,7 +77,7 @@ function AddModuleDrawer() {
   const handleClose = () => {
     if (mutation.isPending) return
     form.resetFields()
-    dispatch(closeAddDrawer())
+    drawer.close()
   }
 
   return (

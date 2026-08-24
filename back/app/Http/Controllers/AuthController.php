@@ -11,36 +11,37 @@ use App\Http\Requests\Profile\UpdateProfileRequest;
 use App\Http\Requests\Profile\UpdateSettingsRequest;
 use App\Services\AuthService;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class AuthController extends Controller
 {
-    public function __construct(private AuthService $authService) {}
+    public function __construct(private AuthService $service) {}
 
     /**
-     * Public endpoint to verify tenant exists. Called by frontend on app load.
-     * Returns 200 if tenant is valid, 404 if not found.
+     * Public endpoint the SPA calls on load to confirm the tenant exists —
+     * 200 with a minimal tenant summary, or 404 when the host names no tenant.
      */
     public function verifyTenant(Request $request)
     {
         $tenant = tenant();
 
-        if (!$tenant) {
+        if (! $tenant) {
             return ApiResponse::error(
-                'Tenant not found',
+                ResponseMessage::TENANT_NOT_FOUND,
                 null,
-                404,
+                Response::HTTP_NOT_FOUND,
             );
         }
 
         return ApiResponse::success([
             'id' => $tenant->id,
             'name' => $tenant->name,
-        ], 'Tenant verified');
+        ], ResponseMessage::TENANT_VERIFIED);
     }
 
     public function login(LoginRequest $request)
     {
-        $payload = $this->authService->login($request->email, $request->password);
+        $payload = $this->service->login($request->email, $request->password);
 
         // Only touch the session if one is available (i.e. a stateful SPA origin;
         // never on a token/API-only call, where there is no session store).
@@ -58,7 +59,7 @@ class AuthController extends Controller
 
     public function logout(Request $request)
     {
-        $this->authService->logout();
+        $this->service->logout();
 
         // Only invalidate session if it's available (web routes, not API-only)
         if ($request->hasSession()) {
@@ -71,13 +72,16 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        return ApiResponse::success($this->authService->currentUser($request->user()));
+        return ApiResponse::success(
+            $this->service->currentUser($request->user()),
+            ResponseMessage::FETCHED,
+        );
     }
 
     public function updateAvatar(UpdateAvatarRequest $request)
     {
         return ApiResponse::success(
-            $this->authService->updateAvatar($request->user(), $request->file('avatar')),
+            $this->service->updateAvatar($request->user(), $request->file('avatar')),
             ResponseMessage::UPDATED,
         );
     }
@@ -85,7 +89,7 @@ class AuthController extends Controller
     public function deleteAvatar(Request $request)
     {
         return ApiResponse::success(
-            $this->authService->deleteAvatar($request->user()),
+            $this->service->deleteAvatar($request->user()),
             ResponseMessage::DELETED,
         );
     }
@@ -93,7 +97,7 @@ class AuthController extends Controller
     public function updateProfile(UpdateProfileRequest $request)
     {
         return ApiResponse::success(
-            $this->authService->updateProfile($request->user(), $request->validated()),
+            $this->service->updateProfile($request->user(), $request->validated()),
             ResponseMessage::UPDATED,
         );
     }
@@ -101,7 +105,7 @@ class AuthController extends Controller
     public function updatePassword(UpdatePasswordRequest $request)
     {
         return ApiResponse::success(
-            $this->authService->updatePassword($request->user(), $request->validated('password')),
+            $this->service->updatePassword($request->user(), $request->validated('password')),
             ResponseMessage::UPDATED,
         );
     }
@@ -109,7 +113,7 @@ class AuthController extends Controller
     public function updateSettings(UpdateSettingsRequest $request)
     {
         return ApiResponse::success(
-            $this->authService->updateSettings($request->user(), $request->validated()),
+            $this->service->updateSettings($request->user(), $request->validated()),
             ResponseMessage::UPDATED,
         );
     }
@@ -117,7 +121,7 @@ class AuthController extends Controller
     public function access(Request $request)
     {
         return ApiResponse::success(
-            $this->authService->accessMatrix($request->user()),
+            $this->service->accessMatrix($request->user()),
             ResponseMessage::FETCHED,
         );
     }

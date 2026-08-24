@@ -4,10 +4,12 @@ namespace App\Services;
 
 use App\Http\Resources\AuthUserResource;
 use App\Models\User;
+use App\Support\DepartmentMode;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Lab404\Impersonate\Services\ImpersonateManager;
 
 class AuthService
 {
@@ -26,7 +28,7 @@ class AuthService
         if (! $user->isActive()) {
             Auth::guard('web')->logout();
 
-            $label = $user->status === \App\Models\User::STATUS_BLOCKED ? 'blocked' : 'deactivated';
+            $label = $user->status === User::STATUS_BLOCKED ? 'blocked' : 'deactivated';
             $reason = $user->status_reason ? " Reason: {$user->status_reason}" : '';
 
             throw ValidationException::withMessages([
@@ -49,41 +51,51 @@ class AuthService
 
     public function updateAvatar(User $user, UploadedFile $file): array
     {
-        // Centralised, validated store; replaces + cleans up the previous avatar.
-        $user->attachSingleFile($file, 'avatar');
+        return DB::transaction(function () use ($user, $file) {
+            // Centralised, validated store; replaces + cleans up the previous avatar.
+            $user->attachSingleFile($file, 'avatar');
 
-        return $this->userPayload($user->fresh());
+            return $this->userPayload($user->fresh());
+        });
     }
 
     public function deleteAvatar(User $user): array
     {
-        $user->detachFiles('avatar');
+        return DB::transaction(function () use ($user) {
+            $user->detachFiles('avatar');
 
-        return $this->userPayload($user->fresh());
+            return $this->userPayload($user->fresh());
+        });
     }
 
     /** Update the signed-in user's personal information. */
     public function updateProfile(User $user, array $data): array
     {
-        $user->update($data);
+        return DB::transaction(function () use ($user, $data) {
+            $user->update($data);
 
-        return $this->userPayload($user->fresh());
+            return $this->userPayload($user->fresh());
+        });
     }
 
     /** Change the signed-in user's password (already validated against the current one). */
     public function updatePassword(User $user, string $password): array
     {
-        $user->update(['password' => $password]); // hashed by the model cast
+        return DB::transaction(function () use ($user, $password) {
+            $user->update(['password' => $password]); // hashed by the model cast
 
-        return $this->userPayload($user->fresh());
+            return $this->userPayload($user->fresh());
+        });
     }
 
     /** Persist the signed-in user's account settings/preferences. */
     public function updateSettings(User $user, array $settings): array
     {
-        $user->update(['settings' => $settings]);
+        return DB::transaction(function () use ($user, $settings) {
+            $user->update(['settings' => $settings]);
 
-        return $this->userPayload($user->fresh());
+            return $this->userPayload($user->fresh());
+        });
     }
 
     /**
@@ -96,7 +108,7 @@ class AuthService
 
         return [
             'roles' => $user->roles->map(fn ($role) => [
-                'name'        => $role->name,
+                'name' => $role->name,
                 'permissions' => $role->permissions->pluck('name')->values(),
             ])->values(),
             'direct_permissions' => $user->getDirectPermissions()->pluck('name')->values(),
@@ -110,27 +122,27 @@ class AuthService
         $resource = (new AuthUserResource($user))->resolve();
 
         return [
-            'user'            => $resource,
-            'roles'           => $resource['roles'],
-            'permissions'     => $resource['permissions'],
+            'user' => $resource,
+            'roles' => $resource['roles'],
+            'permissions' => $resource['permissions'],
             // Tenant-level config the SPA needs up front — drives how the
             // department form behaves (shared / scoped / flexible).
-            'department_mode' => \App\Support\DepartmentMode::current(),
+            'department_mode' => DepartmentMode::current(),
             // When a Super Admin is viewing the app AS another user, the SPA
             // shows a "return to your account" banner. `impersonator` is the real
             // account's name so the banner can say who you'll return to.
-            'impersonation'   => $this->impersonationState(),
+            'impersonation' => $this->impersonationState(),
         ];
     }
 
     /** Current impersonation status, from lab404/laravel-impersonate. */
     private function impersonationState(): array
     {
-        $manager = app(\Lab404\Impersonate\Services\ImpersonateManager::class);
+        $manager = app(ImpersonateManager::class);
         $active = $manager->isImpersonating();
 
         return [
-            'active'       => $active,
+            'active' => $active,
             'impersonator' => $active ? $manager->getImpersonator()?->name : null,
         ];
     }

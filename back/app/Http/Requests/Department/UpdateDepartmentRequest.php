@@ -11,6 +11,7 @@ class UpdateDepartmentRequest extends FormRequest
     public function authorize(): bool
     {
         $department = $this->route('department');
+
         return auth()->user()->can('update', $department);
     }
 
@@ -19,9 +20,8 @@ class UpdateDepartmentRequest extends FormRequest
         $id = $this->route('department')->id;
 
         return [
-            'name'            => ['required', 'string', 'max:255', 'unique:departments,name,' . $id],
-            'organization_id' => DepartmentMode::organizationRule(),
-            'parent_id'       => [
+            'name' => ['required', 'string', 'max:255', 'unique:departments,name,'.$id],
+            'parent_id' => [
                 'nullable',
                 'integer',
                 'exists:departments,id',
@@ -50,6 +50,7 @@ class UpdateDepartmentRequest extends FormRequest
                     }
                 },
             ],
+            'organization_id' => DepartmentMode::organizationRule(),
         ];
     }
 }

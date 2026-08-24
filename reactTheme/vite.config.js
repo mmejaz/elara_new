@@ -17,7 +17,8 @@ export default defineConfig({
     strictPort: false,
     // Tenants are reached at <tenant>.localhost:5173. Vite blocks unknown Host
     // headers by default, so the leading-dot entry whitelists the subdomains.
-    allowedHosts: ['.localhost'],
+    // host.docker.internal lets a containerized Cypress reach the dev server.
+    allowedHosts: ['.localhost', 'host.docker.internal'],
     // Bind-mounted source in Docker (esp. on Windows/WSL) doesn't emit native
     // file-change events into the container, so HMR misses edits. Poll instead.
     watch: {

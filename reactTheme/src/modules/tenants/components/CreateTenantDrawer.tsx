@@ -1,7 +1,7 @@
 import { Alert, Button, Col, Drawer, Form, Input, Row, Select } from 'antd'
 import { useCreateTenant } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
-import { notify, toast } from '../../../utils/toast'
+import { toast } from '../../../utils/toast'
 
 interface Props {
   open: boolean
@@ -19,7 +19,7 @@ function CreateTenantDrawer({ open, onClose }: Props) {
   const handleFinish = (values: Record<string, unknown>) => {
     mutation.mutate(values, {
       onSuccess: () => {
-        notify.success('Tenant created', 'The tenant database is being provisioned.')
+        toast.success('Tenant created successfully')
         form.resetFields()
         onClose()
       },

@@ -1,8 +1,10 @@
 import { LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons'
-import { Button, Drawer, Form, Input, Select } from 'antd'
+import { Button, DatePicker, Drawer, Form, Input, Select } from 'antd'
+import dayjs, { type Dayjs } from 'dayjs'
 import { useEffect } from 'react'
 import { useRoles, useUpdateUser } from '../queries'
 import { useOrganizationOptions } from '../../organizations/queries'
+import { useDepartmentOptions } from '../../departments/queries'
 import { useUrlDrawer } from '../../../components/DataTable'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { toast } from '../../../utils/toast'
@@ -16,6 +18,7 @@ function EditUserDrawer() {
   const { data: roles = [], isLoading: rolesLoading } = useRoles()
   const roleOptions = roles.map((role: string) => ({ value: role, label: role }))
   const { data: organizations = [], isLoading: orgsLoading } = useOrganizationOptions(open)
+  const { data: departments = [], isLoading: deptsLoading } = useDepartmentOptions(open)
   const mutation = useUpdateUser()
 
   useEffect(() => {
@@ -24,6 +27,8 @@ function EditUserDrawer() {
         name: editingUser.name,
         email: editingUser.email,
         role: editingUser.roles?.[0],
+        department_id: editingUser.department_id ?? undefined,
+        joining_date: editingUser.joining_date ? dayjs(editingUser.joining_date) : undefined,
         organization_ids: editingUser.organization_ids ?? [],
         password: '',
       })
@@ -32,8 +37,13 @@ function EditUserDrawer() {
 
   const handleFinish = (values: Record<string, unknown>) => {
     if (!editingUser) return
+    // The DatePicker yields a Dayjs; the API wants an ISO date string.
+    const payload = {
+      ...values,
+      joining_date: (values.joining_date as Dayjs | undefined)?.format('YYYY-MM-DD') ?? null,
+    }
     mutation.mutate(
-      { id: editingUser.id, ...values },
+      { id: editingUser.id, ...payload },
       {
         onSuccess: () => {
           toast.success('User updated successfully')
@@ -112,6 +122,30 @@ function EditUserDrawer() {
             size="large"
             showSearch
             optionFilterProp="label"
+          />
+        </Form.Item>
+
+        <Form.Item
+          label="Department"
+          name="department_id"
+          rules={[{ required: true, message: 'Select a department' }]}
+        >
+          <Select
+            loading={deptsLoading}
+            options={departments.map((d) => ({ value: d.id, label: d.name }))}
+            placeholder="Select a department"
+            size="large"
+            showSearch
+            optionFilterProp="label"
+          />
+        </Form.Item>
+
+        <Form.Item label="Joining Date" name="joining_date">
+          <DatePicker
+            className="!w-full"
+            size="large"
+            format="YYYY-MM-DD"
+            placeholder="Select joining date"
           />
         </Form.Item>
 

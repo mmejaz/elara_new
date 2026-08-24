@@ -4,6 +4,7 @@ namespace App\Http\Requests\Permission;
 
 use App\Models\Permission;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class UpdatePermissionRequest extends FormRequest
 {
@@ -15,10 +16,19 @@ class UpdatePermissionRequest extends FormRequest
 
     public function rules(): array
     {
-        $permissionId = $this->route('permission')->id;
+        $permission = $this->route('permission');
 
         return [
-            'name' => ['required', 'string', 'max:255', 'unique:permissions,name,' . $permissionId],
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                // Every permission has TWO rows (the `web` and `sanctum` guard
+                // twins) sharing one name, so ignoring the bound id alone still
+                // trips on the twin. Ignore by name instead — this excludes both
+                // twins and still catches a collision with a *different* name.
+                Rule::unique('permissions', 'name')->ignore($permission->name, 'name'),
+            ],
         ];
     }
 

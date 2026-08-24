@@ -30,7 +30,7 @@ class ModuleService
         $query = Module::query();
 
         if (! empty($params['search'])) {
-            $query->where('name', 'like', '%' . $params['search'] . '%');
+            $query->where('name', 'like', '%'.$params['search'].'%');
         }
 
         $sortable = ['name', 'created_at', 'id', 'order'];
@@ -40,14 +40,6 @@ class ModuleService
         return $query
             ->orderBy($sortBy, $sortDir)
             ->paginate((int) ($params['per_page'] ?? 15));
-    }
-
-    /** Update a module (e.g. toggle active/inactive visibility). */
-    public function update(Module $module, array $data): ModuleResource
-    {
-        $module->update($data);
-
-        return new ModuleResource($module);
     }
 
     /**
@@ -109,7 +101,7 @@ class ModuleService
                 }
 
                 // Leaf: keep only if the user holds this module's view permission.
-                return $permitted->has(Str::snake($module->name) . '.view');
+                return $permitted->has(Str::snake($module->name).'.view');
             })
             ->values();
     }
@@ -130,16 +122,16 @@ class ModuleService
                 : Str::slug($data['name']);
 
             return Module::create([
-                'name'           => trim($data['name']),
-                'slug'           => $slug,
-                'icon'           => $data['icon'] ?? null,
-                'type'           => $data['type'],
+                'name' => trim($data['name']),
+                'slug' => $slug,
+                'icon' => $data['icon'] ?? null,
+                'type' => $data['type'],
                 'is_resourceful' => $isResourceful,
-                'parent_id'      => $parentId,
-                'order'          => $this->nextOrder($parentId),
-                'is_visible'     => true,
-                'is_system'      => false,
-                'description'    => $data['description'] ?? null,
+                'parent_id' => $parentId,
+                'order' => $this->nextOrder($parentId),
+                'is_visible' => true,
+                'is_system' => false,
+                'description' => $data['description'] ?? null,
             ]);
         });
 
@@ -163,6 +155,16 @@ class ModuleService
         }
 
         return new ModuleResource($module);
+    }
+
+    /** Update a module (e.g. toggle active/inactive visibility). */
+    public function update(Module $module, array $data): ModuleResource
+    {
+        return DB::transaction(function () use ($module, $data) {
+            $module->update($data);
+
+            return new ModuleResource($module);
+        });
     }
 
     // ───────────────────────────────────────────────────────── helpers ────

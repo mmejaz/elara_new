@@ -11,3 +11,18 @@
 @theme {
   --font-sans: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
 }
+
+/* AntD's lightweight `message` toasts are horizontally centered by default
+   (the container is full-width, anchored at left:50% with a translateX(-50%)),
+   and the surface can't be repositioned through its API. The app wants them in
+   the top-right, matching the corner `notification` surface. Re-anchor the fixed
+   container to the right edge and let it shrink to its content. Scoped to
+   `.ant-message` only — the `notification` surface is already topRight. */
+.ant-message {
+  inset-inline-start: auto !important;
+  inset-inline-end: 24px !important;
+  top: 72px !important; /* clear the fixed header so the pill isn't behind it */
+  width: auto !important;
+  transform: none !important;
+  text-align: end;
+}

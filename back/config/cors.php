@@ -15,6 +15,9 @@ return [
         env('FRONTEND_ORIGIN_PATTERN', '#^http://([a-z0-9-]+\.)?localhost:5173$#'),
         // The central app is served on the loopback IP (127.0.0.1:5173).
         '#^http://127\.0\.0\.1:5173$#',
+        // Cypress running inside a container reaches the host-published SPA via
+        // host.docker.internal (macOS has no --network host). Test-only origin.
+        '#^http://host\.docker\.internal:5173$#',
     ],
 
     'allowed_headers' => ['Accept', 'Accept-Language', 'Content-Type', 'X-CSRF-TOKEN', 'X-XSRF-TOKEN', 'Authorization', 'X-Requested-With'],

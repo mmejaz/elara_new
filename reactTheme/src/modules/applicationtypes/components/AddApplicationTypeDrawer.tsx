@@ -2,7 +2,7 @@ import { Alert, Button, Drawer, Form, Input } from 'antd'
 import { closeAddDrawer } from '../applicationTypesSlice'
 import { useCreateApplicationType } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
-import { notify, toast } from '../../../utils/toast'
+import { toast } from '../../../utils/toast'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 
 function AddApplicationTypeDrawer() {
@@ -14,7 +14,7 @@ function AddApplicationTypeDrawer() {
   const handleFinish = (values: Record<string, unknown>) => {
     mutation.mutate(values, {
       onSuccess: () => {
-        notify.success('Application Type created', 'The record was created successfully.')
+        toast.success('Application Type created successfully')
         form.resetFields()
         dispatch(closeAddDrawer())
       },

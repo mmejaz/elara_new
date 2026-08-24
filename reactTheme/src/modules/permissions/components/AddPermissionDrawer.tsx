@@ -1,16 +1,16 @@
 import { Alert, Button, Drawer, Form, Select } from 'antd'
 import { useMemo } from 'react'
-import { notify, toast } from '../../../utils/toast'
-import { closeAddDrawer } from '../permissionsSlice'
+import { toast } from '../../../utils/toast'
 import { useCreatePermission } from '../queries'
 import { useModules } from '../../../hooks/useModules'
+import { useUrlDrawer } from '../../../components/DataTable'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
-import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useAppSelector } from '../../../store/hooks'
 
 const ACTIONS = ['view', 'create', 'edit', 'delete', 'export', 'manage']
 
 function AddPermissionDrawer() {
-  const dispatch = useAppDispatch()
+  const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.permissions.addDrawerOpen)
   const [form] = Form.useForm()
   const mutation = useCreatePermission()
@@ -33,9 +33,9 @@ function AddPermissionDrawer() {
     const name = `${toKey(values.module)}.${toKey(values.action)}`
     mutation.mutate({ name }, {
       onSuccess: () => {
-        notify.success('Permission created', 'The permission was created successfully.')
+        toast.success('Permission created successfully')
         form.resetFields()
-        dispatch(closeAddDrawer())
+        drawer.close()
       },
       onError: (error) => {
         if (!applyServerErrors(error, form)) {
@@ -48,7 +48,7 @@ function AddPermissionDrawer() {
   const handleClose = () => {
     if (mutation.isPending) return
     form.resetFields()
-    dispatch(closeAddDrawer())
+    drawer.close()
   }
 
   return (

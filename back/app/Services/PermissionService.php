@@ -51,18 +51,47 @@ class PermissionService
     public function create(array $data): PermissionResource
     {
         return DB::transaction(function () use ($data) {
-            $permission = Permission::create(['name' => $data['name']]);
+            // Permissions must exist under BOTH guards: `web` backs the SPA session
+            // and `sanctum` backs the API (and the display list is
+            // DISPLAY_GUARD-scoped). Creating under a single guard — the request's
+            // active guard, sanctum — would hide the new permission from the list
+            // and leave it unusable on the other guard. Mirror the seeder and
+            // RoleService: create both.
+            $displayPermission = null;
 
-            return new PermissionResource($permission->load('roles'));
+            foreach ([self::DISPLAY_GUARD, 'sanctum'] as $guard) {
+                $permission = Permission::create(['name' => $data['name'], 'guard_name' => $guard]);
+
+                if ($guard === self::DISPLAY_GUARD) {
+                    $displayPermission = $permission;
+                }
+            }
+
+            return new PermissionResource($displayPermission->load('roles'));
         });
     }
 
     public function update(Permission $permission, array $data): PermissionResource
     {
         return DB::transaction(function () use ($permission, $data) {
-            $permission->update(['name' => $data['name']]);
+            // The bound permission is DISPLAY_GUARD-scoped, but the same permission
+            // also exists under sanctum. Rename BOTH guard rows so the name never
+            // drifts between them.
+            $originalName = $permission->name;
 
-            return new PermissionResource($permission->load('roles'));
+            foreach ([self::DISPLAY_GUARD, 'sanctum'] as $guard) {
+                $twin = $guard === $permission->guard_name
+                    ? $permission
+                    : Permission::where('name', $originalName)->where('guard_name', $guard)->first();
+
+                if (! $twin) {
+                    continue;
+                }
+
+                $twin->update(['name' => $data['name']]);
+            }
+
+            return new PermissionResource($permission->fresh()->load('roles'));
         });
     }
 }

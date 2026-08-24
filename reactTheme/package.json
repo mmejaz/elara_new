@@ -13,7 +13,7 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "test:ci": "vitest run --coverage --reporter=default",
-    "cypress:open": "cypress open --e2e --browser electron",
+    "cypress:open": "cypress open --e2e --browser chrome",
     "cypress:run": "cypress run",
     "e2e": "start-server-and-test dev http://localhost:5173 cypress:run"
   },

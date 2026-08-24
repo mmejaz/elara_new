@@ -24,13 +24,14 @@ export function useDepartments(params: ServerTableParams) {
  * index endpoint with a large page size; shares the ['departments'] key prefix so
  * create/update/delete invalidations refresh it too.
  */
-export function useDepartmentOptions() {
+export function useDepartmentOptions(enabled = true) {
   return useQuery({
     queryKey: ['departments', 'options'],
     queryFn: async (): Promise<Department[]> => {
       const { data } = await apiClient.get('/departments', { params: { per_page: 1000 } })
       return data.data
     },
+    enabled,
   })
 }
 

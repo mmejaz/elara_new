@@ -14,17 +14,17 @@ use Symfony\Component\HttpFoundation\Response;
 
 class PermissionController extends Controller
 {
-    public function __construct(private PermissionService $permissionService) {}
+    public function __construct(private PermissionService $service) {}
 
     public function index()
     {
-        return ApiResponse::success($this->permissionService->getAllNames(), ResponseMessage::FETCHED);
+        return ApiResponse::success($this->service->getAllNames(), ResponseMessage::FETCHED);
     }
 
     public function paginated(Request $request)
     {
         return ApiResponse::paginated(
-            $this->permissionService->paginate($request->only(['search', 'sort_by', 'sort_dir', 'per_page'])),
+            $this->service->paginate($request->only(['search', 'sort_by', 'sort_dir', 'per_page'])),
             PermissionResource::class,
             ResponseMessage::FETCHED,
         );
@@ -33,7 +33,7 @@ class PermissionController extends Controller
     public function store(StorePermissionRequest $request)
     {
         return ApiResponse::success(
-            $this->permissionService->create($request->validated()),
+            $this->service->create($request->validated()),
             ResponseMessage::CREATED,
             Response::HTTP_CREATED,
         );
@@ -42,7 +42,7 @@ class PermissionController extends Controller
     public function update(UpdatePermissionRequest $request, Permission $permission)
     {
         return ApiResponse::success(
-            $this->permissionService->update($permission, $request->validated()),
+            $this->service->update($permission, $request->validated()),
             ResponseMessage::UPDATED,
         );
     }

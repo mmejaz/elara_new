@@ -1,19 +1,32 @@
 import { PlusOutlined } from '@ant-design/icons'
 import { Button, Space, Tag, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import PageHeader from '../../../components/PageHeader'
-import DataTable, { useColumnToggle, useServerTable } from '../../../components/DataTable'
+import DataTable, { useColumnToggle, useUrlDrawer, useUrlTable } from '../../../components/DataTable'
 import AddModuleDrawer from '../components/AddModuleDrawer'
-import { openAddDrawer } from '../moduleBuilderSlice'
+import { openAddDrawer, closeAddDrawer } from '../moduleBuilderSlice'
 import { useModulesPaginated } from '../../../hooks/useModules'
-import { useAppDispatch } from '../../../store/hooks'
+import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 
 const { Text } = Typography
 
 function ModuleBuilderPage() {
   const dispatch = useAppDispatch()
-  const table = useServerTable(15, 'Search modules…')
+  const table = useUrlTable(15, 'Search modules…')
+  // The Add drawer is deep-linkable via ?add=true (this page has no edit).
+  const drawer = useUrlDrawer()
+  const addDrawerOpen = useAppSelector((state) => state.moduleBuilder.addDrawerOpen)
+
+  // The URL drives the drawer: ?add=true opens Add, no param closes it.
+  useEffect(() => {
+    if (drawer.add) {
+      if (!addDrawerOpen) dispatch(openAddDrawer())
+    } else if (addDrawerOpen) {
+      dispatch(closeAddDrawer())
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drawer.add])
   // isFetching (not isLoading): with keepPreviousData the query keeps showing the
   // previous page's rows on a page switch, so isLoading stays false. isFetching
   // is true for every in-flight request — initial load, pagination, search, sort
@@ -82,7 +95,7 @@ function ModuleBuilderPage() {
             <Button
               type="primary"
               icon={<PlusOutlined />}
-              onClick={() => dispatch(openAddDrawer())}
+              onClick={() => drawer.openAdd()}
             >
               Create Module
             </Button>

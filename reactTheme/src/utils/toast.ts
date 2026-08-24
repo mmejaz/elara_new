@@ -13,18 +13,19 @@ import type { ReactNode } from 'react'
  *   import { toast } from '@/utils/toast'
  *
  *   toast({ type: 'success', message: 'Saved' })
- *   // → centered lightweight message
+ *   // → top-right notification card (title only)
  *
  *   toast({ type: 'success', message: 'User created', description: 'Account is ready.' })
- *   // → top-right notification (a description was supplied, so the richer surface is auto-picked)
+ *   // → top-right notification with a description
  *
- *   toast('Copied to clipboard')            // string shorthand → info message
+ *   toast('Copied to clipboard')            // string shorthand → info notification
  *   toast.error(serverMessage(err))         // typed shorthands still work
  *
- * Surface selection (the "auto show accordingly" part):
+ * Surface selection:
  *   - `surface: 'notification'`            → always the corner notification
- *   - `surface: 'message'`                 → always the centered message
- *   - `surface: 'auto'` (default)          → notification if `description` is set, else message
+ *   - `surface: 'message'`                 → always the centered message pill
+ *   - `surface: 'auto'` (default)          → notification for everything except
+ *                                            `loading` (a message, for its spinner)
  *
  * Setup (once): mount <ToastHost/> inside AntD's <App> provider (see providers.tsx).
  */
@@ -84,8 +85,14 @@ function show(config: ToastConfig): void {
     key,
   } = config
 
+  // App-wide standard: every toast renders as the top-right notification card.
+  // `surface: 'auto'` (the default for every `toast.*` call) therefore resolves
+  // to a notification — with or without a description. Only `loading` stays a
+  // centered message, since notification has no spinner variant; pass
+  // `surface: 'message'` explicitly to opt any single toast back into the pill.
   const asNotification =
-    surface === 'notification' || (surface === 'auto' && description != null)
+    surface === 'notification' ||
+    (surface === 'auto' && type !== 'loading')
 
   if (asNotification) {
     if (!notifyApi) return warnNotReady(config)

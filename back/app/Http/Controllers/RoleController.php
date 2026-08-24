@@ -14,22 +14,22 @@ use Symfony\Component\HttpFoundation\Response;
 
 class RoleController extends Controller
 {
-    public function __construct(private RoleService $roleService) {}
+    public function __construct(private RoleService $service) {}
 
     public function index()
     {
-        return ApiResponse::success($this->roleService->getAllNames(), ResponseMessage::FETCHED);
+        return ApiResponse::success($this->service->getAllNames(), ResponseMessage::FETCHED);
     }
 
     public function list()
     {
-        return ApiResponse::success($this->roleService->getAll(), ResponseMessage::FETCHED);
+        return ApiResponse::success($this->service->getAll(), ResponseMessage::FETCHED);
     }
 
     public function paginated(Request $request)
     {
         return ApiResponse::paginated(
-            $this->roleService->paginate($request->only(['search', 'sort_by', 'sort_dir', 'per_page'])),
+            $this->service->paginate($request->only(['search', 'sort_by', 'sort_dir', 'per_page'])),
             RoleResource::class,
             ResponseMessage::FETCHED,
         );
@@ -38,7 +38,7 @@ class RoleController extends Controller
     public function store(StoreRoleRequest $request)
     {
         return ApiResponse::success(
-            $this->roleService->create($request->validated()),
+            $this->service->create($request->validated()),
             ResponseMessage::CREATED,
             Response::HTTP_CREATED,
         );
@@ -47,7 +47,7 @@ class RoleController extends Controller
     public function update(UpdateRoleRequest $request, Role $role)
     {
         return ApiResponse::success(
-            $this->roleService->update($role, $request->validated()),
+            $this->service->update($role, $request->validated()),
             ResponseMessage::UPDATED,
         );
     }

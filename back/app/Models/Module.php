@@ -28,12 +28,15 @@ class Module extends Model
 {
     use SoftDeletes;
 
-    protected $casts = [
-        'is_resourceful' => 'boolean',
-        'is_visible'     => 'boolean',
-        'is_system'      => 'boolean',
-        'meta'           => 'array',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'is_resourceful' => 'boolean',
+            'is_visible' => 'boolean',
+            'is_system' => 'boolean',
+            'meta' => 'array',
+        ];
+    }
 
     /**
      * Central-only modules are invisible inside a tenant.
@@ -109,6 +112,6 @@ class Module extends Model
     {
         $module = Str::snake($this->name);
 
-        return array_map(fn (string $action) => $module . '.' . Str::snake($action), $actions);
+        return array_map(fn (string $action) => $module.'.'.Str::snake($action), $actions);
     }
 }

@@ -2,7 +2,7 @@ import { Alert, Button, Drawer, Form, Input } from 'antd'
 import { closeAddDrawer } from '../leaveTypesSlice'
 import { useCreateLeaveType } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
-import { notify, toast } from '../../../utils/toast'
+import { toast } from '../../../utils/toast'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 
 function AddLeaveTypeDrawer() {
@@ -14,7 +14,7 @@ function AddLeaveTypeDrawer() {
   const handleFinish = (values: Record<string, unknown>) => {
     mutation.mutate(values, {
       onSuccess: () => {
-        notify.success('Leave Type created', 'The record was created successfully.')
+        toast.success('Leave Type created successfully')
         form.resetFields()
         dispatch(closeAddDrawer())
       },

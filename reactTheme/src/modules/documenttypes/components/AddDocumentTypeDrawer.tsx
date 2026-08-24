@@ -2,7 +2,7 @@ import { Alert, Button, Drawer, Form, Input } from 'antd'
 import { closeAddDrawer } from '../documentTypesSlice'
 import { useCreateDocumentType } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
-import { notify, toast } from '../../../utils/toast'
+import { toast } from '../../../utils/toast'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 
 function AddDocumentTypeDrawer() {
@@ -14,7 +14,7 @@ function AddDocumentTypeDrawer() {
   const handleFinish = (values: Record<string, unknown>) => {
     mutation.mutate(values, {
       onSuccess: () => {
-        notify.success('Document Type created', 'The record was created successfully.')
+        toast.success('Document Type created successfully')
         form.resetFields()
         dispatch(closeAddDrawer())
       },

@@ -15,12 +15,12 @@ use Symfony\Component\HttpFoundation\Response;
 
 class UserController extends Controller
 {
-    public function __construct(private UserService $userService) {}
+    public function __construct(private UserService $service) {}
 
     public function paginated(Request $request)
     {
         return ApiResponse::paginated(
-            $this->userService->paginate($request->only(['search', 'sort_by', 'sort_dir', 'per_page'])),
+            $this->service->paginate($request->only(['search', 'sort_by', 'sort_dir', 'per_page'])),
             UserResource::class,
             ResponseMessage::FETCHED,
         );
@@ -28,13 +28,13 @@ class UserController extends Controller
 
     public function stats()
     {
-        return ApiResponse::success($this->userService->stats(), ResponseMessage::FETCHED);
+        return ApiResponse::success($this->service->stats(), ResponseMessage::FETCHED);
     }
 
     public function store(StoreUserRequest $request)
     {
         return ApiResponse::success(
-            $this->userService->create($request->validated()),
+            $this->service->create($request->validated()),
             ResponseMessage::CREATED,
             Response::HTTP_CREATED,
         );
@@ -43,14 +43,14 @@ class UserController extends Controller
     public function update(UpdateUserRequest $request, User $user)
     {
         return ApiResponse::success(
-            $this->userService->update($user, $request->validated()),
+            $this->service->update($user, $request->validated()),
             ResponseMessage::UPDATED,
         );
     }
 
     public function destroy(User $user)
     {
-        $this->userService->delete($user);
+        $this->service->delete($user);
 
         return ApiResponse::success(null, ResponseMessage::DELETED);
     }
@@ -77,7 +77,7 @@ class UserController extends Controller
         }
 
         return ApiResponse::success(
-            $this->userService->setStatus($user, $request->validated('status'), $request->validated('reason'), $actor),
+            $this->service->setStatus($user, $request->validated('status'), $request->validated('reason'), $actor),
             ResponseMessage::UPDATED,
         );
     }

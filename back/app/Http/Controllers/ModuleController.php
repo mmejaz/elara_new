@@ -14,17 +14,17 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ModuleController extends Controller
 {
-    public function __construct(private ModuleService $moduleService) {}
+    public function __construct(private ModuleService $service) {}
 
     public function index()
     {
-        return ApiResponse::success($this->moduleService->getAll(), ResponseMessage::FETCHED);
+        return ApiResponse::success($this->service->getAll(), ResponseMessage::FETCHED);
     }
 
     public function paginated(Request $request)
     {
         return ApiResponse::paginated(
-            $this->moduleService->paginate($request->only(['search', 'sort_by', 'sort_dir', 'per_page'])),
+            $this->service->paginate($request->only(['search', 'sort_by', 'sort_dir', 'per_page'])),
             ModuleResource::class,
             ResponseMessage::FETCHED,
         );
@@ -32,13 +32,13 @@ class ModuleController extends Controller
 
     public function tree()
     {
-        return ApiResponse::success($this->moduleService->tree(), ResponseMessage::FETCHED);
+        return ApiResponse::success($this->service->tree(), ResponseMessage::FETCHED);
     }
 
     public function store(StoreModuleRequest $request)
     {
         return ApiResponse::success(
-            $this->moduleService->create($request->validated()),
+            $this->service->create($request->validated()),
             ResponseMessage::CREATED,
             Response::HTTP_CREATED,
         );
@@ -47,7 +47,7 @@ class ModuleController extends Controller
     public function update(UpdateModuleRequest $request, Module $module)
     {
         return ApiResponse::success(
-            $this->moduleService->update($module, $request->validated()),
+            $this->service->update($module, $request->validated()),
             ResponseMessage::UPDATED,
         );
     }

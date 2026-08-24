@@ -2,7 +2,7 @@ import { Alert, Button, Drawer, Form, Input } from 'antd'
 import { closeAddDrawer } from '../citiesSlice'
 import { useCreateCity } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
-import { notify, toast } from '../../../utils/toast'
+import { toast } from '../../../utils/toast'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 
 function AddCityDrawer() {
@@ -14,7 +14,7 @@ function AddCityDrawer() {
   const handleFinish = (values: Record<string, unknown>) => {
     mutation.mutate(values, {
       onSuccess: () => {
-        notify.success('City created', 'The record was created successfully.')
+        toast.success('City created successfully')
         form.resetFields()
         dispatch(closeAddDrawer())
       },

@@ -37,7 +37,7 @@ class GlobalSettingRecordController extends Controller
 
     public function update(Request $request, GlobalSetting $globalSetting, GlobalSettingRecord $record)
     {
-        abort_if($record->global_setting_id !== $globalSetting->id, 404);
+        abort_if($record->global_setting_id !== $globalSetting->id, Response::HTTP_NOT_FOUND);
 
         return ApiResponse::success(
             $this->service->update($record, $this->validated($request, $globalSetting)),
@@ -52,7 +52,7 @@ class GlobalSettingRecordController extends Controller
         $attributes = [];
 
         foreach ($globalSetting->fields as $field) {
-            $key = 'data.' . $field->key;
+            $key = 'data.'.$field->key;
             $rule = [$field->is_required ? 'required' : 'nullable'];
 
             if ($field->type === 'number') {

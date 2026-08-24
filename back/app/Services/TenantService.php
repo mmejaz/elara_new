@@ -2,7 +2,9 @@
 
 namespace App\Services;
 
+use App\Http\Resources\TenantResource;
 use App\Models\Tenant;
+use App\Support\DepartmentMode;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -26,7 +28,7 @@ class TenantService
         $query = Tenant::query()->with('domains');
 
         if (! empty($params['search'])) {
-            $search = '%' . $params['search'] . '%';
+            $search = '%'.$params['search'].'%';
 
             $query->where(function ($q) use ($search) {
                 $q->where('id', 'like', $search)
@@ -39,16 +41,16 @@ class TenantService
 
         // Maps the column key the table sends to something SQL can order by.
         $sortable = [
-            'id'         => 'id',
-            'name'       => 'data->name',
-            'status'     => 'data->status',
-            'email'      => 'data->email',
-            'timezone'   => 'data->timezone',
-            'currency'   => 'data->currency',
+            'id' => 'id',
+            'name' => 'data->name',
+            'status' => 'data->status',
+            'email' => 'data->email',
+            'timezone' => 'data->timezone',
+            'currency' => 'data->currency',
             'created_at' => 'created_at',
         ];
 
-        $sortBy  = $sortable[$params['sort_by'] ?? ''] ?? 'created_at';
+        $sortBy = $sortable[$params['sort_by'] ?? ''] ?? 'created_at';
         $sortDir = ($params['sort_dir'] ?? 'desc') === 'asc' ? 'asc' : 'desc';
 
         return $query
@@ -56,46 +58,62 @@ class TenantService
             ->paginate((int) ($params['per_page'] ?? 15));
     }
 
-    public function create(array $data): Tenant
+    /** A single tenant with its domains, for the detail view. */
+    public function show(Tenant $tenant): TenantResource
     {
+        return new TenantResource($tenant->load('domains'));
+    }
+
+    public function create(array $data): TenantResource
+    {
+        // NOT wrapped in a DB::transaction — deliberately. Tenant::create fires
+        // Stancl's TenantCreated pipeline, which QUEUES the CreateDatabase job.
+        // A job dispatched inside a transaction is pushed before the row commits,
+        // so the queue worker would race an un-committed tenant and provisioning
+        // would silently fail. Keep the two inserts unwrapped so the row is
+        // visible the moment the job runs.
         // Readable, safe id → becomes the DB name suffix (prefix from config).
         $id = $data['id']
             ?? Str::of($data['domain'])->before('.')->slug()->toString();
 
         $tenant = Tenant::create([
-            'id'       => $id,
-            'name'     => $data['name'],
-            'status'   => $data['status'] ?? 'active',
-            'email'    => $data['email'] ?? null,
-            'phone'    => $data['phone'] ?? null,
+            'id' => $id,
+            'name' => $data['name'],
+            'status' => $data['status'] ?? 'active',
+            'email' => $data['email'] ?? null,
+            'phone' => $data['phone'] ?? null,
             'timezone' => $data['timezone'] ?? 'UTC',
             'currency' => $data['currency'] ?? 'USD',
             'language' => $data['language'] ?? 'en',
             // How this client treats departments — chosen once at provisioning.
             // Read in tenant context via App\Support\DepartmentMode::current().
-            'department_mode' => $data['department_mode'] ?? \App\Support\DepartmentMode::FLEXIBLE,
+            'department_mode' => $data['department_mode'] ?? DepartmentMode::FLEXIBLE,
             // Consumed by TenantDatabaseSeeder. NOTE: stored in the tenant's
             // `data` JSON — in production, rotate/clear after provisioning.
-            'admin_name'     => $data['admin_name'] ?? 'Administrator',
-            'admin_email'    => $data['admin_email'],
+            'admin_name' => $data['admin_name'] ?? 'Administrator',
+            'admin_email' => $data['admin_email'],
             'admin_password' => $data['admin_password'],
         ]);
 
         $tenant->domains()->create(['domain' => $data['domain']]);
 
-        return $tenant->fresh('domains');
+        return new TenantResource($tenant->fresh('domains'));
     }
 
-    public function setStatus(Tenant $tenant, string $status): Tenant
+    public function setStatus(Tenant $tenant, string $status): TenantResource
     {
-        $tenant->update(['status' => $status]);
+        return DB::transaction(function () use ($tenant, $status) {
+            $tenant->update(['status' => $status]);
 
-        return $tenant->fresh('domains');
+            return new TenantResource($tenant->fresh('domains'));
+        });
     }
 
     public function delete(Tenant $tenant): void
     {
-        // Firing TenantDeleted → DeleteDatabase job drops the tenant database.
+        // Also unwrapped (see create): TenantDeleted queues DeleteDatabase, which
+        // must see the committed row — and DROP DATABASE is DDL that can't live in
+        // a transaction anyway.
         $tenant->delete();
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Constants\ResponseMessage;
 use App\Helpers\ApiResponse;
 use App\Models\User;
 use App\Services\AuthService;
@@ -21,7 +22,7 @@ use Symfony\Component\HttpFoundation\Response;
  */
 class ImpersonationController extends Controller
 {
-    public function __construct(private AuthService $authService) {}
+    public function __construct(private AuthService $service) {}
 
     public function start(Request $request, User $user)
     {
@@ -48,8 +49,8 @@ class ImpersonationController extends Controller
         }
 
         return ApiResponse::success(
-            $this->authService->currentUser($user->fresh()),
-            'Impersonation started.',
+            $this->service->currentUser($user->fresh()),
+            ResponseMessage::IMPERSONATION_STARTED,
         );
     }
 
@@ -63,8 +64,8 @@ class ImpersonationController extends Controller
         $manager->leave();
 
         return ApiResponse::success(
-            $this->authService->currentUser($original),
-            'Returned to your account.',
+            $this->service->currentUser($original),
+            ResponseMessage::IMPERSONATION_STOPPED,
         );
     }
 }

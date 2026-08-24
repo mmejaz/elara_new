@@ -1,7 +1,7 @@
 import { Form, Input, Modal, Typography } from 'antd'
 import { useEffect } from 'react'
 import { useUpdateUserStatus } from '../queries'
-import { toast } from '../../../utils/toast'
+import { notify, toast } from '../../../utils/toast'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import type { User, UserStatus } from '../../../types/models'
 
@@ -35,7 +35,10 @@ function UserStatusModal({ user, status, onClose }: Props) {
           { id: user!.id, status: status!, reason },
           {
             onSuccess: () => {
-              toast.success(`${user!.name} has been ${status}.`)
+              notify.success(
+                `Account ${status}`,
+                `${user!.name} has been ${status}.`,
+              )
               onClose()
             },
             onError: (error) => {

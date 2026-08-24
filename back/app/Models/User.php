@@ -8,6 +8,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -15,7 +16,7 @@ use Lab404\Impersonate\Models\Impersonate;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
-#[Fillable(['name', 'email', 'password', 'avatar', 'phone', 'designation', 'country', 'city', 'bio', 'settings'])]
+#[Fillable(['name', 'email', 'password', 'avatar', 'phone', 'designation', 'country', 'city', 'bio', 'settings', 'department_id', 'joining_date'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -57,6 +58,7 @@ class User extends Authenticatable
             'password' => 'hashed',
             'settings' => 'array',
             'status_changed_at' => 'datetime',
+            'joining_date' => 'date:Y-m-d',
         ];
     }
 
@@ -70,6 +72,12 @@ class User extends Authenticatable
         return $this->belongsToMany(Organization::class);
     }
 
+    /** The single department this user belongs to (nullable). */
+    public function department(): BelongsTo
+    {
+        return $this->belongsTo(Department::class);
+    }
+
     /**
      * Super Admins see every organization in the tenant; everyone else is
      * limited to the organizations they are explicitly assigned to.
@@ -81,6 +89,16 @@ class User extends Authenticatable
 
     protected static function booted(): void
     {
+        // Assign the human-readable User ID once the row has a primary key. Runs
+        // for every creation path (service, seeder, tinker); saveQuietly avoids
+        // re-firing model events. Skipped if a code was set explicitly.
+        static::created(function (User $user): void {
+            if (blank($user->user_code)) {
+                $user->user_code = self::formatUserCode($user->getKey());
+                $user->saveQuietly();
+            }
+        });
+
         // Spatie's model_has_roles / model_has_permissions pivots key the model
         // side by (model_id, model_type) with NO foreign key, so a hard delete
         // would orphan them — and a future user reusing the same id could inherit
@@ -89,5 +107,11 @@ class User extends Authenticatable
             $user->roles()->detach();
             $user->permissions()->detach();
         });
+    }
+
+    /** The public User ID form, e.g. USR-00001. */
+    public static function formatUserCode(int|string $id): string
+    {
+        return 'USR-' . str_pad((string) $id, 5, '0', STR_PAD_LEFT);
     }
 }

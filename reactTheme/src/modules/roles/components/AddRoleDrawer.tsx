@@ -1,5 +1,5 @@
 import { Button, Drawer, Form, Input, Skeleton } from 'antd'
-import { notify, toast } from '../../../utils/toast'
+import { toast } from '../../../utils/toast'
 import { useCreateRole, usePermissions } from '../queries'
 import { useUrlDrawer } from '../../../components/DataTable'
 import PermissionPicker from './PermissionPicker'
@@ -17,7 +17,7 @@ function AddRoleDrawer() {
   const handleFinish = (values) => {
     mutation.mutate(values, {
       onSuccess: () => {
-        notify.success('Role created', 'The role was created successfully.')
+        toast.success('Role created successfully')
         form.resetFields()
         drawer.close()
       },

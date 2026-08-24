@@ -2,7 +2,7 @@ import { Alert, Button, Drawer, Form, Input } from 'antd'
 import { closeAddDrawer } from '../countriesSlice'
 import { useCreateCountry } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
-import { notify, toast } from '../../../utils/toast'
+import { toast } from '../../../utils/toast'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 
 function AddCountryDrawer() {
@@ -14,7 +14,7 @@ function AddCountryDrawer() {
   const handleFinish = (values: Record<string, unknown>) => {
     mutation.mutate(values, {
       onSuccess: () => {
-        notify.success('Country created', 'The record was created successfully.')
+        toast.success('Country created successfully')
         form.resetFields()
         dispatch(closeAddDrawer())
       },

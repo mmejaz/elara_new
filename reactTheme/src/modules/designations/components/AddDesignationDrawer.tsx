@@ -2,7 +2,7 @@ import { Alert, Button, Drawer, Form, Input } from 'antd'
 import { closeAddDrawer } from '../designationsSlice'
 import { useCreateDesignation } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
-import { notify, toast } from '../../../utils/toast'
+import { toast } from '../../../utils/toast'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 
 function AddDesignationDrawer() {
@@ -14,7 +14,7 @@ function AddDesignationDrawer() {
   const handleFinish = (values: Record<string, unknown>) => {
     mutation.mutate(values, {
       onSuccess: () => {
-        notify.success('Designation created', 'The record was created successfully.')
+        toast.success('Designation created successfully')
         form.resetFields()
         dispatch(closeAddDrawer())
       },

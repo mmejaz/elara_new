@@ -11,6 +11,8 @@ export type UserStatus = 'active' | 'deactivated' | 'blocked'
 
 export interface User {
   id: number
+  /** Human-readable public User ID, e.g. "USR-00001". */
+  user_code: string
   name: string
   email: string
   status?: UserStatus
@@ -23,6 +25,11 @@ export interface User {
   settings: Partial<UserSettings> | null
   avatar: string | null
   roles: string[]
+  /** The department this user belongs to. */
+  department_id?: number | null
+  department?: { id: number; name: string } | null
+  /** The date the user joined (ISO date, e.g. "2026-08-21"). */
+  joining_date?: string | null
   /** Organizations this user is assigned to (absent/empty for a Super Admin). */
   organizations?: { id: number; name: string }[]
   organization_ids?: number[]

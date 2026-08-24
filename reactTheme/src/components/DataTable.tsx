@@ -208,7 +208,12 @@ export function useUrlTable(
     setSearch({ page: pag.current ?? 1, per_page: pag.pageSize ?? defaultPageSize, ...sort })
   }
 
-  return { params, page, pageSize, search: input, searchInput, onChange }
+  // Page/size change that preserves the current sort — for a standalone
+  // <Pagination> (e.g. a card/grid view) that has no column-sorter of its own.
+  const setPage = (nextPage: number, nextSize?: number) =>
+    setSearch({ page: nextPage, per_page: nextSize ?? pageSize })
+
+  return { params, page, pageSize, search: input, searchInput, onChange, setPage }
 }
 
 /**

@@ -109,9 +109,9 @@ const validateDrawerTableSearch = (raw: Record<string, unknown>) => {
 }
 const usersRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/users', component: UsersPage, validateSearch: validateDrawerTableSearch })
 const rolesRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/roles', component: RolesPage, validateSearch: validateDrawerTableSearch })
-const permissionsRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/permissions', component: PermissionsPage })
-const modulesRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/modules', component: ModulesPage })
-const moduleBuilderRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/module-builder', component: ModuleBuilderPage, beforeLoad: centralOnly })
+const permissionsRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/permissions', component: PermissionsPage, validateSearch: validateDrawerTableSearch })
+const modulesRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/modules', component: ModulesPage, validateSearch: validateTableSearch })
+const moduleBuilderRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/module-builder', component: ModuleBuilderPage, beforeLoad: centralOnly, validateSearch: validateDrawerTableSearch })
 const profileRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/profile', component: ProfilePage })
 const reportsRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/reports', component: ReportsPage })
 const ApplicationTypesPage = lazy(() => import('../modules/applicationtypes/pages/ApplicationTypesPage'))

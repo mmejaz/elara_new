@@ -1,8 +1,11 @@
 import { LockOutlined, MailOutlined, UserOutlined } from '@ant-design/icons'
-import { Button, Drawer, Form, Input, Select, Skeleton } from 'antd'
-import { notify, toast } from '../../../utils/toast'
+import { Button, DatePicker, Drawer, Form, Input, Select, Skeleton } from 'antd'
+import type { Dayjs } from 'dayjs'
+import { useEffect, useMemo } from 'react'
+import { toast } from '../../../utils/toast'
 import { useCreateUser, usePermissions, useRolesDetailed } from '../queries'
 import { useOrganizationOptions } from '../../organizations/queries'
+import { useDepartmentOptions } from '../../departments/queries'
 import { useUrlDrawer } from '../../../components/DataTable'
 import PermissionPicker from '../../roles/components/PermissionPicker'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
@@ -16,6 +19,7 @@ function AddUserDrawer() {
   // Only fetch the drawer's reference data once it's actually open.
   const { data: roles = [], isLoading: rolesLoading } = useRolesDetailed(open)
   const { data: organizations = [], isLoading: orgsLoading } = useOrganizationOptions(open)
+  const { data: departments = [], isLoading: deptsLoading } = useDepartmentOptions(open)
   const { data: permissions = [], isLoading: permissionsLoading } = usePermissions(open)
   const roleOptions = roles.map((role) => ({ value: role.name, label: role.name }))
   const mutation = useCreateUser()
@@ -25,10 +29,33 @@ function AddUserDrawer() {
   const selectedRole = roles.find((role) => role.name === selectedRoleName)
   const rolePermissions = selectedRole?.permissions ?? []
 
+  // Department depends on the chosen organization(s): offer shared departments
+  // (org_id null) plus any owned by a selected org. The field stays disabled
+  // until an organization is picked, and a stale selection is cleared when the
+  // organizations change.
+  const selectedOrgIds = (Form.useWatch('organization_ids', form) as number[] | undefined) ?? []
+  const orgKey = selectedOrgIds.join(',')
+  const filteredDepartments = useMemo(
+    () => departments.filter((d) => d.organization_id == null || selectedOrgIds.includes(d.organization_id)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [departments, orgKey],
+  )
+  useEffect(() => {
+    const current = form.getFieldValue('department_id')
+    if (current != null && !filteredDepartments.some((d) => d.id === current)) {
+      form.setFieldValue('department_id', undefined)
+    }
+  }, [filteredDepartments, form])
+
   const handleFinish = (values) => {
-    mutation.mutate(values, {
+    // The DatePicker yields a Dayjs; the API wants an ISO date string.
+    const payload = {
+      ...values,
+      joining_date: (values.joining_date as Dayjs | undefined)?.format('YYYY-MM-DD') ?? null,
+    }
+    mutation.mutate(payload, {
       onSuccess: () => {
-        notify.success('User created', 'The user account was created successfully.')
+        toast.success('User created successfully')
         form.resetFields()
         drawer.close()
       },
@@ -147,6 +174,32 @@ function AddUserDrawer() {
             size="large"
             showSearch
             optionFilterProp="label"
+          />
+        </Form.Item>
+
+        <Form.Item
+          label="Department"
+          name="department_id"
+          rules={[{ required: true, message: 'Select a department' }]}
+          tooltip="Select an organization first — the list shows that organization's departments plus shared ones."
+        >
+          <Select
+            loading={deptsLoading}
+            disabled={selectedOrgIds.length === 0}
+            options={filteredDepartments.map((d) => ({ value: d.id, label: d.name }))}
+            placeholder={selectedOrgIds.length === 0 ? 'Select an organization first' : 'Select a department'}
+            size="large"
+            showSearch
+            optionFilterProp="label"
+          />
+        </Form.Item>
+
+        <Form.Item label="Joining Date" name="joining_date">
+          <DatePicker
+            className="!w-full"
+            size="large"
+            format="YYYY-MM-DD"
+            placeholder="Select joining date"
           />
         </Form.Item>
 

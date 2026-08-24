@@ -3,7 +3,7 @@ import { closeAddDrawer } from '../globalSettingsSlice'
 import { useCreateGlobalSetting } from '../queries'
 import FieldsBuilder from './FieldsBuilder'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
-import { notify, toast } from '../../../utils/toast'
+import { toast } from '../../../utils/toast'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 
 const { Text } = Typography
@@ -17,7 +17,7 @@ function AddGlobalSettingDrawer() {
   const handleFinish = (values: Record<string, unknown>) => {
     mutation.mutate(values, {
       onSuccess: () => {
-        notify.success('Global Setting created', 'The record was created successfully.')
+        toast.success('Global Setting created successfully')
         form.resetFields()
         dispatch(closeAddDrawer())
       },

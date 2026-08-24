@@ -2,7 +2,7 @@ import { Alert, Button, Drawer, Form, Input, Select } from 'antd'
 import { closeAddDrawer } from '../organizationsSlice'
 import { useCreateOrganization, useOrganizationOptions } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
-import { notify, toast } from '../../../utils/toast'
+import { toast } from '../../../utils/toast'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 
 function AddOrganizationDrawer() {
@@ -15,7 +15,7 @@ function AddOrganizationDrawer() {
   const handleFinish = (values: Record<string, unknown>) => {
     mutation.mutate(values, {
       onSuccess: () => {
-        notify.success('Organization created', 'The record was created successfully.')
+        toast.success('Organization created successfully')
         form.resetFields()
         dispatch(closeAddDrawer())
       },

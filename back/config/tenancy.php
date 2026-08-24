@@ -20,6 +20,10 @@ return [
         // live on subdomains instead (e.g. tenant.localhost, acme.localhost).
         '127.0.0.1',
         'localhost',
+        // Containerized Cypress reaches the host-published API via this host
+        // (macOS has no --network host); treat it as central so the tenancy
+        // middleware doesn't redirect it. Test-only.
+        'host.docker.internal',
     ],
 
     /**
