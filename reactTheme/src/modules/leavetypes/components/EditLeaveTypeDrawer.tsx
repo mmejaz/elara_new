@@ -1,13 +1,13 @@
 import { Button, Drawer, Form, Input } from 'antd'
 import { useEffect } from 'react'
-import { closeEditDrawer } from '../leaveTypesSlice'
+import { useUrlDrawer } from '../../../components/DataTable'
 import { useUpdateLeaveType } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { toast } from '../../../utils/toast'
-import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useAppSelector } from '../../../store/hooks'
 
 function EditLeaveTypeDrawer() {
-  const dispatch = useAppDispatch()
+  const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.leaveTypes.editDrawerOpen)
   const editing = useAppSelector((state) => state.leaveTypes.editing)
   const [form] = Form.useForm()
@@ -22,7 +22,7 @@ function EditLeaveTypeDrawer() {
     mutation.mutate({ id: editing.id, ...values }, {
       onSuccess: () => {
         toast.success('Leave Type updated')
-        dispatch(closeEditDrawer())
+        drawer.close()
       },
       onError: (error) => {
         if (!applyServerErrors(error, form)) {
@@ -34,7 +34,7 @@ function EditLeaveTypeDrawer() {
 
   const handleClose = () => {
     if (mutation.isPending) return
-    dispatch(closeEditDrawer())
+    drawer.close()
   }
 
   return (

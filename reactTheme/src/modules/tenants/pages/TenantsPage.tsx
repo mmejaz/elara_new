@@ -1,9 +1,9 @@
 import { DeleteOutlined, PauseCircleOutlined, PlayCircleOutlined, PlusOutlined } from '@ant-design/icons'
 import { Button, Popconfirm, Space, Tag, Tooltip, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import PageHeader from '../../../components/PageHeader'
-import DataTable, { useColumnToggle, useServerTable } from '../../../components/DataTable'
+import DataTable, { useColumnToggle, useUrlDrawer, useUrlTable } from '../../../components/DataTable'
 import CreateTenantDrawer from '../components/CreateTenantDrawer'
 import { useDeleteTenant, useSetTenantStatus, useTenants } from '../queries'
 import { toast } from '../../../utils/toast'
@@ -15,8 +15,10 @@ const { Text } = Typography
 const dash = <Text type="secondary">—</Text>
 
 function TenantsPage() {
-  const [drawerOpen, setDrawerOpen] = useState(false)
-  const table = useServerTable(15, 'Search tenants…')
+  // URL-backed table state (page/search/sort) + deep-linkable create drawer
+  // (?add=true), mirroring the Users module — shareable and refresh-proof.
+  const table = useUrlTable(15, 'Search tenants…')
+  const drawer = useUrlDrawer()
   const { data, isFetching } = useTenants(table.params)
   const remove = useDeleteTenant()
   const setStatus = useSetTenantStatus()
@@ -175,7 +177,7 @@ function TenantsPage() {
         extra={
           <Space>
             {table.searchInput}
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => setDrawerOpen(true)}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => drawer.openAdd()}>
               Create Tenant
             </Button>
           </Space>
@@ -195,7 +197,7 @@ function TenantsPage() {
           onChange: table.onChange,
         }}
       />
-      <CreateTenantDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <CreateTenantDrawer open={drawer.add} onClose={() => drawer.close()} />
     </Space>
   )
 }

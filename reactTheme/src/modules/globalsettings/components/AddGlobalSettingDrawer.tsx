@@ -1,15 +1,15 @@
 import { Alert, Button, Divider, Drawer, Form, Input, Typography } from 'antd'
-import { closeAddDrawer } from '../globalSettingsSlice'
+import { useUrlDrawer } from '../../../components/DataTable'
 import { useCreateGlobalSetting } from '../queries'
 import FieldsBuilder from './FieldsBuilder'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { toast } from '../../../utils/toast'
-import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useAppSelector } from '../../../store/hooks'
 
 const { Text } = Typography
 
 function AddGlobalSettingDrawer() {
-  const dispatch = useAppDispatch()
+  const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.globalSettings.addDrawerOpen)
   const [form] = Form.useForm()
   const mutation = useCreateGlobalSetting()
@@ -19,7 +19,7 @@ function AddGlobalSettingDrawer() {
       onSuccess: () => {
         toast.success('Global Setting created successfully')
         form.resetFields()
-        dispatch(closeAddDrawer())
+        drawer.close()
       },
       onError: (error) => {
         if (!applyServerErrors(error, form)) {
@@ -32,7 +32,7 @@ function AddGlobalSettingDrawer() {
   const handleClose = () => {
     if (mutation.isPending) return
     form.resetFields()
-    dispatch(closeAddDrawer())
+    drawer.close()
   }
 
   return (

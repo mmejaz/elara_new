@@ -1,16 +1,16 @@
 import { Button, Divider, Drawer, Form, Input, Skeleton, Typography } from 'antd'
 import { useEffect } from 'react'
-import { closeEditDrawer } from '../globalSettingsSlice'
+import { useUrlDrawer } from '../../../components/DataTable'
 import { useGlobalSetting, useUpdateGlobalSetting } from '../queries'
 import FieldsBuilder from './FieldsBuilder'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { toast } from '../../../utils/toast'
-import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useAppSelector } from '../../../store/hooks'
 
 const { Text } = Typography
 
 function EditGlobalSettingDrawer() {
-  const dispatch = useAppDispatch()
+  const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.globalSettings.editDrawerOpen)
   const editing = useAppSelector((state) => state.globalSettings.editing)
   const [form] = Form.useForm()
@@ -28,7 +28,7 @@ function EditGlobalSettingDrawer() {
     mutation.mutate({ id: editing.id, ...values }, {
       onSuccess: () => {
         toast.success('Application updated')
-        dispatch(closeEditDrawer())
+        drawer.close()
       },
       onError: (error) => {
         if (!applyServerErrors(error, form)) {
@@ -40,7 +40,7 @@ function EditGlobalSettingDrawer() {
 
   const handleClose = () => {
     if (mutation.isPending) return
-    dispatch(closeEditDrawer())
+    drawer.close()
   }
 
   return (

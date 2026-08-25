@@ -1,13 +1,13 @@
 import { Button, Drawer, Form, Input } from 'antd'
 import { useEffect } from 'react'
-import { closeEditDrawer } from '../citiesSlice'
+import { useUrlDrawer } from '../../../components/DataTable'
 import { useUpdateCity } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { toast } from '../../../utils/toast'
-import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useAppSelector } from '../../../store/hooks'
 
 function EditCityDrawer() {
-  const dispatch = useAppDispatch()
+  const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.cities.editDrawerOpen)
   const editing = useAppSelector((state) => state.cities.editing)
   const [form] = Form.useForm()
@@ -22,7 +22,7 @@ function EditCityDrawer() {
     mutation.mutate({ id: editing.id, ...values }, {
       onSuccess: () => {
         toast.success('City updated')
-        dispatch(closeEditDrawer())
+        drawer.close()
       },
       onError: (error) => {
         if (!applyServerErrors(error, form)) {
@@ -34,7 +34,7 @@ function EditCityDrawer() {
 
   const handleClose = () => {
     if (mutation.isPending) return
-    dispatch(closeEditDrawer())
+    drawer.close()
   }
 
   return (

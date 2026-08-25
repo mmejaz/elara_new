@@ -1,13 +1,13 @@
 import { Alert, Button, Drawer, Form, Input, Select } from 'antd'
-import { closeAddDrawer } from '../departmentsSlice'
+import { useUrlDrawer } from '../../../components/DataTable'
 import { useCreateDepartment, useDepartmentOptions } from '../queries'
 import { useOrganizationOptions } from '../../organizations/queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { toast } from '../../../utils/toast'
-import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useAppSelector } from '../../../store/hooks'
 
 function AddDepartmentDrawer() {
-  const dispatch = useAppDispatch()
+  const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.departments.addDrawerOpen)
   const mode = useAppSelector((state) => state.auth.departmentMode)
   const [form] = Form.useForm()
@@ -20,7 +20,7 @@ function AddDepartmentDrawer() {
       onSuccess: () => {
         toast.success('Department created successfully')
         form.resetFields()
-        dispatch(closeAddDrawer())
+        drawer.close()
       },
       onError: (error) => {
         if (!applyServerErrors(error, form)) {
@@ -33,7 +33,7 @@ function AddDepartmentDrawer() {
   const handleClose = () => {
     if (mutation.isPending) return
     form.resetFields()
-    dispatch(closeAddDrawer())
+    drawer.close()
   }
 
   return (

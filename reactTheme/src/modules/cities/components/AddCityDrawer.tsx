@@ -1,12 +1,12 @@
 import { Alert, Button, Drawer, Form, Input } from 'antd'
-import { closeAddDrawer } from '../citiesSlice'
+import { useUrlDrawer } from '../../../components/DataTable'
 import { useCreateCity } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { toast } from '../../../utils/toast'
-import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useAppSelector } from '../../../store/hooks'
 
 function AddCityDrawer() {
-  const dispatch = useAppDispatch()
+  const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.cities.addDrawerOpen)
   const [form] = Form.useForm()
   const mutation = useCreateCity()
@@ -16,7 +16,7 @@ function AddCityDrawer() {
       onSuccess: () => {
         toast.success('City created successfully')
         form.resetFields()
-        dispatch(closeAddDrawer())
+        drawer.close()
       },
       onError: (error) => {
         if (!applyServerErrors(error, form)) {
@@ -29,7 +29,7 @@ function AddCityDrawer() {
   const handleClose = () => {
     if (mutation.isPending) return
     form.resetFields()
-    dispatch(closeAddDrawer())
+    drawer.close()
   }
 
   return (

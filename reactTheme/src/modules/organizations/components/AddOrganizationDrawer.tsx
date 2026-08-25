@@ -1,12 +1,12 @@
 import { Alert, Button, Drawer, Form, Input, Select } from 'antd'
-import { closeAddDrawer } from '../organizationsSlice'
+import { useUrlDrawer } from '../../../components/DataTable'
 import { useCreateOrganization, useOrganizationOptions } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { toast } from '../../../utils/toast'
-import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useAppSelector } from '../../../store/hooks'
 
 function AddOrganizationDrawer() {
-  const dispatch = useAppDispatch()
+  const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.organizations.addDrawerOpen)
   const [form] = Form.useForm()
   const mutation = useCreateOrganization()
@@ -17,7 +17,7 @@ function AddOrganizationDrawer() {
       onSuccess: () => {
         toast.success('Organization created successfully')
         form.resetFields()
-        dispatch(closeAddDrawer())
+        drawer.close()
       },
       onError: (error) => {
         if (!applyServerErrors(error, form)) {
@@ -30,7 +30,7 @@ function AddOrganizationDrawer() {
   const handleClose = () => {
     if (mutation.isPending) return
     form.resetFields()
-    dispatch(closeAddDrawer())
+    drawer.close()
   }
 
   return (

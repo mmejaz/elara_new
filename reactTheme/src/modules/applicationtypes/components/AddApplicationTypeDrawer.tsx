@@ -1,12 +1,12 @@
 import { Alert, Button, Drawer, Form, Input } from 'antd'
-import { closeAddDrawer } from '../applicationTypesSlice'
+import { useUrlDrawer } from '../../../components/DataTable'
 import { useCreateApplicationType } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { toast } from '../../../utils/toast'
-import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useAppSelector } from '../../../store/hooks'
 
 function AddApplicationTypeDrawer() {
-  const dispatch = useAppDispatch()
+  const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.applicationTypes.addDrawerOpen)
   const [form] = Form.useForm()
   const mutation = useCreateApplicationType()
@@ -16,7 +16,7 @@ function AddApplicationTypeDrawer() {
       onSuccess: () => {
         toast.success('Application Type created successfully')
         form.resetFields()
-        dispatch(closeAddDrawer())
+        drawer.close()
       },
       onError: (error) => {
         if (!applyServerErrors(error, form)) {
@@ -29,7 +29,7 @@ function AddApplicationTypeDrawer() {
   const handleClose = () => {
     if (mutation.isPending) return
     form.resetFields()
-    dispatch(closeAddDrawer())
+    drawer.close()
   }
 
   return (

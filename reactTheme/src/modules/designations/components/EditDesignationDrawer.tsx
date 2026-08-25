@@ -1,13 +1,13 @@
 import { Button, Drawer, Form, Input } from 'antd'
 import { useEffect } from 'react'
-import { closeEditDrawer } from '../designationsSlice'
+import { useUrlDrawer } from '../../../components/DataTable'
 import { useUpdateDesignation } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { toast } from '../../../utils/toast'
-import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useAppSelector } from '../../../store/hooks'
 
 function EditDesignationDrawer() {
-  const dispatch = useAppDispatch()
+  const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.designations.editDrawerOpen)
   const editing = useAppSelector((state) => state.designations.editing)
   const [form] = Form.useForm()
@@ -22,7 +22,7 @@ function EditDesignationDrawer() {
     mutation.mutate({ id: editing.id, ...values }, {
       onSuccess: () => {
         toast.success('Designation updated')
-        dispatch(closeEditDrawer())
+        drawer.close()
       },
       onError: (error) => {
         if (!applyServerErrors(error, form)) {
@@ -34,7 +34,7 @@ function EditDesignationDrawer() {
 
   const handleClose = () => {
     if (mutation.isPending) return
-    dispatch(closeEditDrawer())
+    drawer.close()
   }
 
   return (

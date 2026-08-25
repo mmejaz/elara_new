@@ -1,13 +1,13 @@
 import { Button, Drawer, Form, Input } from 'antd'
 import { useEffect } from 'react'
-import { closeEditDrawer } from '../countriesSlice'
+import { useUrlDrawer } from '../../../components/DataTable'
 import { useUpdateCountry } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { toast } from '../../../utils/toast'
-import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useAppSelector } from '../../../store/hooks'
 
 function EditCountryDrawer() {
-  const dispatch = useAppDispatch()
+  const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.countries.editDrawerOpen)
   const editing = useAppSelector((state) => state.countries.editing)
   const [form] = Form.useForm()
@@ -22,7 +22,7 @@ function EditCountryDrawer() {
     mutation.mutate({ id: editing.id, ...values }, {
       onSuccess: () => {
         toast.success('Country updated')
-        dispatch(closeEditDrawer())
+        drawer.close()
       },
       onError: (error) => {
         if (!applyServerErrors(error, form)) {
@@ -34,7 +34,7 @@ function EditCountryDrawer() {
 
   const handleClose = () => {
     if (mutation.isPending) return
-    dispatch(closeEditDrawer())
+    drawer.close()
   }
 
   return (

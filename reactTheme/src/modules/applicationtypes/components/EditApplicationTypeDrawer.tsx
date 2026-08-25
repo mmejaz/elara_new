@@ -1,13 +1,13 @@
 import { Button, Drawer, Form, Input } from 'antd'
 import { useEffect } from 'react'
-import { closeEditDrawer } from '../applicationTypesSlice'
+import { useUrlDrawer } from '../../../components/DataTable'
 import { useUpdateApplicationType } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { toast } from '../../../utils/toast'
-import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useAppSelector } from '../../../store/hooks'
 
 function EditApplicationTypeDrawer() {
-  const dispatch = useAppDispatch()
+  const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.applicationTypes.editDrawerOpen)
   const editing = useAppSelector((state) => state.applicationTypes.editing)
   const [form] = Form.useForm()
@@ -22,7 +22,7 @@ function EditApplicationTypeDrawer() {
     mutation.mutate({ id: editing.id, ...values }, {
       onSuccess: () => {
         toast.success('Application Type updated')
-        dispatch(closeEditDrawer())
+        drawer.close()
       },
       onError: (error) => {
         if (!applyServerErrors(error, form)) {
@@ -34,7 +34,7 @@ function EditApplicationTypeDrawer() {
 
   const handleClose = () => {
     if (mutation.isPending) return
-    dispatch(closeEditDrawer())
+    drawer.close()
   }
 
   return (

@@ -1,13 +1,13 @@
 import { Button, Drawer, Form, Input, Select } from 'antd'
 import { useEffect, useMemo } from 'react'
-import { closeEditDrawer } from '../organizationsSlice'
+import { useUrlDrawer } from '../../../components/DataTable'
 import { useOrganizationOptions, useUpdateOrganization } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { toast } from '../../../utils/toast'
-import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useAppSelector } from '../../../store/hooks'
 
 function EditOrganizationDrawer() {
-  const dispatch = useAppDispatch()
+  const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.organizations.editDrawerOpen)
   const editing = useAppSelector((state) => state.organizations.editing)
   const [form] = Form.useForm()
@@ -43,7 +43,7 @@ function EditOrganizationDrawer() {
     mutation.mutate({ id: editing.id, ...values }, {
       onSuccess: () => {
         toast.success('Organization updated')
-        dispatch(closeEditDrawer())
+        drawer.close()
       },
       onError: (error) => {
         if (!applyServerErrors(error, form)) {
@@ -55,7 +55,7 @@ function EditOrganizationDrawer() {
 
   const handleClose = () => {
     if (mutation.isPending) return
-    dispatch(closeEditDrawer())
+    drawer.close()
   }
 
   return (

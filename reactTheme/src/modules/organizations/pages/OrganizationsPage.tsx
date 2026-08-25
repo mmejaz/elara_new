@@ -1,14 +1,14 @@
 import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons'
 import { Button, Popconfirm, Space, Tag, Tooltip, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import PageHeader from '../../../components/PageHeader'
-import DataTable, { useColumnToggle, useServerTable } from '../../../components/DataTable'
+import DataTable, { useColumnToggle, useUrlDrawer, useUrlTable } from '../../../components/DataTable'
 import AddOrganizationDrawer from '../components/AddOrganizationDrawer'
 import EditOrganizationDrawer from '../components/EditOrganizationDrawer'
-import { openAddDrawer, openEditDrawer } from '../organizationsSlice'
+import { openAddDrawer, openEditDrawer, closeAddDrawer, closeEditDrawer } from '../organizationsSlice'
 import { useOrganizations, useDeleteOrganization } from '../queries'
-import { useAppDispatch } from '../../../store/hooks'
+import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 import { toast } from '../../../utils/toast'
 import type { Organization } from '../types'
 
@@ -16,13 +16,34 @@ const { Text } = Typography
 
 function OrganizationsPage() {
   const dispatch = useAppDispatch()
-  const table = useServerTable(15, 'Search Organizations…')
+  // URL-backed table state + deep-linkable Add/Edit drawers (?add / ?edit=<id>),
+  // mirroring the Users module — shareable and refresh-proof.
+  const table = useUrlTable(15, 'Search Organizations…')
+  const drawer = useUrlDrawer()
+  const addOpen = useAppSelector((state) => state.organizations.addDrawerOpen)
+  const editOpen = useAppSelector((state) => state.organizations.editDrawerOpen)
+  const editing = useAppSelector((state) => state.organizations.editing)
   // isFetching (not isLoading): keepPreviousData keeps the previous page's
   // rows during a page switch, so isLoading stays false. isFetching is true
   // for every in-flight request, so the table shows its loading overlay on
   // pagination, search and sort until the new data returns.
   const { data, isFetching } = useOrganizations(table.params)
   const remove = useDeleteOrganization()
+
+  // The URL drives the drawers: ?add opens Add; ?edit=<id> opens Edit for the
+  // matching row on the current page; no param closes both.
+  useEffect(() => {
+    if (drawer.add) {
+      if (!addOpen) dispatch(openAddDrawer())
+    } else if (drawer.editId != null) {
+      const match = (data?.data ?? []).find((r) => r.id === drawer.editId)
+      if (match && editing?.id !== match.id) dispatch(openEditDrawer(match))
+    } else {
+      if (addOpen) dispatch(closeAddDrawer())
+      if (editOpen) dispatch(closeEditDrawer())
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drawer.add, drawer.editId, data])
 
   const handleDelete = (id: number) =>
     remove.mutate(id, {
@@ -50,7 +71,7 @@ function OrganizationsPage() {
         render: (_, record) => (
           <Space>
             <Tooltip title="Edit">
-              <Button type="text" icon={<EditOutlined />} onClick={() => dispatch(openEditDrawer(record))} />
+              <Button type="text" icon={<EditOutlined />} onClick={() => drawer.openEdit(record.id)} />
             </Tooltip>
             <Popconfirm title="Delete this record?" onConfirm={() => handleDelete(record.id)}>
               <Button type="text" danger icon={<DeleteOutlined />} />
@@ -73,7 +94,7 @@ function OrganizationsPage() {
         extra={
           <Space>
             {table.searchInput}
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => dispatch(openAddDrawer())}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => drawer.openAdd()}>
               Add Organization
             </Button>
           </Space>

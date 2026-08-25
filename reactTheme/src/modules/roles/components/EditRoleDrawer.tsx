@@ -82,21 +82,21 @@ function EditRoleDrawer() {
           <Input placeholder="e.g. Accountant" size="large" />
         </Form.Item>
 
-        <Form.Item
-          label={
-            <span className="font-medium">
-              Permissions
-              <span className="ml-1 text-xs font-normal text-gray-400">
-                — expand a module to select
-              </span>
-            </span>
-          }
-          name="permissions"
-        >
+        <Form.Item name="permissions">
           {permissionsLoading ? (
             <Skeleton active paragraph={{ rows: 4 }} />
           ) : (
-            <PermissionPicker permissions={permissions} />
+            <PermissionPicker
+              permissions={permissions}
+              title={
+                <span className="font-medium">
+                  Permissions
+                  <span className="ml-1 text-xs font-normal text-gray-400">
+                    — expand a module to select
+                  </span>
+                </span>
+              }
+            />
           )}
         </Form.Item>
       </Form>

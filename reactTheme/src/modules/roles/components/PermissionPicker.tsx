@@ -1,5 +1,6 @@
-import { Checkbox, Collapse, Tag } from 'antd'
-import { useMemo } from 'react'
+import { Checkbox, Collapse, Empty, Input, Tag } from 'antd'
+import { SearchOutlined } from '@ant-design/icons'
+import { useMemo, useState, type ReactNode } from 'react'
 
 const ACTION_LABELS: Record<string, { label: string; color: string }> = {
   view: { label: 'View', color: 'blue' },
@@ -37,19 +38,24 @@ interface PermissionPickerProps {
   onChange?: (value: string[]) => void
   /** Read-only mode — checkboxes reflect `value` but can't be changed (e.g. a role preview). */
   disabled?: boolean
+  /** Optional heading rendered on the LEFT of the header row; the module search sits on the right. */
+  title?: ReactNode
 }
 
-function PermissionPicker({ permissions = [], value = [], onChange, disabled = false }: PermissionPickerProps) {
+function PermissionPicker({ permissions = [], value = [], onChange, disabled = false, title }: PermissionPickerProps) {
   const grouped = useMemo(() => groupPermissions(permissions), [permissions])
+  const [query, setQuery] = useState('')
+  // Modules the user has manually expanded (ignored while a search is active).
+  const [openKeys, setOpenKeys] = useState<string[]>([])
 
-  const toggle = (perm) => {
+  const toggle = (perm: string) => {
     const next = value.includes(perm)
       ? value.filter((p) => p !== perm)
       : [...value, perm]
     onChange?.(next)
   }
 
-  const toggleModule = (modulePerms, checked) => {
+  const toggleModule = (modulePerms: PermEntry[], checked: boolean) => {
     const names = modulePerms.map((p) => p.name)
     const next = checked
       ? [...new Set([...value, ...names])]
@@ -57,7 +63,10 @@ function PermissionPicker({ permissions = [], value = [], onChange, disabled = f
     onChange?.(next)
   }
 
-  const items = Object.entries(grouped).map(([module, perms]) => {
+  const q = query.trim().toLowerCase()
+  const entries = Object.entries(grouped).filter(([module]) => !q || module.toLowerCase().includes(q))
+
+  const items = entries.map(([module, perms]) => {
     const names = perms.map((p) => p.name)
     const selectedCount = names.filter((n) => value.includes(n)).length
     const allChecked = selectedCount === names.length
@@ -104,13 +113,44 @@ function PermissionPicker({ permissions = [], value = [], onChange, disabled = f
     }
   })
 
+  const showSearch = !disabled
+
   return (
-    <Collapse
-      items={items}
-      defaultActiveKey={[]}
-      className="w-full"
-      expandIconPosition="end"
-    />
+    <div className="w-full">
+      {(title || showSearch) && (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div className="min-w-0 flex-1">{title}</div>
+          {showSearch && (
+            <Input
+              allowClear
+              prefix={<SearchOutlined />}
+              placeholder="Search modules…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              style={{ flex: '0 1 260px', maxWidth: 260 }}
+            />
+          )}
+        </div>
+      )}
+
+      {items.length ? (
+        <Collapse
+          items={items}
+          // While searching, expand every match so the actions are visible at a
+          // glance; otherwise respect what the user has opened manually.
+          activeKey={q ? entries.map(([module]) => module) : openKeys}
+          onChange={(keys) => setOpenKeys(keys as string[])}
+          className="w-full"
+          expandIconPosition="end"
+        />
+      ) : (
+        <Empty
+          image={Empty.PRESENTED_IMAGE_SIMPLE}
+          description={`No modules match “${query}”`}
+          className="!my-6"
+        />
+      )}
+    </div>
   )
 }
 

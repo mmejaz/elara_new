@@ -1,12 +1,12 @@
 import { Alert, Button, Drawer, Form, Input } from 'antd'
-import { closeAddDrawer } from '../leaveTypesSlice'
+import { useUrlDrawer } from '../../../components/DataTable'
 import { useCreateLeaveType } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { toast } from '../../../utils/toast'
-import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useAppSelector } from '../../../store/hooks'
 
 function AddLeaveTypeDrawer() {
-  const dispatch = useAppDispatch()
+  const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.leaveTypes.addDrawerOpen)
   const [form] = Form.useForm()
   const mutation = useCreateLeaveType()
@@ -16,7 +16,7 @@ function AddLeaveTypeDrawer() {
       onSuccess: () => {
         toast.success('Leave Type created successfully')
         form.resetFields()
-        dispatch(closeAddDrawer())
+        drawer.close()
       },
       onError: (error) => {
         if (!applyServerErrors(error, form)) {
@@ -29,7 +29,7 @@ function AddLeaveTypeDrawer() {
   const handleClose = () => {
     if (mutation.isPending) return
     form.resetFields()
-    dispatch(closeAddDrawer())
+    drawer.close()
   }
 
   return (

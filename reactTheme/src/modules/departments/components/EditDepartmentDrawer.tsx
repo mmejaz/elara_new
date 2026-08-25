@@ -1,14 +1,14 @@
 import { Button, Drawer, Form, Input, Select } from 'antd'
 import { useEffect, useMemo } from 'react'
-import { closeEditDrawer } from '../departmentsSlice'
+import { useUrlDrawer } from '../../../components/DataTable'
 import { useDepartmentOptions, useUpdateDepartment } from '../queries'
 import { useOrganizationOptions } from '../../organizations/queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { toast } from '../../../utils/toast'
-import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useAppSelector } from '../../../store/hooks'
 
 function EditDepartmentDrawer() {
-  const dispatch = useAppDispatch()
+  const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.departments.editDrawerOpen)
   const editing = useAppSelector((state) => state.departments.editing)
   const mode = useAppSelector((state) => state.auth.departmentMode)
@@ -50,7 +50,7 @@ function EditDepartmentDrawer() {
     mutation.mutate({ id: editing.id, ...values }, {
       onSuccess: () => {
         toast.success('Department updated')
-        dispatch(closeEditDrawer())
+        drawer.close()
       },
       onError: (error) => {
         if (!applyServerErrors(error, form)) {
@@ -62,7 +62,7 @@ function EditDepartmentDrawer() {
 
   const handleClose = () => {
     if (mutation.isPending) return
-    dispatch(closeEditDrawer())
+    drawer.close()
   }
 
   return (

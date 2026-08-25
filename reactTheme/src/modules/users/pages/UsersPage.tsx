@@ -300,71 +300,98 @@ function UsersPage() {
     blocked: { color: 'error', label: 'Blocked' },
   } as const
 
-  const renderUserCard = (user: User) => {
-    const s = STATUS_MAP[(user.status ?? 'active') as keyof typeof STATUS_MAP] ?? STATUS_MAP.active
-    return (
-      <Card key={user.id} styles={{ body: { padding: 16 } }} className="h-full">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex min-w-0 items-center gap-3">
-            <Avatar
-              src={user.avatar || undefined}
-              style={{ backgroundColor: hexToRgba(primaryColor, 0.12), color: primaryColor, fontWeight: 600 }}
-              icon={!user.name ? <UserOutlined /> : undefined}
-            >
-              {user.name && !user.avatar ? user.name.charAt(0).toUpperCase() : null}
-            </Avatar>
-            <div className="min-w-0">
-              <Text strong className="!block !truncate">{user.name}</Text>
-              <Text type="secondary" className="!block !truncate !text-xs">{user.email}</Text>
-            </div>
-          </div>
-          {actionsDropdown(user)}
-        </div>
+  const STATUS_DOT = { active: '#22c55e', deactivated: '#f59e0b', blocked: '#ef4444' } as const
 
-        <div className="mt-3 flex flex-col gap-2.5 text-xs">
-          <div className="flex items-center justify-between">
-            <Text type="secondary">User ID</Text>
-            <Text code className="!text-xs">{user.user_code ?? '—'}</Text>
+  const renderUserCard = (user: User) => {
+    const statusKey = (user.status ?? 'active') as keyof typeof STATUS_MAP
+    const s = STATUS_MAP[statusKey] ?? STATUS_MAP.active
+    const dot = STATUS_DOT[statusKey] ?? STATUS_DOT.active
+    return (
+      <Card
+        key={user.id}
+        styles={{ body: { padding: 0 } }}
+        className="group h-full overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+      >
+        {/* Identity band — a wash of the workspace's primary color. */}
+        <div
+          className="h-14"
+          style={{ background: `linear-gradient(120deg, ${hexToRgba(primaryColor, 0.16)}, ${hexToRgba(primaryColor, 0.04)})` }}
+        />
+
+        <div className="px-4 pb-4">
+          <div className="-mt-7 flex items-start justify-between gap-2">
+            <div className="flex min-w-0 items-end gap-3">
+              <div className="relative shrink-0">
+                <Avatar
+                  size={56}
+                  src={user.avatar || undefined}
+                  className="!border-4 !border-white shadow-sm dark:!border-[#1f1f1f]"
+                  style={{ backgroundColor: hexToRgba(primaryColor, 0.16), color: primaryColor, fontWeight: 700, fontSize: 20 }}
+                  icon={!user.name ? <UserOutlined /> : undefined}
+                >
+                  {user.name && !user.avatar ? user.name.charAt(0).toUpperCase() : null}
+                </Avatar>
+                <Tooltip title={user.status_reason ? `${s.label} — ${user.status_reason}` : s.label}>
+                  <span
+                    className="absolute bottom-1 right-0 block size-3.5 rounded-full border-2 border-white dark:border-[#1f1f1f]"
+                    style={{ background: dot }}
+                  />
+                </Tooltip>
+              </div>
+              <div className="min-w-0 pb-1">
+                <Text strong className="!block !truncate !text-[15px] !leading-tight">
+                  {user.name || 'Unnamed user'}
+                </Text>
+                <Text type="secondary" className="!block !truncate !text-xs">{user.email}</Text>
+              </div>
+            </div>
+            <div className="pt-8">{actionsDropdown(user)}</div>
           </div>
-          <div className="flex items-center justify-between">
-            <Text type="secondary">Status</Text>
-            {user.status_reason ? (
-              <Tooltip title={user.status_reason}><Tag color={s.color}>{s.label}</Tag></Tooltip>
-            ) : (
-              <Tag color={s.color}>{s.label}</Tag>
-            )}
-          </div>
-          <div className="flex items-center justify-between gap-2">
-            <Text type="secondary">Department</Text>
-            {user.department ? (
-              <Tag color="geekblue" icon={<ApartmentOutlined />}>{user.department.name}</Tag>
-            ) : (
-              <Text type="secondary">—</Text>
-            )}
-          </div>
-          <div className="flex flex-col gap-1">
-            <Text type="secondary">Roles</Text>
+
+          {/* Roles are the card's headline — what this person can do. */}
+          <div className="mt-3">
             {user.roles?.length ? (
-              <Space size={[4, 4]} wrap>
+              <Space size={[6, 6]} wrap>
                 {user.roles.map((role) => (
-                  <Tag key={role} color="processing" icon={<SafetyCertificateOutlined />}>{role}</Tag>
+                  <Tag key={role} color="processing" icon={<SafetyCertificateOutlined />} className="!m-0">
+                    {role}
+                  </Tag>
                 ))}
               </Space>
             ) : (
-              <Text type="secondary">No role</Text>
+              <Tag color="default" className="!m-0">No role assigned</Tag>
             )}
           </div>
-          <div className="flex flex-col gap-1">
-            <Text type="secondary">Organizations</Text>
-            {user.organizations?.length ? (
-              <Space size={[4, 4]} wrap>
-                {user.organizations.map((org) => (
-                  <Tag key={org.id} color="cyan" icon={<ApartmentOutlined />}>{org.name}</Tag>
-                ))}
-              </Space>
-            ) : (
-              <Text type="secondary">—</Text>
-            )}
+
+          <div className="my-3 h-px bg-black/[0.06] dark:bg-white/[0.08]" />
+
+          <div className="flex flex-col gap-2.5 text-xs">
+            <div className="flex items-center justify-between gap-2">
+              <Text type="secondary" className="!text-xs">User ID</Text>
+              <Text code className="!text-[11px]">{user.user_code ?? '—'}</Text>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <Text type="secondary" className="!text-xs">Department</Text>
+              {user.department ? (
+                <Text className="!text-xs !font-medium">{user.department.name}</Text>
+              ) : (
+                <Text type="secondary" className="!text-xs">—</Text>
+              )}
+            </div>
+            <div className="flex items-start justify-between gap-2">
+              <Text type="secondary" className="!shrink-0 !pt-0.5 !text-xs">Organizations</Text>
+              {user.organizations?.length ? (
+                <div className="flex flex-wrap justify-end gap-1">
+                  {user.organizations.map((org) => (
+                    <Tag key={org.id} color="cyan" icon={<ApartmentOutlined />} className="!m-0">
+                      {org.name}
+                    </Tag>
+                  ))}
+                </div>
+              ) : (
+                <Text type="secondary" className="!text-xs">—</Text>
+              )}
+            </div>
           </div>
         </div>
       </Card>
@@ -421,8 +448,21 @@ function UsersPage() {
         />
       ) : (
         <Spin spinning={isFetching}>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {(data?.data ?? []).map(renderUserCard)}
+            {(data?.data?.length ?? 0) > 0 && (
+              <button
+                type="button"
+                onClick={() => drawer.openAdd()}
+                className="flex h-full min-h-[220px] flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed bg-transparent transition hover:bg-black/[0.02] dark:hover:bg-white/[0.04]"
+                style={{ borderColor: hexToRgba(primaryColor, 0.3), color: primaryColor }}
+              >
+                <span className="grid size-11 place-items-center rounded-full" style={{ background: hexToRgba(primaryColor, 0.1) }}>
+                  <PlusOutlined style={{ fontSize: 18 }} />
+                </span>
+                <span className="text-sm font-medium">Add user</span>
+              </button>
+            )}
           </div>
           {(data?.data?.length ?? 0) === 0 && !isFetching && (
             <div className="py-12 text-center">

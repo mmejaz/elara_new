@@ -6,13 +6,13 @@ import {
   SettingOutlined,
 } from '@ant-design/icons'
 import { Button, Card, Col, Empty, Pagination, Popconfirm, Row, Space, Spin, theme, Tooltip, Typography } from 'antd'
-import { useState, type CSSProperties } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import PageHeader from '../../../components/PageHeader'
-import { useServerTable } from '../../../components/DataTable'
+import { useUrlDrawer, useUrlTable } from '../../../components/DataTable'
 import AddGlobalSettingDrawer from '../components/AddGlobalSettingDrawer'
 import EditGlobalSettingDrawer from '../components/EditGlobalSettingDrawer'
 import RecordDrawer from '../components/RecordDrawer'
-import { openAddDrawer, openEditDrawer } from '../globalSettingsSlice'
+import { openAddDrawer, openEditDrawer, closeAddDrawer, closeEditDrawer } from '../globalSettingsSlice'
 import { useGlobalSetting, useGlobalSettings, useDeleteGlobalSetting, useRecords } from '../queries'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 import { hexToRgba } from '../../../utils/color'
@@ -27,7 +27,13 @@ function GlobalSettingsPage() {
   const dispatch = useAppDispatch()
   const primaryColor = useAppSelector((state) => state.ui.primaryColor)
   const { token } = theme.useToken()
-  const table = useServerTable(15, 'Search applications…')
+  // URL-backed table state + deep-linkable Add/Edit drawers (?add / ?edit=<id>),
+  // mirroring the Users module — shareable and refresh-proof.
+  const table = useUrlTable(15, 'Search applications…')
+  const drawer = useUrlDrawer()
+  const addOpen = useAppSelector((state) => state.globalSettings.addDrawerOpen)
+  const editOpen = useAppSelector((state) => state.globalSettings.editDrawerOpen)
+  const editing = useAppSelector((state) => state.globalSettings.editing)
   const { data, isLoading } = useGlobalSettings(table.params)
   const remove = useDeleteGlobalSetting()
 
@@ -44,6 +50,21 @@ function GlobalSettingsPage() {
   const apps = data?.data ?? []
   const total = data?.meta.total ?? 0
 
+  // The URL drives the drawers: ?add opens Add; ?edit=<id> opens Edit for the
+  // matching app on the current page. No param → both closed.
+  useEffect(() => {
+    if (drawer.add) {
+      if (!addOpen) dispatch(openAddDrawer())
+    } else if (drawer.editId != null) {
+      const match = apps.find((a) => a.id === drawer.editId)
+      if (match && editing?.id !== match.id) dispatch(openEditDrawer(match))
+    } else {
+      if (addOpen) dispatch(closeAddDrawer())
+      if (editOpen) dispatch(closeEditDrawer())
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drawer.add, drawer.editId, data])
+
   const handleDelete = (id: number) =>
     remove.mutate(id, {
       onSuccess: () => toast.success('Deleted'),
@@ -58,7 +79,7 @@ function GlobalSettingsPage() {
         extra={
           <Space>
             {table.searchInput}
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => dispatch(openAddDrawer())}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => drawer.openAdd()}>
               Add Application
             </Button>
           </Space>
@@ -109,7 +130,7 @@ function GlobalSettingsPage() {
                               type="text"
                               size="small"
                               icon={<EditOutlined />}
-                              onClick={() => dispatch(openEditDrawer(app))}
+                              onClick={() => drawer.openEdit(app.id)}
                             />
                           </Tooltip>
                           <Popconfirm title="Delete this application?" onConfirm={() => handleDelete(app.id)}>
@@ -172,12 +193,7 @@ function GlobalSettingsPage() {
                 pageSize={table.pageSize}
                 total={total}
                 showSizeChanger
-                onChange={(page, pageSize) =>
-                  table.onChange({ current: page, pageSize }, {}, {}, {
-                    currentDataSource: [],
-                    action: 'paginate',
-                  })
-                }
+                onChange={(page, pageSize) => table.setPage(page, pageSize)}
               />
             </div>
           )}

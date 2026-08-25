@@ -240,7 +240,7 @@ function AdminLayout() {
       <Layout>
         <ImpersonationBanner />
         <Header
-          className={`z-10 border-b ${settings.stickyHeader ? 'sticky top-0' : ''}`}
+          className={`z-50 border-b ${settings.stickyHeader ? 'sticky top-0' : ''}`}
           style={{
             height: headerHeight,
             lineHeight: `${headerHeight}px`,
