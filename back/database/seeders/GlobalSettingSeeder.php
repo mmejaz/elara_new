@@ -81,6 +81,17 @@ class GlobalSettingSeeder extends Seeder
                 ['label' => 'Webhook URL', 'type' => 'text', 'required' => false],
             ],
         ],
+        [
+            'name'   => 'AWS S3 Storage Settings',
+            'fields' => [
+                ['label' => 'AWS Access Key', 'type' => 'text', 'required' => true],
+                ['label' => 'AWS Secret Access Key', 'type' => 'text', 'required' => true],
+                ['label' => 'AWS Default Regin', 'type' => 'text', 'required' => true],
+                ['label' => 'AWS Bucket', 'type' => 'text', 'required' => true],
+                ['label' => 'AWS URL', 'type' => 'text', 'required' => true],
+                ['label' => 'AWS Endpoint', 'type' => 'text', 'required' => true],
+            ],
+        ],
     ];
 
     public function run(): void

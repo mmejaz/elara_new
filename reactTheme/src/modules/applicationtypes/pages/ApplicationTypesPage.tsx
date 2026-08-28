@@ -80,7 +80,7 @@ function ApplicationTypesPage() {
         extra={
           <Space>
             {table.searchInput}
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => dispatch(openAddDrawer())}>
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => drawer.openAdd()}>
               Add Application Type
             </Button>
           </Space>

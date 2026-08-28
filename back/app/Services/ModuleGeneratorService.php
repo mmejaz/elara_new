@@ -517,14 +517,14 @@ class ModuleGeneratorService
         import { DeleteOutlined, EditOutlined, PlusOutlined } from '@ant-design/icons'
         import { Button, Popconfirm, Space, Tooltip, Typography } from 'antd'
         import type { ColumnsType } from 'antd/es/table'
-        import { useMemo } from 'react'
+        import { useEffect, useMemo } from 'react'
         import PageHeader from '../../../components/PageHeader'
-        import DataTable, { useColumnToggle, useServerTable } from '../../../components/DataTable'
+        import DataTable, { useColumnToggle, useUrlDrawer, useUrlTable } from '../../../components/DataTable'
         import Add{$n['singular']}Drawer from '../components/Add{$n['singular']}Drawer'
         import Edit{$n['singular']}Drawer from '../components/Edit{$n['singular']}Drawer'
-        import { openAddDrawer, openEditDrawer } from '../{$n['camelPlural']}Slice'
+        import { openAddDrawer, openEditDrawer, closeAddDrawer, closeEditDrawer } from '../{$n['camelPlural']}Slice'
         import { use{$n['plural']}, useDelete{$n['singular']} } from '../queries'
-        import { useAppDispatch } from '../../../store/hooks'
+        import { useAppDispatch, useAppSelector } from '../../../store/hooks'
         import { toast } from '../../../utils/toast'
         import type { {$n['singular']} } from '../types'
 
@@ -532,13 +532,31 @@ class ModuleGeneratorService
 
         function {$n['plural']}Page() {
           const dispatch = useAppDispatch()
-          const table = useServerTable(15, 'Search {$n['titlePlural']}…')
-          // isFetching (not isLoading): keepPreviousData keeps the previous page's
-          // rows during a page switch, so isLoading stays false. isFetching is true
-          // for every in-flight request, so the table shows its loading overlay on
-          // pagination, search and sort until the new data returns.
+          // URL-backed table state (search/page/sort) + deep-linkable Add/Edit
+          // drawers (?add / ?edit=<id>), mirroring the Users module — shareable
+          // and refresh-proof. isFetching drives the table's loading overlay.
+          const table = useUrlTable(15, 'Search {$n['titlePlural']}…')
+          const drawer = useUrlDrawer()
+          const addOpen = useAppSelector((state) => state.{$n['camelPlural']}.addDrawerOpen)
+          const editOpen = useAppSelector((state) => state.{$n['camelPlural']}.editDrawerOpen)
+          const editing = useAppSelector((state) => state.{$n['camelPlural']}.editing)
           const { data, isFetching } = use{$n['plural']}(table.params)
           const remove = useDelete{$n['singular']}()
+
+          // The URL drives the drawers: ?add opens Add; ?edit=<id> opens Edit for
+          // the matching row on the current page; no param closes both.
+          useEffect(() => {
+            if (drawer.add) {
+              if (!addOpen) dispatch(openAddDrawer())
+            } else if (drawer.editId != null) {
+              const match = (data?.data ?? []).find((r) => r.id === drawer.editId)
+              if (match && editing?.id !== match.id) dispatch(openEditDrawer(match))
+            } else {
+              if (addOpen) dispatch(closeAddDrawer())
+              if (editOpen) dispatch(closeEditDrawer())
+            }
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+          }, [drawer.add, drawer.editId, data])
 
           const handleDelete = (id: number) =>
             remove.mutate(id, {
@@ -556,7 +574,7 @@ class ModuleGeneratorService
                 render: (_, record) => (
                   <Space>
                     <Tooltip title="Edit">
-                      <Button type="text" icon={<EditOutlined />} onClick={() => dispatch(openEditDrawer(record))} />
+                      <Button type="text" icon={<EditOutlined />} onClick={() => drawer.openEdit(record.id)} />
                     </Tooltip>
                     <Popconfirm title="Delete this record?" onConfirm={() => handleDelete(record.id)}>
                       <Button type="text" danger icon={<DeleteOutlined />} />
@@ -579,7 +597,7 @@ class ModuleGeneratorService
                 extra={
                   <Space>
                     {table.searchInput}
-                    <Button type="primary" icon={<PlusOutlined />} onClick={() => dispatch(openAddDrawer())}>
+                    <Button type="primary" icon={<PlusOutlined />} onClick={() => drawer.openAdd()}>
                       Add {$n['titleSingular']}
                     </Button>
                   </Space>
@@ -610,14 +628,14 @@ class ModuleGeneratorService
         // Add drawer
         $this->put("{$src}/modules/{$n['slug']}/components/Add{$n['singular']}Drawer.tsx", <<<TSX
         import { Alert, Button, Drawer, Form, Input } from 'antd'
-        import { closeAddDrawer } from '../{$n['camelPlural']}Slice'
         import { useCreate{$n['singular']} } from '../queries'
+        import { useUrlDrawer } from '../../../components/DataTable'
         import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
         import { notify, toast } from '../../../utils/toast'
-        import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+        import { useAppSelector } from '../../../store/hooks'
 
         function Add{$n['singular']}Drawer() {
-          const dispatch = useAppDispatch()
+          const drawer = useUrlDrawer()
           const open = useAppSelector((state) => state.{$n['camelPlural']}.addDrawerOpen)
           const [form] = Form.useForm()
           const mutation = useCreate{$n['singular']}()
@@ -627,7 +645,7 @@ class ModuleGeneratorService
               onSuccess: () => {
                 notify.success('{$n['titleSingular']} created', 'The record was created successfully.')
                 form.resetFields()
-                dispatch(closeAddDrawer())
+                drawer.close()
               },
               onError: (error) => {
                 if (!applyServerErrors(error, form)) {
@@ -640,7 +658,7 @@ class ModuleGeneratorService
           const handleClose = () => {
             if (mutation.isPending) return
             form.resetFields()
-            dispatch(closeAddDrawer())
+            drawer.close()
           }
 
           return (
@@ -687,14 +705,14 @@ class ModuleGeneratorService
         $this->put("{$src}/modules/{$n['slug']}/components/Edit{$n['singular']}Drawer.tsx", <<<TSX
         import { Button, Drawer, Form, Input } from 'antd'
         import { useEffect } from 'react'
-        import { closeEditDrawer } from '../{$n['camelPlural']}Slice'
         import { useUpdate{$n['singular']} } from '../queries'
+        import { useUrlDrawer } from '../../../components/DataTable'
         import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
         import { toast } from '../../../utils/toast'
-        import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+        import { useAppSelector } from '../../../store/hooks'
 
         function Edit{$n['singular']}Drawer() {
-          const dispatch = useAppDispatch()
+          const drawer = useUrlDrawer()
           const open = useAppSelector((state) => state.{$n['camelPlural']}.editDrawerOpen)
           const editing = useAppSelector((state) => state.{$n['camelPlural']}.editing)
           const [form] = Form.useForm()
@@ -709,7 +727,7 @@ class ModuleGeneratorService
             mutation.mutate({ id: editing.id, ...values }, {
               onSuccess: () => {
                 toast.success('{$n['titleSingular']} updated')
-                dispatch(closeEditDrawer())
+                drawer.close()
               },
               onError: (error) => {
                 if (!applyServerErrors(error, form)) {
@@ -721,7 +739,7 @@ class ModuleGeneratorService
 
           const handleClose = () => {
             if (mutation.isPending) return
-            dispatch(closeEditDrawer())
+            drawer.close()
           }
 
           return (
@@ -771,7 +789,7 @@ class ModuleGeneratorService
         $routes = "{$src}/routes/index.tsx";
         $this->patch($routes, '// __MODULE_ROUTE_DEFS__',
             "const {$n['plural']}Page = lazy(() => import('../modules/{$n['slug']}/pages/{$n['plural']}Page'))\n"
-          . "const {$n['camelPlural']}Route = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/{$n['slug']}', component: {$n['plural']}Page })\n"
+          . "const {$n['camelPlural']}Route = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/{$n['slug']}', component: {$n['plural']}Page, validateSearch: validateDrawerTableSearch })\n"
           . "// __MODULE_ROUTE_DEFS__");
         $this->patch($routes, '// __MODULE_ROUTES__',
             "{$n['camelPlural']}Route,\n    // __MODULE_ROUTES__");
