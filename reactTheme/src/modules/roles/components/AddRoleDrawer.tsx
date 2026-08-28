@@ -1,4 +1,5 @@
 import { Button, Drawer, Form, Input, Skeleton } from 'antd'
+import { useTranslation } from 'react-i18next'
 import { toast } from '../../../utils/toast'
 import { useCreateRole, usePermissions } from '../queries'
 import { useUrlDrawer } from '../../../components/DataTable'
@@ -7,6 +8,7 @@ import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { useAppSelector } from '../../../store/hooks'
 
 function AddRoleDrawer() {
+  const { t } = useTranslation()
   const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.roles.addDrawerOpen)
   const [form] = Form.useForm()
@@ -47,14 +49,14 @@ function AddRoleDrawer() {
       footer={
         <div className="flex justify-end gap-2">
           <Button onClick={handleClose} disabled={mutation.isPending}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             type="primary"
             loading={mutation.isPending}
             onClick={() => form.submit()}
           >
-            Create Role
+            {t('common.create')}
           </Button>
         </div>
       }

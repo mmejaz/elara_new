@@ -34,6 +34,7 @@ class DatabaseSeeder extends Seeder
         // never duplicates.
         $this->call(RolePermissionSeeder::class);
         $this->call(ModuleSeeder::class);
+        $this->call(DashboardWidgetSeeder::class);
         $this->call(GlobalSettingSeeder::class);
         // The one default Organization. Central master data — seeded here (not in
         // ReferenceDataSeeder) so it is created once for the install and is not

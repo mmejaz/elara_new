@@ -10,15 +10,17 @@ import { openAddDrawer, openEditDrawer, closeAddDrawer, closeEditDrawer } from '
 import { useApplicationTypes, useDeleteApplicationType } from '../queries'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 import { toast } from '../../../utils/toast'
+import { useTranslation } from 'react-i18next'
 import type { ApplicationType } from '../types'
 
 const { Text } = Typography
 
 function ApplicationTypesPage() {
   const dispatch = useAppDispatch()
+  const { t } = useTranslation()
   // URL-backed table state + deep-linkable Add/Edit drawers (?add / ?edit=<id>),
   // mirroring the Users module — shareable and refresh-proof.
-  const table = useUrlTable(15, 'Search Application Types…')
+  const table = useUrlTable(15, t('pages.applicationtypes.search'))
   const drawer = useUrlDrawer()
   const addOpen = useAppSelector((state) => state.applicationTypes.addDrawerOpen)
   const editOpen = useAppSelector((state) => state.applicationTypes.editDrawerOpen)
@@ -43,15 +45,15 @@ function ApplicationTypesPage() {
 
   const handleDelete = (id: number) =>
     remove.mutate(id, {
-      onSuccess: () => toast.success('Deleted'),
-      onError: () => toast.error('Unable to delete'),
+      onSuccess: () => toast.success(t('common.deleted')),
+      onError: () => toast.error(t('common.unableToDelete')),
     })
 
   const columns = useMemo<ColumnsType<ApplicationType>>(
     () => [
-      { title: 'Name', dataIndex: 'name', sorter: true, render: (name) => <Text strong>{name}</Text> },
+      { title: t('common.name'), dataIndex: 'name', sorter: true, render: (name) => <Text strong>{name}</Text> },
       {
-        title: 'Actions',
+        title: t('common.actions'),
         key: 'actions',
         width: 120,
         render: (_, record) => (
@@ -59,7 +61,7 @@ function ApplicationTypesPage() {
             <Tooltip title="Edit">
               <Button type="text" icon={<EditOutlined />} onClick={() => drawer.openEdit(record.id)} />
             </Tooltip>
-            <Popconfirm title="Delete this record?" onConfirm={() => handleDelete(record.id)}>
+            <Popconfirm title={t('common.deleteRecordConfirm')} onConfirm={() => handleDelete(record.id)}>
               <Button type="text" danger icon={<DeleteOutlined />} />
             </Popconfirm>
           </Space>
@@ -74,14 +76,14 @@ function ApplicationTypesPage() {
   return (
     <Space orientation="vertical" size={16} className="w-full">
       <PageHeader
-        title="Application Types"
-        subtitle="Manage Application Types records."
+        title={t('pages.applicationtypes.title')}
+        subtitle={t('pages.applicationtypes.subtitle')}
         titleExtra={control}
         extra={
           <Space>
             {table.searchInput}
-            <Button type="primary" icon={<PlusOutlined />} onClick={() => dispatch(openAddDrawer())}>
-              Add Application Type
+            <Button type="primary" icon={<PlusOutlined />} onClick={() => drawer.openAdd()}>
+              {t('pages.applicationtypes.add')}
             </Button>
           </Space>
         }

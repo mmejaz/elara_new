@@ -1,4 +1,5 @@
 import { Button, Drawer, Form, Input, Select } from 'antd'
+import { useTranslation } from 'react-i18next'
 import { toast } from '../../../utils/toast'
 import { useEffect } from 'react'
 import { useUpdatePermission } from '../queries'
@@ -9,6 +10,7 @@ import { useAppSelector } from '../../../store/hooks'
 const ACTIONS = ['view', 'create', 'edit', 'delete', 'export', 'manage']
 
 function EditPermissionDrawer() {
+  const { t } = useTranslation()
   const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.permissions.editDrawerOpen)
   const editingPermission = useAppSelector((state) => state.permissions.editingPermission)
@@ -62,10 +64,10 @@ function EditPermissionDrawer() {
       footer={
         <div className="flex justify-end gap-2">
           <Button onClick={handleClose} disabled={mutation.isPending}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="primary" loading={mutation.isPending} onClick={() => form.submit()}>
-            Save Changes
+            {t('common.saveChanges')}
           </Button>
         </div>
       }

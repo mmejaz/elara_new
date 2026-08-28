@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import 'antd/dist/reset.css'
 import './styles/index.css'
+import './i18n' // initialize react-i18next before the app renders
 import App from './app/App'
 import AppProviders from './app/providers'
 

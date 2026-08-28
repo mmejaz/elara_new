@@ -1,5 +1,11 @@
 import { combineReducers, configureStore } from '@reduxjs/toolkit'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import {
+  RouterProvider,
+  createMemoryHistory,
+  createRootRoute,
+  createRouter,
+} from '@tanstack/react-router'
 import { render, type RenderOptions } from '@testing-library/react'
 import { App as AntApp, ConfigProvider } from 'antd'
 import type { ReactElement, ReactNode } from 'react'
@@ -45,7 +51,10 @@ export function renderWithProviders(
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   })
 
-  function Wrapper({ children }: { children: ReactNode }) {
+  // Many components use router-aware hooks (useUrlTable/useUrlDrawer →
+  // useSearch/useNavigate), which require a TanStack Router context. Render the
+  // component as a single memory-history route so those hooks resolve in tests.
+  function Providers({ children }: { children: ReactNode }) {
     return (
       <Provider store={store}>
         <QueryClientProvider client={queryClient}>
@@ -60,7 +69,19 @@ export function renderWithProviders(
     )
   }
 
-  return { store, ...render(ui, { wrapper: Wrapper, ...options }) }
+  const rootRoute = createRootRoute({
+    component: () => <Providers>{ui}</Providers>,
+  })
+  const router = createRouter({
+    routeTree: rootRoute,
+    history: createMemoryHistory({ initialEntries: ['/'] }),
+  })
+
+  return {
+    store,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- test-only router type
+    ...render(<RouterProvider router={router as any} />, options),
+  }
 }
 
 // Re-export everything from Testing Library so tests import from one place.

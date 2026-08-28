@@ -2,6 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { App as AntApp, ConfigProvider, Spin, theme } from 'antd'
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Provider } from 'react-redux'
 import { queryClient } from '../services/queryClient'
 import { store } from '../store'
@@ -9,6 +10,7 @@ import { ToastHost } from '../utils/toast'
 import { useAppSelector } from '../store/hooks'
 import { useTenantVerification } from '../hooks/useTenantVerification'
 import { centralOrigin, isCentralHost } from '../utils/tenantUtils'
+import { antdLocaleFor } from './antdLocale'
 
 // Maps the `fontScale` UI setting onto a concrete AntD base font size.
 const FONT_SIZE_BY_SCALE = { compact: 13, comfortable: 14, large: 16 }
@@ -18,6 +20,7 @@ const FONT_SIZE_BY_SCALE = { compact: 13, comfortable: 14, large: 16 }
 function ThemeProvider({ children }) {
   const settings = useAppSelector((state) => state.ui)
   const fontSize = FONT_SIZE_BY_SCALE[settings.fontScale] ?? 14
+  const { i18n } = useTranslation()
 
   useEffect(() => {
     document.documentElement.classList.toggle(
@@ -26,8 +29,14 @@ function ThemeProvider({ children }) {
     )
   }, [settings.themeMode])
 
+  // Keep the document language in sync for accessibility / correct hyphenation.
+  useEffect(() => {
+    document.documentElement.lang = i18n.language
+  }, [i18n.language])
+
   return (
     <ConfigProvider
+      locale={antdLocaleFor(i18n.language)}
       theme={{
         algorithm: [
           settings.themeMode === 'dark'

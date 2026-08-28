@@ -6,6 +6,7 @@ import {
 } from '@ant-design/icons'
 import { Alert, Button, Checkbox, Divider, Form, Input, Typography } from 'antd'
 import { useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from '@tanstack/react-router'
 import AuthPanel from '../components/AuthPanel'
 import SecureBadge from '../components/SecureBadge'
@@ -27,6 +28,7 @@ interface LoginValues {
 function Login() {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const { loading, error, fieldErrors } = useAppSelector((state) => state.auth)
   // Untyped form: setFields() below maps arbitrary server-side error keys,
   // which a generic form would reject. handleSubmit is typed instead.
@@ -54,8 +56,8 @@ function Login() {
 
   return (
     <AuthPanel
-      title="Welcome Back"
-      subtitle="Enter your email and password to access your account."
+      title={t('auth.welcomeBack')}
+      subtitle={t('auth.welcomeSubtitle')}
     >
       <Form
         form={form}
@@ -75,15 +77,15 @@ function Login() {
 
         <Form.Item
           className={authFormItem}
-          label="Email"
+          label={t('auth.email')}
           name="email"
-          rules={[{ required: true, type: 'email', message: 'Enter your email' }]}
+          rules={[{ required: true, type: 'email', message: t('auth.emailPlaceholder') }]}
         >
           <Input
             autoComplete="email"
             autoFocus
             className={authInput}
-            placeholder="Enter your email"
+            placeholder={t('auth.emailPlaceholder')}
             prefix={<MailOutlined />}
             size="large"
           />
@@ -91,14 +93,14 @@ function Login() {
 
         <Form.Item
           className={authFormItem}
-          label="Password"
+          label={t('auth.password')}
           name="password"
-          rules={[{ required: true, message: 'Enter your password' }]}
+          rules={[{ required: true, message: t('auth.passwordPlaceholder') }]}
         >
           <Input.Password
             autoComplete="current-password"
             className={`${authInput} ${authPasswordIcon}`}
-            placeholder="Enter your password"
+            placeholder={t('auth.passwordPlaceholder')}
             prefix={<LockOutlined />}
             // Default toggle is a tiny, faint 13px glyph that's easy to miss.
             // Render explicit eye / eye-off icons; authPasswordIcon enlarges
@@ -112,7 +114,7 @@ function Login() {
 
         <div className="-mt-2 mb-5 flex items-center justify-between gap-4 max-md:mb-6 max-sm:flex-col max-sm:items-start max-sm:gap-2 [&_.ant-checkbox-wrapper]:!text-xs [&_.ant-checkbox-wrapper]:!text-[#111111] dark:[&_.ant-checkbox-wrapper]:!text-slate-300 [&_.ant-typography]:!text-xs [&_.ant-typography]:!text-[#111111]">
           <Form.Item name="remember" valuePropName="checked" noStyle>
-            <Checkbox>Remember me</Checkbox>
+            <Checkbox>{t('auth.rememberMe')}</Checkbox>
           </Form.Item>
           <Typography.Link
             onClick={(event) => {
@@ -120,7 +122,7 @@ function Login() {
               navigate({ to: '/forgot-password' })
             }}
           >
-            Forgot password?
+            {t('auth.forgotPassword')}
           </Typography.Link>
         </div>
 
@@ -132,11 +134,11 @@ function Login() {
           loading={loading}
           size="large"
         >
-          Sign in
+          {t('auth.signIn')}
         </Button>
 
         <Divider plain className="!my-2.5 !text-xs !text-[#a2a2a8] dark:!text-slate-500">
-          or
+          {t('auth.or')}
         </Divider>
 
         <SecureBadge />

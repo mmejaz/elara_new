@@ -83,19 +83,29 @@ export const searchableItems: SearchableItem[] = menuItems.flatMap((group) => {
  * Groups become menu groups, items become links, and items with children
  * become sub-menus. Icons are resolved from the string registry.
  */
-export function buildMenuItems(tree: Module[] = []): MenuItem[] {
+/** Resolves a node's display label; `translate` (from i18n) maps the stable
+ *  slug to a localized string, falling back to the DB `name` when untranslated. */
+export type LabelResolver = (slug: string, fallback: string) => string
+
+export function buildMenuItems(
+  tree: Module[] = [],
+  translate?: LabelResolver,
+): MenuItem[] {
+  const label = (node: Module) =>
+    translate ? translate(node.slug, node.name) : node.name
+
   const toItems = (nodes: Module[]): MenuItem[] =>
     nodes.map((node) => {
       const children = node.children?.length ? toItems(node.children) : null
 
       if (node.type === 'group') {
-        return { type: 'group', label: node.name, children: children ?? [] }
+        return { type: 'group', label: label(node), children: children ?? [] }
       }
 
       const Icon = node.icon ? ICONS[node.icon] : undefined
       return {
         key: `/${node.slug}`,
-        label: node.name,
+        label: label(node),
         icon: Icon ? <Icon /> : undefined,
         ...(children ? { children } : {}),
       }
@@ -111,13 +121,20 @@ export interface SearchableItem {
 }
 
 /** Flatten a DB tree into the header search list (leaf items only). */
-export function buildSearchableItems(tree: Module[] = []): SearchableItem[] {
+export function buildSearchableItems(
+  tree: Module[] = [],
+  translate?: LabelResolver,
+): SearchableItem[] {
   const out: SearchableItem[] = []
   const walk = (nodes: Module[]) =>
     nodes.forEach((node) => {
       if (node.type === 'item' && !node.children?.length) {
         const Icon = node.icon ? ICONS[node.icon] : undefined
-        out.push({ key: `/${node.slug}`, label: node.name, icon: Icon ? <Icon /> : undefined })
+        out.push({
+          key: `/${node.slug}`,
+          label: translate ? translate(node.slug, node.name) : node.name,
+          icon: Icon ? <Icon /> : undefined,
+        })
       }
       if (node.children?.length) walk(node.children)
     })

@@ -1,4 +1,5 @@
 import { Alert, Button, Col, Drawer, Form, Input, Row, Select } from 'antd'
+import { useTranslation } from 'react-i18next'
 import { useCreateTenant } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { toast } from '../../../utils/toast'
@@ -13,6 +14,7 @@ const CURRENCIES = ['USD', 'PKR', 'AED', 'GBP', 'EUR']
 const LANGUAGES = ['en', 'ur', 'ar']
 
 function CreateTenantDrawer({ open, onClose }: Props) {
+  const { t } = useTranslation()
   const [form] = Form.useForm()
   const mutation = useCreateTenant()
 
@@ -49,10 +51,10 @@ function CreateTenantDrawer({ open, onClose }: Props) {
       footer={
         <div className="flex justify-end gap-2">
           <Button onClick={handleClose} disabled={mutation.isPending}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="primary" loading={mutation.isPending} onClick={() => form.submit()}>
-            Create tenant
+            {t('common.create')}
           </Button>
         </div>
       }

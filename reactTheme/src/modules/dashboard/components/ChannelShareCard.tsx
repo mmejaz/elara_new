@@ -2,6 +2,7 @@ import { PieChartOutlined } from '@ant-design/icons'
 import { Pie } from '@ant-design/charts'
 import { Card, Typography } from 'antd'
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { buildThemeColorPalette } from '../../../utils/color'
 import { channelShareData } from '../data'
 import { useAppSelector } from '../../../store/hooks'
@@ -14,15 +15,22 @@ function ChannelShareCard() {
   const primaryColor = useAppSelector((state) => state.ui.primaryColor)
   const themeMode = useAppSelector((state) => state.ui.themeMode)
   const isDark = themeMode === 'dark'
+  const { t } = useTranslation()
 
   const colors = useMemo(
     () => buildThemeColorPalette(primaryColor, channelShareData.length),
     [primaryColor],
   )
 
+  // Localize the channel names for the legend/labels without touching the source data.
+  const localizedData = useMemo(
+    () => channelShareData.map((d) => ({ ...d, type: t(`dashboard.channel.${d.type}`) })),
+    [t],
+  )
+
   const config = useMemo(
     () => ({
-      data: channelShareData,
+      data: localizedData,
       autoFit: true,
       angleField: 'value',
       colorField: 'type',
@@ -42,14 +50,14 @@ function ChannelShareCard() {
         items: [
           {
             field: 'value',
-            name: 'Share',
+            name: t('dashboard.share'),
             valueFormatter: (value) => `${value}%`,
           },
         ],
       },
       theme: isDark ? 'classicDark' : 'classic',
     }),
-    [colors, isDark],
+    [colors, isDark, localizedData, t],
   )
 
   return (
@@ -57,7 +65,7 @@ function ChannelShareCard() {
       <div className="mb-3 flex items-center gap-2.5">
         <PieChartOutlined style={{ color: primaryColor }} />
         <Text strong className="!text-base">
-          Traffic by Channel
+          {t('dashboard.trafficByChannel')}
         </Text>
       </div>
       <Pie {...config} />

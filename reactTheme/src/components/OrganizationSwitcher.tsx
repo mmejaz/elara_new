@@ -1,6 +1,7 @@
 import { ApartmentOutlined, AppstoreOutlined, CaretDownOutlined, CheckOutlined } from '@ant-design/icons'
 import { Dropdown, Typography } from 'antd'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useOrganizationOptions } from '../modules/organizations/queries'
 import { setCurrentOrganization } from '../store/orgSlice'
 import { useAppDispatch, useAppSelector } from '../store/hooks'
@@ -15,6 +16,7 @@ const { Text } = Typography
  */
 function OrganizationSwitcher() {
   const dispatch = useAppDispatch()
+  const { t } = useTranslation()
   const currentId = useAppSelector((state) => state.org.currentOrganizationId)
   const userId = useAppSelector((state) => state.auth.user?.id)
   const isSuperAdmin = useAppSelector((state) => state.auth.roles.includes('Super Admin'))
@@ -105,9 +107,9 @@ function OrganizationSwitcher() {
       style={{ borderColor: border, background: bg }}
     >
       <div className="flex items-center justify-between px-2 pb-1 pt-1">
-        <Text className="!text-xs !font-semibold uppercase tracking-wide" type="secondary">Organization</Text>
+        <Text className="!text-xs !font-semibold uppercase tracking-wide" type="secondary">{t('orgSwitcher.title')}</Text>
         {organizations.length > 0 && (
-          <Text type="secondary" className="!text-[11px]">{organizations.length} total</Text>
+          <Text type="secondary" className="!text-[11px]">{t('orgSwitcher.total', { count: organizations.length })}</Text>
         )}
       </div>
 
@@ -115,15 +117,15 @@ function OrganizationSwitcher() {
         {card({
           active: currentId === null,
           icon: <AppstoreOutlined />,
-          title: 'All organizations',
-          subtitle: 'No organization filter',
+          title: t('orgSwitcher.all'),
+          subtitle: t('orgSwitcher.noFilter'),
           onClick: () => select(null),
         })}
 
-        {isLoading && <Text type="secondary" className="!px-2 !py-3 !text-center !text-xs">Loading…</Text>}
+        {isLoading && <Text type="secondary" className="!px-2 !py-3 !text-center !text-xs">{t('common.loading')}</Text>}
 
         {!isLoading && organizations.length === 0 && (
-          <Text type="secondary" className="!px-2 !py-3 !text-center !text-xs">No organizations yet</Text>
+          <Text type="secondary" className="!px-2 !py-3 !text-center !text-xs">{t('orgSwitcher.empty')}</Text>
         )}
 
         {organizations.map((o) =>
@@ -132,7 +134,7 @@ function OrganizationSwitcher() {
             active: o.id === currentId,
             icon: <ApartmentOutlined />,
             title: o.name,
-            subtitle: o.parent ? `Under ${o.parent.name}` : 'Top level',
+            subtitle: o.parent ? t('orgSwitcher.under', { name: o.parent.name }) : t('orgSwitcher.topLevel'),
             onClick: () => select(o.id),
           }),
         )}
@@ -156,9 +158,9 @@ function OrganizationSwitcher() {
       >
         <ApartmentOutlined style={{ color: primaryColor, fontSize: 16 }} />
         <span className="hidden max-w-[130px] flex-col leading-tight sm:flex">
-          <Text type="secondary" className="!text-[10px] !leading-tight">Organization</Text>
+          <Text type="secondary" className="!text-[10px] !leading-tight">{t('orgSwitcher.title')}</Text>
           <Text className="!truncate !text-[13px] !font-semibold !leading-tight">
-            {current ? current.name : 'All organizations'}
+            {current ? current.name : t('orgSwitcher.all')}
           </Text>
         </span>
         <CaretDownOutlined className="text-[11px] opacity-60" />

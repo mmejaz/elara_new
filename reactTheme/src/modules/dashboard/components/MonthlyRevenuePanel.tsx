@@ -8,6 +8,7 @@ import { Column } from '@ant-design/charts'
 import { Card, DatePicker, Divider, Segmented, Select, Space, Typography } from 'antd'
 import dayjs from 'dayjs'
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { monthlyRevenueData } from '../data'
 import { useAppSelector } from '../../../store/hooks'
 
@@ -18,6 +19,7 @@ const { Text } = Typography
 function MonthlyRevenuePanel() {
   const primaryColor = useAppSelector((state) => state.ui.primaryColor)
   const themeMode = useAppSelector((state) => state.ui.themeMode)
+  const { t } = useTranslation()
   const [feeType, setFeeType] = useState('all')
   const [summaryMode, setSummaryMode] = useState('Monthly')
   const [summaryDate, setSummaryDate] = useState(dayjs('2025-06-01'))
@@ -35,9 +37,20 @@ function MonthlyRevenuePanel() {
     [feeType],
   )
 
+  // Localize the series names for the chart legend/tooltip, keeping the filter
+  // logic above on the original English `type` values.
+  const localizedData = useMemo(
+    () =>
+      filteredData.map((item) => ({
+        ...item,
+        type: item.type === 'Received' ? t('dashboard.received') : t('dashboard.pending'),
+      })),
+    [filteredData, t],
+  )
+
   const chartConfig = useMemo(
     () => ({
-      data: filteredData,
+      data: localizedData,
       autoFit: true,
       xField: 'month',
       yField: 'value',
@@ -59,19 +72,19 @@ function MonthlyRevenuePanel() {
       },
       theme: isDark ? 'classicDark' : 'classic',
     }),
-    [filteredData, isDark, pendingColor, receivedColor],
+    [localizedData, isDark, pendingColor, receivedColor],
   )
 
   const summaryItems = [
     {
-      label: 'Received',
+      label: t('dashboard.received'),
       amount: '$543,245',
       trend: '57%',
       icon: <ArrowUpOutlined />,
       color: receivedColor,
     },
     {
-      label: 'Pending',
+      label: t('dashboard.pending'),
       amount: '$248,110',
       trend: '7%',
       icon: <ArrowDownOutlined />,
@@ -92,7 +105,7 @@ function MonthlyRevenuePanel() {
                 className="text-base"
                 style={{ color: primaryColor }}
               />
-              <Text strong>Monthly Revenue</Text>
+              <Text strong>{t('dashboard.monthlyRevenue')}</Text>
             </div>
             <Space wrap>
               <Select
@@ -101,9 +114,9 @@ function MonthlyRevenuePanel() {
                 style={{ minWidth: 160 }}
                 suffixIcon={<DollarOutlined />}
                 options={[
-                  { value: 'all', label: 'All Types' },
-                  { value: 'Received', label: 'Received' },
-                  { value: 'Pending', label: 'Pending' },
+                  { value: 'all', label: t('dashboard.allTypes') },
+                  { value: 'Received', label: t('dashboard.received') },
+                  { value: 'Pending', label: t('dashboard.pending') },
                 ]}
               />
             </Space>
@@ -118,7 +131,10 @@ function MonthlyRevenuePanel() {
           <div className="mb-6 flex flex-nowrap items-center justify-between gap-2">
             <Segmented
               size="middle"
-              options={['Monthly', 'Yearly']}
+              options={[
+                { value: 'Monthly', label: t('dashboard.monthly') },
+                { value: 'Yearly', label: t('dashboard.yearly') },
+              ]}
               value={summaryMode}
               onChange={setSummaryMode}
             />

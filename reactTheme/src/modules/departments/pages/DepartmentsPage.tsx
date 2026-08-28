@@ -10,16 +10,18 @@ import { openAddDrawer, openEditDrawer, closeAddDrawer, closeEditDrawer } from '
 import { useDepartments, useDeleteDepartment } from '../queries'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 import { toast } from '../../../utils/toast'
+import { useTranslation } from 'react-i18next'
 import type { Department } from '../types'
 
 const { Text } = Typography
 
 function DepartmentsPage() {
   const dispatch = useAppDispatch()
+  const { t } = useTranslation()
   const mode = useAppSelector((state) => state.auth.departmentMode)
   // URL-backed table state + deep-linkable Add/Edit drawers (?add / ?edit=<id>),
   // mirroring the Users module — shareable and refresh-proof.
-  const table = useUrlTable(15, 'Search Departments…')
+  const table = useUrlTable(15, t('pages.departments.search'))
   const drawer = useUrlDrawer()
   const addOpen = useAppSelector((state) => state.departments.addDrawerOpen)
   const editOpen = useAppSelector((state) => state.departments.editDrawerOpen)
@@ -48,48 +50,48 @@ function DepartmentsPage() {
 
   const handleDelete = (id: number) =>
     remove.mutate(id, {
-      onSuccess: () => toast.success('Deleted'),
-      onError: () => toast.error('Unable to delete'),
+      onSuccess: () => toast.success(t('common.deleted')),
+      onError: () => toast.error(t('common.unableToDelete')),
     })
 
   const columns = useMemo<ColumnsType<Department>>(
     () => [
-      { title: 'Name', dataIndex: 'name', sorter: true, render: (name) => <Text strong>{name}</Text> },
+      { title: t('common.name'), dataIndex: 'name', sorter: true, render: (name) => <Text strong>{name}</Text> },
       // Only meaningful when departments can belong to an organization. In
       // shared mode every department is tenant-wide, so the column is hidden.
       ...(mode !== 'shared' ? [{
-        title: 'Organization',
+        title: t('pages.departments.col.organization'),
         dataIndex: ['organization', 'name'],
         render: (_: unknown, record: Department) =>
-          record.organization ? <Text>{record.organization.name}</Text> : <Tag color="cyan">Shared</Tag>,
+          record.organization ? <Text>{record.organization.name}</Text> : <Tag color="cyan">{t('pages.departments.shared')}</Tag>,
       }] : []),
       {
-        title: 'Parent Department',
+        title: t('pages.departments.col.parent'),
         dataIndex: ['parent', 'name'],
         render: (_, record) =>
           record.parent ? (
             <Text>{record.parent.name}</Text>
           ) : (
-            <Tag color="default">Top level</Tag>
+            <Tag color="default">{t('orgSwitcher.topLevel')}</Tag>
           ),
       },
       {
-        title: 'Actions',
+        title: t('common.actions'),
         key: 'actions',
         width: 120,
         render: (_, record) => (
           <Space>
-            <Tooltip title="Edit">
+            <Tooltip title={t('common.edit')}>
               <Button type="text" icon={<EditOutlined />} onClick={() => drawer.openEdit(record.id)} />
             </Tooltip>
-            <Popconfirm title="Delete this record?" onConfirm={() => handleDelete(record.id)}>
+            <Popconfirm title={t('common.deleteRecordConfirm')} onConfirm={() => handleDelete(record.id)}>
               <Button type="text" danger icon={<DeleteOutlined />} />
             </Popconfirm>
           </Space>
         ),
       },
     ],
-    [dispatch, mode],
+    [dispatch, mode, t],
   )
 
   const { visibleColumns, control } = useColumnToggle(columns)
@@ -97,14 +99,14 @@ function DepartmentsPage() {
   return (
     <Space orientation="vertical" size={16} className="w-full">
       <PageHeader
-        title="Departments"
-        subtitle="Manage Departments records."
+        title={t('pages.departments.title')}
+        subtitle={t('pages.departments.subtitle')}
         titleExtra={control}
         extra={
           <Space>
             {table.searchInput}
             <Button type="primary" icon={<PlusOutlined />} onClick={() => drawer.openAdd()}>
-              Add Department
+              {t('pages.departments.add')}
             </Button>
           </Space>
         }

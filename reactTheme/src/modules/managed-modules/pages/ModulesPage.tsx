@@ -8,15 +8,17 @@ import { useModules, useSetModuleVisibility } from '../../../hooks/useModules'
 import { toast } from '../../../utils/toast'
 import { hexToRgba } from '../../../utils/color'
 import { useAppSelector } from '../../../store/hooks'
+import { useTranslation } from 'react-i18next'
 
 const { Text } = Typography
 
 function ModulesPage() {
+  const { t } = useTranslation()
   const primaryColor = useAppSelector((state) => state.ui.primaryColor)
   const { data: all = [], isLoading } = useModules()
   const setVisibility = useSetModuleVisibility()
   // Search lives in the URL (?q=…) so the view is shareable and survives reload.
-  const table = useUrlTable(15, 'Search modules…')
+  const table = useUrlTable(15, t('managedModules.search'))
 
   // Show actual modules (menu items), not section headers — filtered by the search box.
   const modules = useMemo(() => {
@@ -31,8 +33,12 @@ function ModulesPage() {
       { id: module.id, is_visible: checked },
       {
         onSuccess: () =>
-          toast.success(`${module.name} ${checked ? 'activated' : 'deactivated'}`),
-        onError: () => toast.error('Unable to update module'),
+          toast.success(
+            checked
+              ? t('managedModules.activated', { name: module.name })
+              : t('managedModules.deactivated', { name: module.name }),
+          ),
+        onError: () => toast.error(t('managedModules.updateError')),
       },
     )
   }
@@ -40,8 +46,8 @@ function ModulesPage() {
   return (
     <Space orientation="vertical" size={16} className="w-full">
       <PageHeader
-        title="Managed Modules"
-        subtitle="Activate or deactivate modules. Inactive modules are hidden from the sidebar."
+        title={t('managedModules.title')}
+        subtitle={t('managedModules.subtitle')}
         extra={table.searchInput}
       />
 
@@ -50,7 +56,7 @@ function ModulesPage() {
           <Spin />
         </div>
       ) : modules.length === 0 ? (
-        <Empty description="No modules found." />
+        <Empty description={t('managedModules.empty')} />
       ) : (
         <Row gutter={[12, 12]}>
           {modules.map((module) => {
@@ -75,10 +81,10 @@ function ModulesPage() {
                         </Text>
                         <div className="flex items-center gap-2">
                           <Tag color={module.is_resourceful ? 'green' : 'gold'} className="!text-xs">
-                            {module.is_resourceful ? 'CRUD' : 'Menu'}
+                            {module.is_resourceful ? t('managedModules.crud') : t('managedModules.menu')}
                           </Tag>
                           <Tag color={module.is_visible ? 'success' : 'default'} className="!text-xs">
-                            {module.is_visible ? 'Active' : 'Inactive'}
+                            {module.is_visible ? t('managedModules.active') : t('managedModules.inactive')}
                           </Tag>
                         </div>
                       </div>

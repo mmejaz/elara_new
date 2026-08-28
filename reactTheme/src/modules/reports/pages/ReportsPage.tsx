@@ -2,6 +2,7 @@ import { DownloadOutlined, FileTextOutlined } from '@ant-design/icons'
 import { Button, Space, Tag, Tooltip, Typography } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import PageHeader from '../../../components/PageHeader'
 import DataTable, { useColumnToggle, useTableSearch } from '../../../components/DataTable'
 
@@ -20,13 +21,14 @@ const reports: Report[] = [
 ]
 
 function ReportsPage() {
+  const { t } = useTranslation()
   // Static local list, so search filters client-side.
-  const { value: search, input: searchInput } = useTableSearch('Search reports…')
+  const { value: search, input: searchInput } = useTableSearch(t('reports.searchPlaceholder'))
 
   const columns = useMemo<ColumnsType<Report>>(
     () => [
       {
-        title: 'Report',
+        title: t('reports.col.report'),
         dataIndex: 'name',
         sorter: (a, b) => a.name.localeCompare(b.name),
         render: (name) => (
@@ -37,22 +39,22 @@ function ReportsPage() {
         ),
       },
       {
-        title: 'Period',
+        title: t('reports.col.period'),
         dataIndex: 'period',
-        render: (period) => <Tag color="blue">{period}</Tag>,
+        render: (period) => <Tag color="blue">{t(`reports.period.${period}`)}</Tag>,
       },
       {
-        title: 'Actions',
+        title: t('common.actions'),
         key: 'actions',
         width: 120,
         render: () => (
-          <Tooltip title="Download">
-            <Button type="text" icon={<DownloadOutlined />} aria-label="Download" />
+          <Tooltip title={t('reports.download')}>
+            <Button type="text" icon={<DownloadOutlined />} aria-label={t('reports.download')} />
           </Tooltip>
         ),
       },
     ],
-    [],
+    [t],
   )
 
   const { visibleColumns, control } = useColumnToggle(columns)
@@ -60,8 +62,8 @@ function ReportsPage() {
   return (
     <Space orientation="vertical" size={16} className="w-full">
       <PageHeader
-        title="Reports"
-        subtitle="Generate and download workspace reports."
+        title={t('reports.title')}
+        subtitle={t('reports.subtitle')}
         titleExtra={control}
         extra={searchInput}
       />

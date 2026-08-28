@@ -17,6 +17,7 @@ import { useGlobalSetting, useGlobalSettings, useDeleteGlobalSetting, useRecords
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 import { hexToRgba } from '../../../utils/color'
 import { toast } from '../../../utils/toast'
+import { useTranslation } from 'react-i18next'
 
 const { Text } = Typography
 
@@ -24,12 +25,13 @@ const { Text } = Typography
 const LATEST_RECORD_PARAMS = { page: 1, per_page: 1 }
 
 function GlobalSettingsPage() {
+  const { t } = useTranslation()
   const dispatch = useAppDispatch()
   const primaryColor = useAppSelector((state) => state.ui.primaryColor)
   const { token } = theme.useToken()
   // URL-backed table state + deep-linkable Add/Edit drawers (?add / ?edit=<id>),
   // mirroring the Users module — shareable and refresh-proof.
-  const table = useUrlTable(15, 'Search applications…')
+  const table = useUrlTable(15, t('pages.globalsettings.search'))
   const drawer = useUrlDrawer()
   const addOpen = useAppSelector((state) => state.globalSettings.addDrawerOpen)
   const editOpen = useAppSelector((state) => state.globalSettings.editDrawerOpen)
@@ -74,13 +76,13 @@ function GlobalSettingsPage() {
   return (
     <Space orientation="vertical" size={16} className="w-full">
       <PageHeader
-        title="Global Settings"
-        subtitle="Build applications with custom fields, then add records to them."
+        title={t('pages.globalsettings.title')}
+        subtitle={t('pages.globalsettings.subtitle')}
         extra={
           <Space>
             {table.searchInput}
             <Button type="primary" icon={<PlusOutlined />} onClick={() => drawer.openAdd()}>
-              Add Application
+              {t('pages.globalsettings.add')}
             </Button>
           </Space>
         }

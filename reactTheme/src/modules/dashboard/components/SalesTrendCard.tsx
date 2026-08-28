@@ -2,6 +2,7 @@ import { LineChartOutlined } from '@ant-design/icons'
 import { Area } from '@ant-design/charts'
 import { Card, Typography } from 'antd'
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { hexToRgba } from '../../../utils/color'
 import { salesTrendData } from '../data'
 import { useAppSelector } from '../../../store/hooks'
@@ -13,6 +14,7 @@ function SalesTrendCard() {
   const primaryColor = useAppSelector((state) => state.ui.primaryColor)
   const themeMode = useAppSelector((state) => state.ui.themeMode)
   const isDark = themeMode === 'dark'
+  const { t } = useTranslation()
 
   const config = useMemo(
     () => ({
@@ -31,14 +33,14 @@ function SalesTrendCard() {
         items: [
           {
             field: 'value',
-            name: 'Sales',
+            name: t('analytics.sales'),
             valueFormatter: (value) => `$${Number(value).toLocaleString()}`,
           },
         ],
       },
       theme: isDark ? 'classicDark' : 'classic',
     }),
-    [isDark, primaryColor],
+    [isDark, primaryColor, t],
   )
 
   return (
@@ -46,7 +48,7 @@ function SalesTrendCard() {
       <div className="mb-3 flex items-center gap-2.5">
         <LineChartOutlined style={{ color: primaryColor }} />
         <Text strong className="!text-base">
-          Weekly Sales Trend
+          {t('analytics.weeklySalesTrend')}
         </Text>
       </div>
       <Area {...config} />

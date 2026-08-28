@@ -5,8 +5,10 @@ import { useUpdateCity } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { toast } from '../../../utils/toast'
 import { useAppSelector } from '../../../store/hooks'
+import { useTranslation } from 'react-i18next'
 
 function EditCityDrawer() {
+  const { t } = useTranslation()
   const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.cities.editDrawerOpen)
   const editing = useAppSelector((state) => state.cities.editing)
@@ -21,7 +23,7 @@ function EditCityDrawer() {
     if (!editing) return
     mutation.mutate({ id: editing.id, ...values }, {
       onSuccess: () => {
-        toast.success('City updated')
+        toast.success(t('common.updateSuccess'))
         drawer.close()
       },
       onError: (error) => {
@@ -39,7 +41,7 @@ function EditCityDrawer() {
 
   return (
     <Drawer
-      title="Edit City"
+      title={t('pages.cities.edit')}
       placement="right"
       size={480}
       open={open}
@@ -48,14 +50,14 @@ function EditCityDrawer() {
       destroyOnHidden
       footer={
         <div className="flex justify-end gap-2">
-          <Button onClick={handleClose} disabled={mutation.isPending}>Cancel</Button>
-          <Button type="primary" loading={mutation.isPending} onClick={() => form.submit()}>Save</Button>
+          <Button onClick={handleClose} disabled={mutation.isPending}>{t('common.cancel')}</Button>
+          <Button type="primary" loading={mutation.isPending} onClick={() => form.submit()}>{t('common.save')}</Button>
         </div>
       }
     >
       <Form form={form} layout="vertical" requiredMark={false} onFinish={handleFinish}>
-        <Form.Item label="Name" name="name" rules={[{ required: true, message: 'Enter a name' }]}>
-          <Input placeholder="Enter name" size="large" autoFocus />
+        <Form.Item label={t('common.name')} name="name" rules={[{ required: true, message: t('common.enterName') }]}>
+          <Input placeholder={t('common.namePlaceholder')} size="large" autoFocus />
         </Form.Item>
       </Form>
     </Drawer>

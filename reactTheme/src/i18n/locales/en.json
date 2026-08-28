@@ -1,0 +1,499 @@
+{
+  "common": {
+    "add": "Add",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "saveChanges": "Save Changes",
+    "cancel": "Cancel",
+    "create": "Create",
+    "update": "Update",
+    "search": "Search",
+    "searchPlaceholder": "Search…",
+    "actions": "Actions",
+    "confirm": "Confirm",
+    "close": "Close",
+    "loading": "Loading…",
+    "noData": "No data",
+    "name": "Name",
+    "namePlaceholder": "Enter name",
+    "enterName": "Enter a name",
+    "status": "Status",
+    "active": "Active",
+    "created": "Created",
+    "yes": "Yes",
+    "no": "No",
+    "deleted": "Deleted",
+    "deleteRecordConfirm": "Delete this record?",
+    "unableToDelete": "Unable to delete",
+    "beforeYouStart": "Before you start",
+    "requiredFieldsNote": "Fields marked with * are required.",
+    "uniqueNameNote": "Enter a unique name — duplicate names aren't allowed.",
+    "createSuccess": "Created successfully",
+    "updateSuccess": "Updated successfully",
+    "on": "On",
+    "somethingWentWrong": "Something went wrong."
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "welcomeBack": "Welcome Back",
+    "welcomeSubtitle": "Enter your email and password to access your account.",
+    "email": "Email",
+    "emailPlaceholder": "Enter your email",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "forgotPassword": "Forgot password?",
+    "rememberMe": "Remember me",
+    "or": "or",
+    "invalidCredentials": "The provided credentials are incorrect."
+  },
+  "nav": {
+    "overview": "Overview",
+    "dashboard": "Dashboard",
+    "analytics": "Analytics",
+    "attendance": "Attendance",
+    "management": "Management",
+    "users": "Users",
+    "roles": "Roles",
+    "permissions": "Permissions",
+    "modules": "Managed Modules",
+    "module-builder": "Module Builder",
+    "tenants": "Tenants",
+    "globalsettings": "Global Setting",
+    "account": "Account",
+    "profile": "Profile",
+    "reports": "Reports",
+    "user-guide": "User Guide",
+    "developer-guide": "Developer Guide",
+    "lookups": "Lookups",
+    "all-lookups": "All Lookups",
+    "applicationtypes": "Application Type",
+    "countries": "Country",
+    "cities": "City",
+    "genders": "Gender",
+    "departments": "Department",
+    "designations": "Designation",
+    "leavetypes": "Leave Type",
+    "documenttypes": "Document Type",
+    "organizations": "Organization",
+    "dashboard-settings": "Dashboard Setting"
+  },
+  "header": {
+    "organization": "Organization",
+    "allOrganizations": "All organizations",
+    "searchPlaceholder": "Search across modules and pages",
+    "notifications": "Notifications",
+    "profile": "Profile",
+    "logout": "Log out",
+    "language": "Language",
+    "signedIn": "Signed in"
+  },
+  "orgSwitcher": {
+    "title": "Organization",
+    "total": "{{count}} total",
+    "all": "All organizations",
+    "noFilter": "No organization filter",
+    "empty": "No organizations yet",
+    "under": "Under {{name}}",
+    "topLevel": "Top level"
+  },
+  "table": {
+    "columns": "Columns",
+    "sticky": "Sticky",
+    "columnsAndSticky": "Columns & sticky",
+    "noResults": "No results found"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "subtitle": "Track today's activity and keep the store moving.",
+    "today": "Today",
+    "week": "Week",
+    "month": "Month",
+    "revenue": "Revenue",
+    "orders": "Orders",
+    "customers": "Customers",
+    "conversion": "Conversion",
+    "monthlyRevenue": "Monthly Revenue",
+    "allTypes": "All Types",
+    "received": "Received",
+    "pending": "Pending",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "recentOrders": "Recent Orders",
+    "trafficByChannel": "Traffic by Channel",
+    "share": "Share",
+    "col": {
+      "order": "Order",
+      "customer": "Customer",
+      "product": "Product",
+      "amount": "Amount",
+      "status": "Status",
+      "date": "Date"
+    },
+    "orderStatus": {
+      "Paid": "Paid",
+      "Pending": "Pending",
+      "Refunded": "Refunded"
+    },
+    "channel": {
+      "Direct": "Direct",
+      "Referral": "Referral",
+      "Social": "Social",
+      "Organic": "Organic"
+    },
+    "customWidgetPlaceholder": "Widget coming soon"
+  },
+  "managedModules": {
+    "title": "Managed Modules",
+    "subtitle": "Activate or deactivate modules. Inactive modules are hidden from the sidebar.",
+    "search": "Search modules…",
+    "empty": "No modules found.",
+    "crud": "CRUD",
+    "menu": "Menu",
+    "active": "Active",
+    "inactive": "Inactive",
+    "activated": "{{name}} activated",
+    "deactivated": "{{name}} deactivated",
+    "updateError": "Unable to update module"
+  },
+  "moduleBuilder": {
+    "title": "Module Builder",
+    "subtitle": "Generate a new module with its CRUD scaffolding.",
+    "search": "Search modules…",
+    "create": "Create Module",
+    "col": {
+      "module": "Module",
+      "type": "Type",
+      "parent": "Parent",
+      "permissions": "Permissions"
+    },
+    "groupSection": "Group / Section",
+    "resourcefulCrud": "Resourceful · CRUD",
+    "parentMenu": "Parent Menu",
+    "topLevel": "— top level —",
+    "noPermissions": "None",
+    "drawer": {
+      "title": "Create New Module",
+      "generate": "Generate Module",
+      "alertTitle": "Before you start",
+      "alertRequiredBefore": "Fields marked with",
+      "alertRequiredAfter": "are required.",
+      "alertLetters": "Module name accepts letters and spaces only.",
+      "alertResourceful": "Resourceful modules generate full CRUD files (list, drawers, service, controller).",
+      "nameLabel": "Module Name",
+      "nameRequired": "Enter the module name",
+      "namePattern": "Only letters and spaces are allowed",
+      "nameExtra": "e.g. Students, Courses, Invoices",
+      "namePlaceholder": "e.g. Students",
+      "typeLabel": "Type",
+      "typeRequired": "Select a type",
+      "typeExtra": "How this entry appears in the sidebar.",
+      "typeMenuItem": "Menu Item",
+      "typeGroupSection": "Group / Section",
+      "parentLabel": "Parent / Section",
+      "parentRequired": "Choose where this module lives",
+      "parentExtra": "Pick a section to place it under, or a menu item to nest it inside.",
+      "parentPlaceholder": "Select section or parent module",
+      "menuItemTypeLabel": "Menu Item Type",
+      "menuItemTypeExtra": "Resourceful generates full CRUD files (list, drawers, service, controller). Parent Menu is a container — nest resourceful items under it.",
+      "resourcefulCrud": "Resourceful (CRUD)",
+      "parentMenu": "Parent Menu",
+      "iconLabel": "Icon",
+      "iconPlaceholder": "Select an icon",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Short description of what this module manages",
+      "permissionsLabel": "Permissions to Generate",
+      "permissionsRequired": "Select at least one permission",
+      "previewLabel": "Preview",
+      "previewEmpty": "Fill the form to see a preview.",
+      "previewNewSection": "New top-level section",
+      "previewUnder": "Under: {{parent}}",
+      "previewNoParent": "No parent selected",
+      "createdSuccess": "Module created successfully",
+      "createError": "Unable to create module",
+      "icon": {
+        "appstore": "Appstore",
+        "team": "Team",
+        "book": "Book",
+        "bank": "Bank",
+        "calendar": "Calendar",
+        "file": "File"
+      },
+      "perm": {
+        "view": "View",
+        "create": "Create",
+        "edit": "Edit",
+        "delete": "Delete",
+        "export": "Export"
+      }
+    }
+  },
+  "analytics": {
+    "title": "Analytics",
+    "subtitle": "Understand where your traffic comes from and how it converts.",
+    "pageViews": "Page Views",
+    "bounceRate": "Bounce Rate",
+    "avgSession": "Avg. Session",
+    "growth": "Growth",
+    "weeklySalesTrend": "Weekly Sales Trend",
+    "sales": "Sales"
+  },
+  "attendance": {
+    "title": "Attendance",
+    "subtitle": "Daily attendance overview across all classes.",
+    "searchPlaceholder": "Search classes…",
+    "register": "Attendance Register — {{month}}",
+    "col": {
+      "class": "Class",
+      "total": "Total",
+      "present": "Present",
+      "excused": "Excused",
+      "unexcused": "Un-excused"
+    }
+  },
+  "reports": {
+    "title": "Reports",
+    "subtitle": "Generate and download workspace reports.",
+    "searchPlaceholder": "Search reports…",
+    "download": "Download",
+    "col": {
+      "report": "Report",
+      "period": "Period"
+    },
+    "period": {
+      "Monthly": "Monthly",
+      "Weekly": "Weekly",
+      "Quarterly": "Quarterly"
+    }
+  },
+  "profile": {
+    "title": "Profile",
+    "subtitle": "Manage your account information and preferences.",
+    "changePhoto": "Change photo",
+    "removePhoto": "Remove photo",
+    "removePhotoConfirm": "Remove profile photo?",
+    "remove": "Remove",
+    "defaultName": "User",
+    "noRoles": "No roles",
+    "email": "Email",
+    "phone": "Phone",
+    "location": "Location",
+    "joined": "Joined",
+    "tabs": {
+      "personal": "Personal",
+      "access": "Access",
+      "security": "Security",
+      "settings": "Settings"
+    },
+    "personal": {
+      "fullName": "Full Name",
+      "nameRequired": "Name is required",
+      "namePlaceholder": "Your name",
+      "email": "Email Address",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Enter a valid email",
+      "emailPlaceholder": "you@example.com",
+      "phone": "Phone",
+      "phonePlaceholder": "Phone number",
+      "designation": "Designation",
+      "designationPlaceholder": "e.g. Administrator",
+      "country": "Country",
+      "countryPlaceholder": "Country",
+      "city": "City",
+      "cityPlaceholder": "City",
+      "bio": "Bio",
+      "bioPlaceholder": "A short bio about yourself"
+    },
+    "access": {
+      "rolesHeading": "Roles & their permissions",
+      "permissionCount_one": "{{count}} permission",
+      "permissionCount_other": "{{count}} permissions",
+      "superAdminAccess": "Full access — this role bypasses all permission checks.",
+      "noRolePermissions": "No permissions assigned to this role.",
+      "noRolesAssigned": "No roles assigned",
+      "directHeading": "Directly assigned permissions",
+      "directDescription": "Permissions granted to you directly, on top of those inherited from your roles.",
+      "noDirectPermissions": "No directly assigned permissions"
+    },
+    "security": {
+      "oldPassword": "Old Password",
+      "oldPasswordRequired": "Enter your current password",
+      "oldPasswordPlaceholder": "Enter old password",
+      "newPassword": "New Password",
+      "newPasswordRequired": "Enter a new password",
+      "newPasswordPlaceholder": "Enter new password",
+      "requirementsError": "Password does not meet all requirements",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordRequired": "Confirm your new password",
+      "confirmPasswordPlaceholder": "Enter confirm password",
+      "passwordsMismatch": "Passwords do not match",
+      "requirementsTitle": "New password must contain:",
+      "rules": {
+        "minLength": "At least 8 characters",
+        "lowercase": "At least 1 lower letter (a-z)",
+        "uppercase": "At least 1 uppercase letter (A-Z)",
+        "number": "At least 1 number (0-9)",
+        "special": "At least 1 special character"
+      }
+    },
+    "settings": {
+      "emailNotifications": "Email notifications",
+      "emailNotificationsDesc": "Receive email about account activity.",
+      "productUpdates": "Product updates",
+      "productUpdatesDesc": "Occasional news about new features.",
+      "publicProfile": "Public profile",
+      "publicProfileDesc": "Allow others to see your profile.",
+      "save": "Save Settings"
+    }
+  },
+  "pages": {
+    "users": {
+      "title": "Users",
+      "subtitle": "Manage users, roles, and account access.",
+      "add": "Add User",
+      "search": "Search users by name, email, or role…",
+      "totalUsers": "Total Users",
+      "rolesCount": "Roles",
+      "withRole": "With a Role",
+      "withoutRole": "Without a Role",
+      "roles": "Roles",
+      "organizations": "Organizations",
+      "noRole": "No role"
+    },
+    "roles": {
+      "title": "Roles",
+      "subtitle": "Define what each group of users can access.",
+      "add": "Add Role",
+      "search": "Search roles…"
+    },
+    "permissions": {
+      "title": "Permissions",
+      "subtitle": "Manage the individual permissions that make up roles.",
+      "add": "Add Permission",
+      "search": "Search permissions…"
+    },
+    "tenants": {
+      "title": "Tenants",
+      "subtitle": "Provision and manage tenant workspaces (each gets its own database).",
+      "add": "Create Tenant",
+      "search": "Search tenants…"
+    },
+    "globalsettings": {
+      "title": "Global Settings",
+      "subtitle": "Build applications with custom fields, then add records to them.",
+      "add": "Add Application",
+      "search": "Search applications…"
+    },
+    "applicationtypes": {
+      "title": "Application Types",
+      "subtitle": "Manage Application Types records.",
+      "add": "Add Application Type",
+      "edit": "Edit Application Type",
+      "search": "Search Application Types…"
+    },
+    "countries": {
+      "title": "Countries",
+      "subtitle": "Manage Countries records.",
+      "add": "Add Country",
+      "edit": "Edit Country",
+      "search": "Search Countries…"
+    },
+    "cities": {
+      "title": "Cities",
+      "subtitle": "Manage Cities records.",
+      "add": "Add City",
+      "edit": "Edit City",
+      "search": "Search Cities…"
+    },
+    "genders": {
+      "title": "Genders",
+      "subtitle": "Manage Genders records.",
+      "add": "Add Gender",
+      "edit": "Edit Gender",
+      "search": "Search Genders…"
+    },
+    "designations": {
+      "title": "Designations",
+      "subtitle": "Manage Designations records.",
+      "add": "Add Designation",
+      "edit": "Edit Designation",
+      "search": "Search Designations…"
+    },
+    "leavetypes": {
+      "title": "Leave Types",
+      "subtitle": "Manage Leave Types records.",
+      "add": "Add Leave Type",
+      "edit": "Edit Leave Type",
+      "search": "Search Leave Types…"
+    },
+    "documenttypes": {
+      "title": "Document Types",
+      "subtitle": "Manage Document Types records.",
+      "add": "Add Document Type",
+      "edit": "Edit Document Type",
+      "search": "Search Document Types…"
+    },
+    "departments": {
+      "title": "Departments",
+      "subtitle": "Manage Departments records.",
+      "add": "Add Department",
+      "edit": "Edit Department",
+      "search": "Search Departments…",
+      "col": {
+        "organization": "Organization",
+        "parent": "Parent Department"
+      },
+      "shared": "Shared",
+      "fields": {
+        "organization": "Organization",
+        "organizationPlaceholder": "Select an organization",
+        "organizationSharedPlaceholder": "None / Shared across all organizations",
+        "organizationRequired": "Select an organization",
+        "organizationShareHint": "Leave empty to share this department across all organizations.",
+        "parent": "Parent Department",
+        "parentPlaceholder": "None / Top Level Department"
+      }
+    },
+    "organizations": {
+      "title": "Organizations",
+      "subtitle": "Manage Organizations records.",
+      "add": "Add Organization",
+      "edit": "Edit Organization",
+      "search": "Search Organizations…",
+      "fields": {
+        "parent": "Parent Organization",
+        "parentPlaceholder": "None / Top Level Organization"
+      }
+    }
+  },
+  "dashboardSettings": {
+    "title": "Dashboard Setting",
+    "subtitle": "Pick a widget, then choose which roles can see it. A user sees a widget if any of their roles allows it.",
+    "widget": "Widget",
+    "hint": "Toggle a widget off to hide it from that role.",
+    "saved": "Dashboard settings saved.",
+    "forbidden": "Only a Super Admin can configure dashboards.",
+    "noRoles": "No roles found.",
+    "widgets": "Widgets",
+    "rolesFor": "Roles for {{widget}}",
+    "selectWidget": "Select a widget",
+    "rolesCount": "{{count}} of {{total}} roles",
+    "enableAll": "Enable all",
+    "disableAll": "Disable all",
+    "visible": "Visible",
+    "hidden": "Hidden",
+    "addWidget": "Add widget",
+    "widgetName": "Widget name",
+    "widgetNamePlaceholder": "e.g. Top Products",
+    "enterWidgetName": "Enter a widget name",
+    "icon": "Icon",
+    "widgetadded": "Widget added.",
+    "widgetremoved": "Widget removed.",
+    "deleteWidget": "Delete this widget?",
+    "addWidgetNote1": "A new widget is available to assign per role right away.",
+    "addWidgetNote2": "Custom widgets show as a placeholder card until a developer wires a component.",
+    "off": "Off",
+    "showOnDashboard": "Show on dashboard",
+    "hiddenNote": "This widget is hidden from every dashboard. Turn on “Show on dashboard” to use the per-role settings below."
+  }
+}
