@@ -37,6 +37,7 @@ import {
 } from 'antd'
 import type { UploadProps } from 'antd'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import PageHeader from '../../../components/PageHeader'
 import apiClient from '../../../services/apiClient'
 import { setUser } from '../../../store/authSlice'
@@ -59,12 +60,12 @@ const DEFAULT_SETTINGS: UserSettings = {
 
 // New-password requirements, kept in sync with the backend rule
 // (Password::min(8)->mixedCase()->numbers()->symbols()).
-const PASSWORD_RULES: { label: string; test: (v: string) => boolean }[] = [
-  { label: 'At least 8 characters', test: (v) => v.length >= 8 },
-  { label: 'At least 1 lower letter (a-z)', test: (v) => /[a-z]/.test(v) },
-  { label: 'At least 1 uppercase letter (A-Z)', test: (v) => /[A-Z]/.test(v) },
-  { label: 'At least 1 number (0-9)', test: (v) => /[0-9]/.test(v) },
-  { label: 'At least 1 special character', test: (v) => /[^A-Za-z0-9]/.test(v) },
+const PASSWORD_RULES: { labelKey: string; test: (v: string) => boolean }[] = [
+  { labelKey: 'profile.security.rules.minLength', test: (v) => v.length >= 8 },
+  { labelKey: 'profile.security.rules.lowercase', test: (v) => /[a-z]/.test(v) },
+  { labelKey: 'profile.security.rules.uppercase', test: (v) => /[A-Z]/.test(v) },
+  { labelKey: 'profile.security.rules.number', test: (v) => /[0-9]/.test(v) },
+  { labelKey: 'profile.security.rules.special', test: (v) => /[^A-Za-z0-9]/.test(v) },
 ]
 
 /** Turn an axios/Laravel error into a title + (validation) description for a corner notification. */
@@ -96,6 +97,7 @@ interface AccessData {
 }
 
 function ProfilePage() {
+  const { t } = useTranslation()
   const dispatch = useAppDispatch()
   const user = useAppSelector((state) => state.auth.user)
   const roles = useAppSelector((state) => state.auth.roles)
@@ -246,7 +248,7 @@ function ProfilePage() {
       key: 'personal',
       label: (
         <span>
-          <UserOutlined /> Personal
+          <UserOutlined /> {t('profile.tabs.personal')}
         </span>
       ),
       children: (
@@ -267,51 +269,51 @@ function ProfilePage() {
         >
           <Row gutter={16}>
             <Col xs={24} md={12}>
-              <Form.Item label="Full Name" name="name" rules={[{ required: true, message: 'Name is required' }]}>
-                <Input prefix={<UserOutlined />} placeholder="Your name" />
+              <Form.Item label={t('profile.personal.fullName')} name="name" rules={[{ required: true, message: t('profile.personal.nameRequired') }]}>
+                <Input prefix={<UserOutlined />} placeholder={t('profile.personal.namePlaceholder')} />
               </Form.Item>
             </Col>
             <Col xs={24} md={12}>
               <Form.Item
-                label="Email Address"
+                label={t('profile.personal.email')}
                 name="email"
                 rules={[
-                  { required: true, message: 'Email is required' },
-                  { type: 'email', message: 'Enter a valid email' },
+                  { required: true, message: t('profile.personal.emailRequired') },
+                  { type: 'email', message: t('profile.personal.emailInvalid') },
                 ]}
               >
-                <Input prefix={<MailOutlined />} placeholder="you@example.com" />
+                <Input prefix={<MailOutlined />} placeholder={t('profile.personal.emailPlaceholder')} />
               </Form.Item>
             </Col>
             <Col xs={24} md={12}>
-              <Form.Item label="Phone" name="phone">
-                <Input prefix={<PhoneOutlined />} placeholder="Phone number" />
+              <Form.Item label={t('profile.personal.phone')} name="phone">
+                <Input prefix={<PhoneOutlined />} placeholder={t('profile.personal.phonePlaceholder')} />
               </Form.Item>
             </Col>
             <Col xs={24} md={12}>
-              <Form.Item label="Designation" name="designation">
-                <Input prefix={<IdcardOutlined />} placeholder="e.g. Administrator" />
+              <Form.Item label={t('profile.personal.designation')} name="designation">
+                <Input prefix={<IdcardOutlined />} placeholder={t('profile.personal.designationPlaceholder')} />
               </Form.Item>
             </Col>
             <Col xs={24} md={12}>
-              <Form.Item label="Country" name="country">
-                <Input prefix={<EnvironmentOutlined />} placeholder="Country" />
+              <Form.Item label={t('profile.personal.country')} name="country">
+                <Input prefix={<EnvironmentOutlined />} placeholder={t('profile.personal.countryPlaceholder')} />
               </Form.Item>
             </Col>
             <Col xs={24} md={12}>
-              <Form.Item label="City" name="city">
-                <Input prefix={<EnvironmentOutlined />} placeholder="City" />
+              <Form.Item label={t('profile.personal.city')} name="city">
+                <Input prefix={<EnvironmentOutlined />} placeholder={t('profile.personal.cityPlaceholder')} />
               </Form.Item>
             </Col>
             <Col xs={24}>
-              <Form.Item label="Bio" name="bio">
-                <Input.TextArea rows={3} maxLength={2000} showCount placeholder="A short bio about yourself" />
+              <Form.Item label={t('profile.personal.bio')} name="bio">
+                <Input.TextArea rows={3} maxLength={2000} showCount placeholder={t('profile.personal.bioPlaceholder')} />
               </Form.Item>
             </Col>
           </Row>
           <div className="flex justify-end">
             <Button type="primary" htmlType="submit" loading={savingProfile}>
-              Save Changes
+              {t('common.saveChanges')}
             </Button>
           </div>
         </Form>
@@ -321,7 +323,7 @@ function ProfilePage() {
       key: 'access',
       label: (
         <span>
-          <SafetyCertificateOutlined /> Access
+          <SafetyCertificateOutlined /> {t('profile.tabs.access')}
         </span>
       ),
       children: accessLoading ? (
@@ -332,7 +334,7 @@ function ProfilePage() {
         <div>
           <div className="mb-3 flex items-center gap-2">
             <TeamOutlined style={{ color: primaryColor }} />
-            <Text strong>Roles &amp; their permissions</Text>
+            <Text strong>{t('profile.access.rolesHeading')}</Text>
           </div>
           {access?.roles.length ? (
             <Collapse
@@ -344,7 +346,7 @@ function ProfilePage() {
                     <SafetyCertificateOutlined style={{ color: primaryColor }} />
                     <span className="font-medium">{role.name}</span>
                     <Tag>
-                      {role.permissions.length} permission{role.permissions.length === 1 ? '' : 's'}
+                      {t('profile.access.permissionCount', { count: role.permissions.length })}
                     </Tag>
                   </span>
                 ),
@@ -357,25 +359,25 @@ function ProfilePage() {
                     ))}
                   </div>
                 ) : role.name === 'Super Admin' ? (
-                  <Text type="secondary">Full access — this role bypasses all permission checks.</Text>
+                  <Text type="secondary">{t('profile.access.superAdminAccess')}</Text>
                 ) : (
-                  <Text type="secondary">No permissions assigned to this role.</Text>
+                  <Text type="secondary">{t('profile.access.noRolePermissions')}</Text>
                 ),
               }))}
             />
           ) : (
-            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No roles assigned" />
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('profile.access.noRolesAssigned')} />
           )}
 
           <Divider />
 
           <div className="mb-1 flex items-center gap-2">
             <KeyOutlined style={{ color: primaryColor }} />
-            <Text strong>Directly assigned permissions</Text>
+            <Text strong>{t('profile.access.directHeading')}</Text>
             {access?.direct_permissions.length ? <Tag>{access.direct_permissions.length}</Tag> : null}
           </div>
           <Text type="secondary" className="!mb-3 !block !text-xs">
-            Permissions granted to you directly, on top of those inherited from your roles.
+            {t('profile.access.directDescription')}
           </Text>
           {access?.direct_permissions.length ? (
             <div className="flex flex-wrap gap-1.5">
@@ -386,7 +388,7 @@ function ProfilePage() {
               ))}
             </div>
           ) : (
-            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No directly assigned permissions" />
+            <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description={t('profile.access.noDirectPermissions')} />
           )}
         </div>
       ),
@@ -396,7 +398,7 @@ function ProfilePage() {
       forceRender: true,
       label: (
         <span>
-          <LockOutlined /> Security
+          <LockOutlined /> {t('profile.tabs.security')}
         </span>
       ),
       children: (
@@ -404,60 +406,60 @@ function ProfilePage() {
           <Row gutter={[24, 8]}>
             <Col xs={24} md={12}>
               <Form.Item
-                label="Old Password"
+                label={t('profile.security.oldPassword')}
                 name="current_password"
-                rules={[{ required: true, message: 'Enter your current password' }]}
+                rules={[{ required: true, message: t('profile.security.oldPasswordRequired') }]}
               >
-                <Input.Password prefix={<LockOutlined />} placeholder="Enter old password" autoComplete="current-password" />
+                <Input.Password prefix={<LockOutlined />} placeholder={t('profile.security.oldPasswordPlaceholder')} autoComplete="current-password" />
               </Form.Item>
               <Form.Item
-                label="New Password"
+                label={t('profile.security.newPassword')}
                 name="password"
                 rules={[
-                  { required: true, message: 'Enter a new password' },
+                  { required: true, message: t('profile.security.newPasswordRequired') },
                   {
                     validator: (_, value) =>
                       !value || PASSWORD_RULES.every((r) => r.test(value))
                         ? Promise.resolve()
-                        : Promise.reject(new Error('Password does not meet all requirements')),
+                        : Promise.reject(new Error(t('profile.security.requirementsError'))),
                   },
                 ]}
               >
-                <Input.Password prefix={<LockOutlined />} placeholder="Enter new password" autoComplete="new-password" />
+                <Input.Password prefix={<LockOutlined />} placeholder={t('profile.security.newPasswordPlaceholder')} autoComplete="new-password" />
               </Form.Item>
               <Form.Item
-                label="Confirm Password"
+                label={t('profile.security.confirmPassword')}
                 name="password_confirmation"
                 dependencies={['password']}
                 rules={[
-                  { required: true, message: 'Confirm your new password' },
+                  { required: true, message: t('profile.security.confirmPasswordRequired') },
                   ({ getFieldValue }) => ({
                     validator(_, value) {
                       if (!value || getFieldValue('password') === value) return Promise.resolve()
-                      return Promise.reject(new Error('Passwords do not match'))
+                      return Promise.reject(new Error(t('profile.security.passwordsMismatch')))
                     },
                   }),
                 ]}
               >
-                <Input.Password prefix={<LockOutlined />} placeholder="Enter confirm password" autoComplete="new-password" />
+                <Input.Password prefix={<LockOutlined />} placeholder={t('profile.security.confirmPasswordPlaceholder')} autoComplete="new-password" />
               </Form.Item>
             </Col>
 
             <Col xs={24} md={12}>
               <Text strong className="!block !mb-3">
-                New password must contain:
+                {t('profile.security.requirementsTitle')}
               </Text>
               <ul className="m-0 list-none space-y-2.5 p-0">
                 {PASSWORD_RULES.map((rule) => {
                   const met = newPassword ? rule.test(newPassword) : false
                   return (
-                    <li key={rule.label} className="flex items-center gap-2.5">
+                    <li key={rule.labelKey} className="flex items-center gap-2.5">
                       {met ? (
                         <CheckCircleFilled style={{ color: '#52c41a' }} />
                       ) : (
                         <MinusCircleOutlined style={{ color: isDark ? 'rgba(255,255,255,0.35)' : 'rgba(0,0,0,0.3)' }} />
                       )}
-                      <Text type={met ? undefined : 'secondary'}>{rule.label}</Text>
+                      <Text type={met ? undefined : 'secondary'}>{t(rule.labelKey)}</Text>
                     </li>
                   )
                 })}
@@ -467,10 +469,10 @@ function ProfilePage() {
 
           <div className="mt-2 flex justify-end gap-2">
             <Button onClick={() => passwordForm.resetFields()} disabled={savingPassword}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button type="primary" htmlType="submit" loading={savingPassword}>
-              Save
+              {t('common.save')}
             </Button>
           </div>
         </Form>
@@ -481,7 +483,7 @@ function ProfilePage() {
       forceRender: true,
       label: (
         <span>
-          <SettingOutlined /> Settings
+          <SettingOutlined /> {t('profile.tabs.settings')}
         </span>
       ),
       children: (
@@ -494,8 +496,8 @@ function ProfilePage() {
           <div className="max-w-lg space-y-2">
             <div style={rowStyle} className="!justify-between">
               <div>
-                <Text strong className="!block">Email notifications</Text>
-                <Text type="secondary" className="!text-xs">Receive email about account activity.</Text>
+                <Text strong className="!block">{t('profile.settings.emailNotifications')}</Text>
+                <Text type="secondary" className="!text-xs">{t('profile.settings.emailNotificationsDesc')}</Text>
               </div>
               <Form.Item name="email_notifications" valuePropName="checked" noStyle>
                 <Switch />
@@ -503,8 +505,8 @@ function ProfilePage() {
             </div>
             <div style={rowStyle} className="!justify-between">
               <div>
-                <Text strong className="!block">Product updates</Text>
-                <Text type="secondary" className="!text-xs">Occasional news about new features.</Text>
+                <Text strong className="!block">{t('profile.settings.productUpdates')}</Text>
+                <Text type="secondary" className="!text-xs">{t('profile.settings.productUpdatesDesc')}</Text>
               </div>
               <Form.Item name="product_updates" valuePropName="checked" noStyle>
                 <Switch />
@@ -512,8 +514,8 @@ function ProfilePage() {
             </div>
             <div style={rowStyle} className="!justify-between">
               <div>
-                <Text strong className="!block">Public profile</Text>
-                <Text type="secondary" className="!text-xs">Allow others to see your profile.</Text>
+                <Text strong className="!block">{t('profile.settings.publicProfile')}</Text>
+                <Text type="secondary" className="!text-xs">{t('profile.settings.publicProfileDesc')}</Text>
               </div>
               <Form.Item name="profile_public" valuePropName="checked" noStyle>
                 <Switch />
@@ -522,7 +524,7 @@ function ProfilePage() {
           </div>
           <div className="mt-4 flex justify-end">
             <Button type="primary" htmlType="submit" loading={savingSettings}>
-              Save Settings
+              {t('profile.settings.save')}
             </Button>
           </div>
         </Form>
@@ -532,14 +534,14 @@ function ProfilePage() {
 
   return (
     <Space orientation="vertical" size={16} className="w-full">
-      <PageHeader title="Profile" subtitle="Manage your account information and preferences." />
+      <PageHeader title={t('profile.title')} subtitle={t('profile.subtitle')} />
 
       <Row gutter={[12, 12]}>
         <Col xs={24} lg={8}>
           <Card className="h-full">
             <div className="flex flex-col items-center text-center">
               <Upload accept="image/*" showUploadList={false} beforeUpload={beforeUpload} disabled={uploading}>
-                <div className="group relative cursor-pointer" style={{ width: 96, height: 96 }} title="Change photo">
+                <div className="group relative cursor-pointer" style={{ width: 96, height: 96 }} title={t('profile.changePhoto')}>
                   <Spin spinning={uploading}>
                     <Avatar
                       size={96}
@@ -565,14 +567,14 @@ function ProfilePage() {
               </Upload>
 
               <Text strong className="!mt-4 !text-lg">
-                {user?.name || 'User'}
+                {user?.name || t('profile.defaultName')}
               </Text>
               {user?.designation && <Text type="secondary">{user.designation}</Text>}
 
               {user?.avatar && (
-                <Popconfirm title="Remove profile photo?" onConfirm={removeAvatar} okText="Remove">
+                <Popconfirm title={t('profile.removePhotoConfirm')} onConfirm={removeAvatar} okText={t('profile.remove')}>
                   <Button type="link" size="small" danger icon={<DeleteOutlined />} disabled={uploading} className="!mt-2">
-                    Remove photo
+                    {t('profile.removePhoto')}
                   </Button>
                 </Popconfirm>
               )}
@@ -585,7 +587,7 @@ function ProfilePage() {
                     </Tag>
                   ))
                 ) : (
-                  <Tag>No roles</Tag>
+                  <Tag>{t('profile.noRoles')}</Tag>
                 )}
               </div>
 
@@ -595,28 +597,28 @@ function ProfilePage() {
                 <div style={rowStyle}>
                   <MailOutlined style={{ color: primaryColor }} />
                   <div className="min-w-0">
-                    <Text type="secondary" className="!block !text-xs">Email</Text>
+                    <Text type="secondary" className="!block !text-xs">{t('profile.email')}</Text>
                     <Text strong className="!block truncate">{user?.email || '—'}</Text>
                   </div>
                 </div>
                 <div style={rowStyle}>
                   <PhoneOutlined style={{ color: primaryColor }} />
                   <div className="min-w-0">
-                    <Text type="secondary" className="!block !text-xs">Phone</Text>
+                    <Text type="secondary" className="!block !text-xs">{t('profile.phone')}</Text>
                     <Text strong className="!block">{user?.phone || '—'}</Text>
                   </div>
                 </div>
                 <div style={rowStyle}>
                   <EnvironmentOutlined style={{ color: primaryColor }} />
                   <div className="min-w-0">
-                    <Text type="secondary" className="!block !text-xs">Location</Text>
+                    <Text type="secondary" className="!block !text-xs">{t('profile.location')}</Text>
                     <Text strong className="!block">{location}</Text>
                   </div>
                 </div>
                 <div style={rowStyle}>
                   <CalendarOutlined style={{ color: primaryColor }} />
                   <div className="min-w-0">
-                    <Text type="secondary" className="!block !text-xs">Joined</Text>
+                    <Text type="secondary" className="!block !text-xs">{t('profile.joined')}</Text>
                     <Text strong className="!block">{formatDate(user?.created_at)}</Text>
                   </div>
                 </div>

@@ -8,12 +8,14 @@ import AddModuleDrawer from '../components/AddModuleDrawer'
 import { openAddDrawer, closeAddDrawer } from '../moduleBuilderSlice'
 import { useModulesPaginated } from '../../../hooks/useModules'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useTranslation } from 'react-i18next'
 
 const { Text } = Typography
 
 function ModuleBuilderPage() {
   const dispatch = useAppDispatch()
-  const table = useUrlTable(15, 'Search modules…')
+  const { t } = useTranslation()
+  const table = useUrlTable(15, t('moduleBuilder.search'))
   // The Add drawer is deep-linkable via ?add=true (this page has no edit).
   const drawer = useUrlDrawer()
   const addDrawerOpen = useAppSelector((state) => state.moduleBuilder.addDrawerOpen)
@@ -36,35 +38,35 @@ function ModuleBuilderPage() {
   const columns = useMemo<ColumnsType<Record<string, unknown>>>(
     () => [
       {
-        title: 'Module',
+        title: t('moduleBuilder.col.module'),
         dataIndex: 'name',
         sorter: true,
         render: (name) => <Text strong>{name}</Text>,
       },
       {
-        title: 'Type',
+        title: t('moduleBuilder.col.type'),
         key: 'type',
         render: (_, record) => {
-          if (record.type === 'group') return <Tag color="geekblue">Group / Section</Tag>
+          if (record.type === 'group') return <Tag color="geekblue">{t('moduleBuilder.groupSection')}</Tag>
           return record.resourceful ? (
-            <Tag color="green">Resourceful · CRUD</Tag>
+            <Tag color="green">{t('moduleBuilder.resourcefulCrud')}</Tag>
           ) : (
-            <Tag color="gold">Parent Menu</Tag>
+            <Tag color="gold">{t('moduleBuilder.parentMenu')}</Tag>
           )
         },
       },
       {
-        title: 'Parent',
+        title: t('moduleBuilder.col.parent'),
         dataIndex: 'parent',
         render: (parent) =>
           parent ? (
             <Text>{parent.startsWith('group:') ? parent.slice(6) : parent}</Text>
           ) : (
-            <Text type="secondary">— top level —</Text>
+            <Text type="secondary">{t('moduleBuilder.topLevel')}</Text>
           ),
       },
       {
-        title: 'Permissions',
+        title: t('moduleBuilder.col.permissions'),
         dataIndex: 'permissions',
         render: (permissions = []) =>
           permissions.length ? (
@@ -74,11 +76,11 @@ function ModuleBuilderPage() {
               ))}
             </Space>
           ) : (
-            <Text type="secondary">None</Text>
+            <Text type="secondary">{t('moduleBuilder.noPermissions')}</Text>
           ),
       },
     ],
-    [],
+    [t],
   )
 
   const { visibleColumns, control } = useColumnToggle(columns)
@@ -86,8 +88,8 @@ function ModuleBuilderPage() {
   return (
     <Space orientation="vertical" size={16} className="w-full">
       <PageHeader
-        title="Module Builder"
-        subtitle="Generate a new module with its CRUD scaffolding."
+        title={t('moduleBuilder.title')}
+        subtitle={t('moduleBuilder.subtitle')}
         titleExtra={control}
         extra={
           <Space>
@@ -97,7 +99,7 @@ function ModuleBuilderPage() {
               icon={<PlusOutlined />}
               onClick={() => drawer.openAdd()}
             >
-              Create Module
+              {t('moduleBuilder.create')}
             </Button>
           </Space>
         }

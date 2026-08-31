@@ -10,15 +10,17 @@ import { openAddDrawer, openEditDrawer, closeAddDrawer, closeEditDrawer } from '
 import { useCities, useDeleteCity } from '../queries'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 import { toast } from '../../../utils/toast'
+import { useTranslation } from 'react-i18next'
 import type { City } from '../types'
 
 const { Text } = Typography
 
 function CitiesPage() {
   const dispatch = useAppDispatch()
+  const { t } = useTranslation()
   // URL-backed table state + deep-linkable Add/Edit drawers (?add / ?edit=<id>),
   // mirroring the Users module — shareable and refresh-proof.
-  const table = useUrlTable(15, 'Search Cities…')
+  const table = useUrlTable(15, t('pages.cities.search'))
   const drawer = useUrlDrawer()
   const addOpen = useAppSelector((state) => state.cities.addDrawerOpen)
   const editOpen = useAppSelector((state) => state.cities.editDrawerOpen)
@@ -43,15 +45,15 @@ function CitiesPage() {
 
   const handleDelete = (id: number) =>
     remove.mutate(id, {
-      onSuccess: () => toast.success('Deleted'),
-      onError: () => toast.error('Unable to delete'),
+      onSuccess: () => toast.success(t('common.deleted')),
+      onError: () => toast.error(t('common.unableToDelete')),
     })
 
   const columns = useMemo<ColumnsType<City>>(
     () => [
-      { title: 'Name', dataIndex: 'name', sorter: true, render: (name) => <Text strong>{name}</Text> },
+      { title: t('common.name'), dataIndex: 'name', sorter: true, render: (name) => <Text strong>{name}</Text> },
       {
-        title: 'Actions',
+        title: t('common.actions'),
         key: 'actions',
         width: 120,
         render: (_, record) => (
@@ -59,7 +61,7 @@ function CitiesPage() {
             <Tooltip title="Edit">
               <Button type="text" icon={<EditOutlined />} onClick={() => drawer.openEdit(record.id)} />
             </Tooltip>
-            <Popconfirm title="Delete this record?" onConfirm={() => handleDelete(record.id)}>
+            <Popconfirm title={t('common.deleteRecordConfirm')} onConfirm={() => handleDelete(record.id)}>
               <Button type="text" danger icon={<DeleteOutlined />} />
             </Popconfirm>
           </Space>
@@ -74,14 +76,14 @@ function CitiesPage() {
   return (
     <Space orientation="vertical" size={16} className="w-full">
       <PageHeader
-        title="Cities"
-        subtitle="Manage Cities records."
+        title={t('pages.cities.title')}
+        subtitle={t('pages.cities.subtitle')}
         titleExtra={control}
         extra={
           <Space>
             {table.searchInput}
             <Button type="primary" icon={<PlusOutlined />} onClick={() => drawer.openAdd()}>
-              Add City
+              {t('pages.cities.add')}
             </Button>
           </Space>
         }

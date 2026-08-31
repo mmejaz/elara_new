@@ -15,33 +15,43 @@ import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { useModuleTree } from '../../../hooks/useModuleTree'
 import { buildParentOptions } from '../navTree'
 import { useAppSelector } from '../../../store/hooks'
+import { useTranslation } from 'react-i18next'
 
 const { Text } = Typography
 
 const PERMISSION_ACTIONS = ['view', 'create', 'edit', 'delete', 'export']
 
-const ICON_OPTIONS = [
-  { value: 'AppstoreOutlined', label: 'Appstore', icon: <AppstoreOutlined /> },
-  { value: 'TeamOutlined', label: 'Team', icon: <TeamOutlined /> },
-  { value: 'BookOutlined', label: 'Book', icon: <BookOutlined /> },
-  { value: 'BankOutlined', label: 'Bank', icon: <BankOutlined /> },
-  { value: 'CalendarOutlined', label: 'Calendar', icon: <CalendarOutlined /> },
-  { value: 'FileTextOutlined', label: 'File', icon: <FileTextOutlined /> },
-]
-
 // group = a section header in the sidebar (e.g. "Management")
 // item  = a menu entry. Either a Parent Menu (container that holds children)
 //         or Resourceful (a CRUD leaf). Controlled by the `resourceful` flag.
-const MODULE_TYPES = [
-  { value: 'item', label: 'Menu Item' },
-  { value: 'group', label: 'Group / Section' },
-]
 
 function AddModuleDrawer() {
+  const { t } = useTranslation()
   const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.moduleBuilder.addDrawerOpen)
   const [form] = Form.useForm()
   const mutation = useCreateModule()
+
+  // Option lists drive logic by their stable `value`; only the label is translated.
+  const ICON_OPTIONS = useMemo(
+    () => [
+      { value: 'AppstoreOutlined', label: t('moduleBuilder.drawer.icon.appstore'), icon: <AppstoreOutlined /> },
+      { value: 'TeamOutlined', label: t('moduleBuilder.drawer.icon.team'), icon: <TeamOutlined /> },
+      { value: 'BookOutlined', label: t('moduleBuilder.drawer.icon.book'), icon: <BookOutlined /> },
+      { value: 'BankOutlined', label: t('moduleBuilder.drawer.icon.bank'), icon: <BankOutlined /> },
+      { value: 'CalendarOutlined', label: t('moduleBuilder.drawer.icon.calendar'), icon: <CalendarOutlined /> },
+      { value: 'FileTextOutlined', label: t('moduleBuilder.drawer.icon.file'), icon: <FileTextOutlined /> },
+    ],
+    [t],
+  )
+
+  const MODULE_TYPES = useMemo(
+    () => [
+      { value: 'item', label: t('moduleBuilder.drawer.typeMenuItem') },
+      { value: 'group', label: t('moduleBuilder.drawer.typeGroupSection') },
+    ],
+    [t],
+  )
 
   const { data: tree } = useModuleTree()
   const parentOptions = useMemo(() => buildParentOptions(tree ?? []), [tree])
@@ -62,13 +72,13 @@ function AddModuleDrawer() {
 
     mutation.mutate(payload, {
       onSuccess: () => {
-        toast.success('Module created successfully')
+        toast.success(t('moduleBuilder.drawer.createdSuccess'))
         form.resetFields()
         drawer.close()
       },
       onError: (error) => {
         if (!applyServerErrors(error, form)) {
-          toast.error(serverMessage(error, 'Unable to create module'))
+          toast.error(serverMessage(error, t('moduleBuilder.drawer.createError')))
         }
       },
     })
@@ -82,7 +92,7 @@ function AddModuleDrawer() {
 
   return (
     <Drawer
-      title="Create New Module"
+      title={t('moduleBuilder.drawer.title')}
       placement="right"
       size={480}
       open={open}
@@ -92,10 +102,10 @@ function AddModuleDrawer() {
       footer={
         <div className="flex justify-end gap-2">
           <Button onClick={handleClose} disabled={mutation.isPending}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="primary" loading={mutation.isPending} onClick={() => form.submit()}>
-            Generate Module
+            {t('moduleBuilder.drawer.generate')}
           </Button>
         </div>
       }
@@ -110,32 +120,36 @@ function AddModuleDrawer() {
           type="info"
           showIcon
           className="!mb-4"
-          title="Before you start"
+          title={t('moduleBuilder.drawer.alertTitle')}
           description={
             <ul className="mt-1 list-disc pl-4 text-xs">
-              <li>Fields marked with <span className="text-red-500">*</span> are required.</li>
-              <li>Module name accepts letters and spaces only.</li>
-              <li>Resourceful modules generate full CRUD files (list, drawers, service, controller).</li>
+              <li>
+                {t('moduleBuilder.drawer.alertRequiredBefore')}{' '}
+                <span className="text-red-500">*</span>{' '}
+                {t('moduleBuilder.drawer.alertRequiredAfter')}
+              </li>
+              <li>{t('moduleBuilder.drawer.alertLetters')}</li>
+              <li>{t('moduleBuilder.drawer.alertResourceful')}</li>
             </ul>
           }
         />
         <Form.Item
-          label="Module Name"
+          label={t('moduleBuilder.drawer.nameLabel')}
           name="name"
           rules={[
-            { required: true, message: 'Enter the module name' },
-            { pattern: /^[A-Za-z ]+$/, message: 'Only letters and spaces are allowed' },
+            { required: true, message: t('moduleBuilder.drawer.nameRequired') },
+            { pattern: /^[A-Za-z ]+$/, message: t('moduleBuilder.drawer.namePattern') },
           ]}
-          extra="e.g. Students, Courses, Invoices"
+          extra={t('moduleBuilder.drawer.nameExtra')}
         >
-          <Input placeholder="e.g. Students" size="large" autoFocus />
+          <Input placeholder={t('moduleBuilder.drawer.namePlaceholder')} size="large" autoFocus />
         </Form.Item>
 
         <Form.Item
-          label="Type"
+          label={t('moduleBuilder.drawer.typeLabel')}
           name="type"
-          rules={[{ required: true, message: 'Select a type' }]}
-          extra="How this entry appears in the sidebar."
+          rules={[{ required: true, message: t('moduleBuilder.drawer.typeRequired') }]}
+          extra={t('moduleBuilder.drawer.typeExtra')}
         >
           <Radio.Group
             options={MODULE_TYPES}
@@ -150,14 +164,14 @@ function AddModuleDrawer() {
           {({ getFieldValue }) =>
             getFieldValue('type') === 'group' ? null : (
               <Form.Item
-                label="Parent / Section"
+                label={t('moduleBuilder.drawer.parentLabel')}
                 name="parent"
-                rules={[{ required: true, message: 'Choose where this module lives' }]}
-                extra="Pick a section to place it under, or a menu item to nest it inside."
+                rules={[{ required: true, message: t('moduleBuilder.drawer.parentRequired') }]}
+                extra={t('moduleBuilder.drawer.parentExtra')}
               >
                 <TreeSelect
                   size="large"
-                  placeholder="Select section or parent module"
+                  placeholder={t('moduleBuilder.drawer.parentPlaceholder')}
                   treeData={parentOptions}
                   treeDefaultExpandAll
                   showSearch
@@ -174,22 +188,22 @@ function AddModuleDrawer() {
           {({ getFieldValue }) =>
             getFieldValue('type') === 'item' ? (
               <Form.Item
-                label="Menu Item Type"
+                label={t('moduleBuilder.drawer.menuItemTypeLabel')}
                 name="resourceful"
-                extra="Resourceful generates full CRUD files (list, drawers, service, controller). Parent Menu is a container — nest resourceful items under it."
+                extra={t('moduleBuilder.drawer.menuItemTypeExtra')}
               >
                 <Radio.Group optionType="button" buttonStyle="solid">
-                  <Radio.Button value={true}>Resourceful (CRUD)</Radio.Button>
-                  <Radio.Button value={false}>Parent Menu</Radio.Button>
+                  <Radio.Button value={true}>{t('moduleBuilder.drawer.resourcefulCrud')}</Radio.Button>
+                  <Radio.Button value={false}>{t('moduleBuilder.drawer.parentMenu')}</Radio.Button>
                 </Radio.Group>
               </Form.Item>
             ) : null
           }
         </Form.Item>
 
-        <Form.Item label="Icon" name="icon">
+        <Form.Item label={t('moduleBuilder.drawer.iconLabel')} name="icon">
           <Select
-            placeholder="Select an icon"
+            placeholder={t('moduleBuilder.drawer.iconPlaceholder')}
             size="large"
             allowClear
             options={ICON_OPTIONS.map((o) => ({
@@ -203,8 +217,8 @@ function AddModuleDrawer() {
           />
         </Form.Item>
 
-        <Form.Item label="Description" name="description">
-          <Input.TextArea placeholder="Short description of what this module manages" rows={2} />
+        <Form.Item label={t('moduleBuilder.drawer.descriptionLabel')} name="description">
+          <Input.TextArea placeholder={t('moduleBuilder.drawer.descriptionPlaceholder')} rows={2} />
         </Form.Item>
 
         {/* Permissions only apply to a resourceful Menu Item (has CRUD). */}
@@ -217,14 +231,14 @@ function AddModuleDrawer() {
           {({ getFieldValue }) =>
             getFieldValue('type') === 'item' && getFieldValue('resourceful') ? (
               <Form.Item
-                label="Permissions to Generate"
+                label={t('moduleBuilder.drawer.permissionsLabel')}
                 name="permissions"
-                rules={[{ required: true, message: 'Select at least one permission' }]}
+                rules={[{ required: true, message: t('moduleBuilder.drawer.permissionsRequired') }]}
               >
                 <Checkbox.Group
                   options={PERMISSION_ACTIONS.map((a) => ({
                     value: a,
-                    label: a.charAt(0).toUpperCase() + a.slice(1),
+                    label: t(`moduleBuilder.drawer.perm.${a}`),
                   }))}
                 />
               </Form.Item>
@@ -232,22 +246,24 @@ function AddModuleDrawer() {
           }
         </Form.Item>
 
-        <Form.Item label="Preview" shouldUpdate>
+        <Form.Item label={t('moduleBuilder.drawer.previewLabel')} shouldUpdate>
           {({ getFieldValue }) => {
             const name = getFieldValue('name')?.trim()
             const type = getFieldValue('type')
             const parent = getFieldValue('parent')
             const resourceful = type === 'item' && getFieldValue('resourceful')
             const perms = getFieldValue('permissions') ?? []
-            if (!name) return <Text type="secondary">Fill the form to see a preview.</Text>
+            if (!name) return <Text type="secondary">{t('moduleBuilder.drawer.previewEmpty')}</Text>
 
-            const typeLabel = MODULE_TYPES.find((t) => t.value === type)?.label
+            const typeLabel = MODULE_TYPES.find((opt) => opt.value === type)?.label
             const placement =
               type === 'group'
-                ? 'New top-level section'
+                ? t('moduleBuilder.drawer.previewNewSection')
                 : parent
-                  ? `Under: ${parent.startsWith('group:') ? parent.slice(6) : parent}`
-                  : 'No parent selected'
+                  ? t('moduleBuilder.drawer.previewUnder', {
+                      parent: parent.startsWith('group:') ? parent.slice(6) : parent,
+                    })
+                  : t('moduleBuilder.drawer.previewNoParent')
 
             return (
               <div className="flex flex-col gap-2">
@@ -255,7 +271,7 @@ function AddModuleDrawer() {
                   <Tag color="geekblue">{typeLabel}</Tag>
                   {type === 'item' && (
                     <Tag color={resourceful ? 'green' : 'gold'}>
-                      {resourceful ? 'Resourceful · CRUD' : 'Parent Menu'}
+                      {resourceful ? t('moduleBuilder.resourcefulCrud') : t('moduleBuilder.drawer.parentMenu')}
                     </Tag>
                   )}
                   <Text type="secondary">{placement}</Text>

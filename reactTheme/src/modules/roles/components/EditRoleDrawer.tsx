@@ -1,4 +1,5 @@
 import { Button, Drawer, Form, Input, Skeleton } from 'antd'
+import { useTranslation } from 'react-i18next'
 import { toast } from '../../../utils/toast'
 import { useEffect } from 'react'
 import { useUpdateRole, usePermissions } from '../queries'
@@ -8,6 +9,7 @@ import PermissionPicker from './PermissionPicker'
 import { useAppSelector } from '../../../store/hooks'
 
 function EditRoleDrawer() {
+  const { t } = useTranslation()
   const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.roles.editDrawerOpen)
   const editingRole = useAppSelector((state) => state.roles.editingRole)
@@ -61,14 +63,14 @@ function EditRoleDrawer() {
       footer={
         <div className="flex justify-end gap-2">
           <Button onClick={handleClose} disabled={mutation.isPending}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button
             type="primary"
             loading={mutation.isPending}
             onClick={() => form.submit()}
           >
-            Save Changes
+            {t('common.saveChanges')}
           </Button>
         </div>
       }

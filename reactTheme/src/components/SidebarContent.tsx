@@ -1,6 +1,7 @@
 import { ConfigProvider, Menu } from 'antd'
 import { slimScroll } from '../styles/scrollbar'
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useLocation, useNavigate } from '@tanstack/react-router'
 import { buildMenuItems, menuItems as staticMenuItems } from '../config/navigation'
 import { useModuleTree } from '../hooks/useModuleTree'
@@ -22,13 +23,19 @@ interface SidebarContentProps {
 function SidebarContent({ collapsed = false, onNavigate }: SidebarContentProps) {
   const location = useLocation()
   const navigate = useNavigate()
+  const { t, i18n } = useTranslation()
   const { data: tree } = useModuleTree()
 
   // Render from the DB-driven module tree; fall back to the static config
-  // while the tree is loading or if the request fails.
+  // while the tree is loading or if the request fails. Labels are localized by
+  // module slug (nav.<slug>), falling back to the DB name when untranslated.
   const items = useMemo(
-    () => (tree?.length ? buildMenuItems(tree) : staticMenuItems),
-    [tree],
+    () =>
+      tree?.length
+        ? buildMenuItems(tree, (slug, name) => t(`nav.${slug}`, { defaultValue: name }))
+        : staticMenuItems,
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-translate on language switch
+    [tree, i18n.language],
   )
 
   const settings = useAppSelector((state) => state.ui)

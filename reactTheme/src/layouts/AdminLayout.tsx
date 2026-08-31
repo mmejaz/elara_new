@@ -1,6 +1,7 @@
 import {
   BellOutlined,
   CaretDownOutlined,
+  GlobalOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuOutlined,
@@ -24,7 +25,9 @@ import {
 } from 'antd'
 import type { InputRef, MenuProps } from 'antd'
 import { Suspense, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Outlet, useLocation, useNavigate } from '@tanstack/react-router'
+import { SUPPORTED_LANGUAGES } from '../i18n'
 import ErrorBoundary from '../components/ErrorBoundary'
 import ImpersonationBanner from '../components/ImpersonationBanner'
 import ModuleAccessGuard from '../components/ModuleAccessGuard'
@@ -73,6 +76,7 @@ function AdminLayout() {
   const dispatch = useAppDispatch()
   const location = useLocation()
   const navigate = useNavigate()
+  const { t, i18n } = useTranslation()
   const searchInputRef = useRef<InputRef>(null)
   const screens = Grid.useBreakpoint()
   const user = useAppSelector((state) => state.auth.user)
@@ -89,8 +93,12 @@ function AdminLayout() {
 
   const { data: tree } = useModuleTree()
   const items = useMemo(
-    () => (tree?.length ? buildSearchableItems(tree) : staticSearchableItems),
-    [tree],
+    () =>
+      tree?.length
+        ? buildSearchableItems(tree, (slug, name) => t(`nav.${slug}`, { defaultValue: name }))
+        : staticSearchableItems,
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- re-translate on language switch
+    [tree, i18n.language],
   )
 
   // Resolve the current page's label for the header title (from the nav config).
@@ -122,18 +130,25 @@ function AdminLayout() {
     background: colorBgContainer,
   }
 
+  // Language options for the header switcher.
+  const languageItems: MenuProps['items'] = SUPPORTED_LANGUAGES.map((lng) => ({
+    key: lng.code,
+    label: lng.label,
+    onClick: () => i18n.changeLanguage(lng.code),
+  }))
+
   const accountItems: MenuProps['items'] = [
     {
       key: 'profile',
       icon: <UserOutlined />,
-      label: 'Profile',
+      label: t('header.profile'),
       onClick: () => navigate({ to: '/profile' }),
     },
     { type: 'divider' },
     {
       key: 'logout',
       icon: <LogoutOutlined />,
-      label: 'Logout',
+      label: t('header.logout'),
       danger: true,
       onClick: async () => {
         // Ask the server to invalidate the session, but log out client-side
@@ -282,7 +297,7 @@ function AdminLayout() {
                     ref={searchInputRef}
                     allowClear
                     autoFocus
-                    placeholder="Search across modules and pages"
+                    placeholder={t('header.searchPlaceholder')}
                     value={searchQuery}
                     onChange={(event) => setSearchQuery(event.target.value)}
                     onSearch={() => {
@@ -339,7 +354,7 @@ function AdminLayout() {
                       ))
                     ) : (
                       <div className="px-3 py-4 text-center">
-                        <Text type="secondary">No results found</Text>
+                        <Text type="secondary">{t('table.noResults')}</Text>
                       </div>
                     )}
                   </div>
@@ -357,6 +372,24 @@ function AdminLayout() {
             </div>
 
             <div className="flex items-center justify-end gap-2">
+              <Dropdown
+                menu={{
+                  items: languageItems,
+                  selectedKeys: [i18n.language.split('-')[0]],
+                }}
+                trigger={['click']}
+                placement="bottomRight"
+              >
+                <Tooltip title={t('header.language')}>
+                  <Button
+                    type="text"
+                    style={actionButtonStyle}
+                    aria-label={t('header.language')}
+                    icon={<GlobalOutlined style={{ fontSize: 18 }} />}
+                  />
+                </Tooltip>
+              </Dropdown>
+
               <Dropdown
                 menu={{
                   items: notificationItems,

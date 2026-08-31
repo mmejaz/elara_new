@@ -4,6 +4,7 @@ import type { TableProps } from 'antd'
 import type { ColumnsType } from 'antd/es/table'
 import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 
 export interface ServerTableParams {
   page: number
@@ -270,6 +271,7 @@ function columnKey(col: Record<string, unknown>, index: number): string {
  *   <DataTable columns={visibleColumns} showColumnToggle={false} />
  */
 export function useColumnToggle<T>(columns: ColumnsType<T>) {
+  const { t } = useTranslation()
   const [hidden, setHidden] = useState<Set<string>>(new Set())
   const [pinned, setPinned] = useState<Set<string>>(new Set())
 
@@ -331,15 +333,15 @@ export function useColumnToggle<T>(columns: ColumnsType<T>) {
     <Tabs
       size="small"
       items={[
-        { key: 'columns', label: 'Columns', children: columnsTab },
-        { key: 'sticky', label: 'Sticky', icon: <PushpinOutlined />, children: stickyTab },
+        { key: 'columns', label: t('table.columns'), children: columnsTab },
+        { key: 'sticky', label: t('table.sticky'), icon: <PushpinOutlined />, children: stickyTab },
       ]}
     />
   )
 
   const control = (
     <Popover content={panel} trigger="click" placement="bottomLeft">
-      <Tooltip title="Columns & sticky">
+      <Tooltip title={t('table.columnsAndSticky')}>
         <Button icon={<SettingOutlined />} />
       </Tooltip>
     </Popover>

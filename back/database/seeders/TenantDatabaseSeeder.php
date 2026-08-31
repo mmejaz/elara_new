@@ -24,6 +24,7 @@ class TenantDatabaseSeeder extends Seeder
         $this->call([
             RolePermissionSeeder::class,
             ModuleSeeder::class,
+            DashboardWidgetSeeder::class,
             GlobalSettingSeeder::class,
             ReferenceDataSeeder::class,
             // Every tenant needs at least one organization or the OrganizationSwitcher

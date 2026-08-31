@@ -140,6 +140,8 @@ const UserGuidePage = lazy(() => import('../modules/user-guide/pages/UserGuidePa
 const userGuideRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/user-guide', component: UserGuidePage })
 const DeveloperGuidePage = lazy(() => import('../modules/user-guide/pages/DeveloperGuidePage'))
 const developerGuideRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/developer-guide', component: DeveloperGuidePage })
+const DashboardSettingsPage = lazy(() => import('../modules/dashboard-settings/pages/DashboardSettingsPage'))
+const dashboardSettingsRoute = createRoute({ getParentRoute: () => adminLayoutRoute, path: '/dashboard-settings', component: DashboardSettingsPage })
 // __MODULE_ROUTE_DEFS__
 
 const routeTree = rootRoute.addChildren([
@@ -169,6 +171,7 @@ const routeTree = rootRoute.addChildren([
     organizationsRoute,
     userGuideRoute,
     developerGuideRoute,
+    dashboardSettingsRoute,
     // __MODULE_ROUTES__
     notFoundRoute,
   ]),

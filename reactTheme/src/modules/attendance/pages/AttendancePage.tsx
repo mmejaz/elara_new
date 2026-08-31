@@ -2,6 +2,7 @@ import { OrderedListOutlined } from '@ant-design/icons'
 import { Card, Col, DatePicker, Row, Space, Table, Typography } from 'antd'
 import dayjs, { type Dayjs } from 'dayjs'
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import PageHeader from '../../../components/PageHeader'
 import { useTableSearch } from '../../../components/DataTable'
 import ChannelShareCard from '../../dashboard/components/ChannelShareCard'
@@ -15,16 +16,16 @@ const attendanceRows = [
   { key: 4, group: 'Class D', total: 34, present: 30, excused: 2, unexcused: 2 },
 ]
 
-const columns = [
-  { title: 'Class', dataIndex: 'group' },
-  { title: 'Total', dataIndex: 'total' },
-  { title: 'Present', dataIndex: 'present' },
-  { title: 'Excused', dataIndex: 'excused' },
-  { title: 'Un-excused', dataIndex: 'unexcused' },
-]
-
 function AttendancePage() {
-  const { value: search, input: searchInput } = useTableSearch('Search classes…')
+  const { t } = useTranslation()
+  const columns = [
+    { title: t('attendance.col.class'), dataIndex: 'group' },
+    { title: t('attendance.col.total'), dataIndex: 'total' },
+    { title: t('attendance.col.present'), dataIndex: 'present' },
+    { title: t('attendance.col.excused'), dataIndex: 'excused' },
+    { title: t('attendance.col.unexcused'), dataIndex: 'unexcused' },
+  ]
+  const { value: search, input: searchInput } = useTableSearch(t('attendance.searchPlaceholder'))
   const [month, setMonth] = useState<Dayjs>(dayjs())
 
   const rows = useMemo(() => {
@@ -35,8 +36,8 @@ function AttendancePage() {
   return (
     <Space orientation="vertical" size={16} className="w-full">
       <PageHeader
-        title="Attendance"
-        subtitle="Daily attendance overview across all classes."
+        title={t('attendance.title')}
+        subtitle={t('attendance.subtitle')}
         extra={
           <Space>
             <DatePicker
@@ -56,7 +57,7 @@ function AttendancePage() {
           <Card className="w-full" styles={{ body: { padding: 18 } }}>
             <div className="mb-4 flex items-center gap-2.5">
               <OrderedListOutlined />
-              <Text strong>Attendance Register — {month.format('MMMM YYYY')}</Text>
+              <Text strong>{t('attendance.register', { month: month.format('MMMM YYYY') })}</Text>
             </div>
 
             <Table

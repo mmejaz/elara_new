@@ -10,13 +10,15 @@ import { openAddDrawer, openEditDrawer, closeAddDrawer, closeEditDrawer } from '
 import { useDesignations, useDeleteDesignation } from '../queries'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
 import { toast } from '../../../utils/toast'
+import { useTranslation } from 'react-i18next'
 import type { Designation } from '../types'
 
 const { Text } = Typography
 
 function DesignationsPage() {
   const dispatch = useAppDispatch()
-  const table = useUrlTable(15, 'Search Designations…')
+  const { t } = useTranslation()
+  const table = useUrlTable(15, t('pages.designations.search'))
   const drawer = useUrlDrawer()
   const addOpen = useAppSelector((state) => state.designations.addDrawerOpen)
   const editOpen = useAppSelector((state) => state.designations.editDrawerOpen)
@@ -43,15 +45,15 @@ function DesignationsPage() {
 
   const handleDelete = (id: number) =>
     remove.mutate(id, {
-      onSuccess: () => toast.success('Deleted'),
-      onError: () => toast.error('Unable to delete'),
+      onSuccess: () => toast.success(t('common.deleted')),
+      onError: () => toast.error(t('common.unableToDelete')),
     })
 
   const columns = useMemo<ColumnsType<Designation>>(
     () => [
-      { title: 'Name', dataIndex: 'name', sorter: true, render: (name) => <Text strong>{name}</Text> },
+      { title: t('common.name'), dataIndex: 'name', sorter: true, render: (name) => <Text strong>{name}</Text> },
       {
-        title: 'Actions',
+        title: t('common.actions'),
         key: 'actions',
         width: 120,
         render: (_, record) => (
@@ -59,7 +61,7 @@ function DesignationsPage() {
             <Tooltip title="Edit">
               <Button type="text" icon={<EditOutlined />} onClick={() => drawer.openEdit(record.id)} />
             </Tooltip>
-            <Popconfirm title="Delete this record?" onConfirm={() => handleDelete(record.id)}>
+            <Popconfirm title={t('common.deleteRecordConfirm')} onConfirm={() => handleDelete(record.id)}>
               <Button type="text" danger icon={<DeleteOutlined />} />
             </Popconfirm>
           </Space>
@@ -74,14 +76,14 @@ function DesignationsPage() {
   return (
     <Space orientation="vertical" size={16} className="w-full">
       <PageHeader
-        title="Designations"
-        subtitle="Manage Designations records."
+        title={t('pages.designations.title')}
+        subtitle={t('pages.designations.subtitle')}
         titleExtra={control}
         extra={
           <Space>
             {table.searchInput}
             <Button type="primary" icon={<PlusOutlined />} onClick={() => drawer.openAdd()}>
-              Add Designation
+              {t('pages.designations.add')}
             </Button>
           </Space>
         }

@@ -4,8 +4,10 @@ import { useCreateOrganization, useOrganizationOptions } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { toast } from '../../../utils/toast'
 import { useAppSelector } from '../../../store/hooks'
+import { useTranslation } from 'react-i18next'
 
 function AddOrganizationDrawer() {
+  const { t } = useTranslation()
   const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.organizations.addDrawerOpen)
   const [form] = Form.useForm()
@@ -15,7 +17,7 @@ function AddOrganizationDrawer() {
   const handleFinish = (values: Record<string, unknown>) => {
     mutation.mutate(values, {
       onSuccess: () => {
-        toast.success('Organization created successfully')
+        toast.success(t('common.createSuccess'))
         form.resetFields()
         drawer.close()
       },
@@ -35,7 +37,7 @@ function AddOrganizationDrawer() {
 
   return (
     <Drawer
-      title="Add Organization"
+      title={t('pages.organizations.add')}
       placement="right"
       size={480}
       open={open}
@@ -44,8 +46,8 @@ function AddOrganizationDrawer() {
       destroyOnHidden
       footer={
         <div className="flex justify-end gap-2">
-          <Button onClick={handleClose} disabled={mutation.isPending}>Cancel</Button>
-          <Button type="primary" loading={mutation.isPending} onClick={() => form.submit()}>Create</Button>
+          <Button onClick={handleClose} disabled={mutation.isPending}>{t('common.cancel')}</Button>
+          <Button type="primary" loading={mutation.isPending} onClick={() => form.submit()}>{t('common.create')}</Button>
         </div>
       }
     >
@@ -53,25 +55,25 @@ function AddOrganizationDrawer() {
         type="info"
         showIcon
         className="!mb-4"
-        message="Before you start"
+        message={t('common.beforeYouStart')}
         description={
           <ul className="mt-1 list-disc pl-4 text-xs">
-            <li>Fields marked with <span className="text-red-500">*</span> are required.</li>
-            <li>Enter a unique name — duplicate names aren't allowed.</li>
+            <li>{t('common.requiredFieldsNote')}</li>
+            <li>{t('common.uniqueNameNote')}</li>
           </ul>
         }
       />
       <Form form={form} layout="vertical" onFinish={handleFinish}>
-        <Form.Item label="Name" name="name" rules={[{ required: true, message: 'Enter a name' }]}>
-          <Input placeholder="Enter name" size="large" autoFocus />
+        <Form.Item label={t('common.name')} name="name" rules={[{ required: true, message: t('common.enterName') }]}>
+          <Input placeholder={t('common.namePlaceholder')} size="large" autoFocus />
         </Form.Item>
-        <Form.Item label="Parent Organization" name="parent_id">
+        <Form.Item label={t('pages.organizations.fields.parent')} name="parent_id">
           <Select
             allowClear
             showSearch
             size="large"
             loading={optionsLoading}
-            placeholder="None / Top Level Organization"
+            placeholder={t('pages.organizations.fields.parentPlaceholder')}
             optionFilterProp="label"
             options={organizations.map((o) => ({ value: o.id, label: o.name }))}
           />

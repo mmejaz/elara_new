@@ -5,10 +5,12 @@ import FieldsBuilder from './FieldsBuilder'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { toast } from '../../../utils/toast'
 import { useAppSelector } from '../../../store/hooks'
+import { useTranslation } from 'react-i18next'
 
 const { Text } = Typography
 
 function AddGlobalSettingDrawer() {
+  const { t } = useTranslation()
   const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.globalSettings.addDrawerOpen)
   const [form] = Form.useForm()
@@ -46,8 +48,8 @@ function AddGlobalSettingDrawer() {
       destroyOnHidden
       footer={
         <div className="flex justify-end gap-2">
-          <Button onClick={handleClose} disabled={mutation.isPending}>Cancel</Button>
-          <Button type="primary" loading={mutation.isPending} onClick={() => form.submit()}>Create</Button>
+          <Button onClick={handleClose} disabled={mutation.isPending}>{t('common.cancel')}</Button>
+          <Button type="primary" loading={mutation.isPending} onClick={() => form.submit()}>{t('common.create')}</Button>
         </div>
       }
     >

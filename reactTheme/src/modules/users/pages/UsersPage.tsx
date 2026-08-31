@@ -31,18 +31,20 @@ import { hexToRgba } from '../../../utils/color'
 import { notify, toast } from '../../../utils/toast'
 import { serverMessage } from '../../../utils/formErrors'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useTranslation } from 'react-i18next'
 import type { User } from '../../../types/models'
 
 const { Text } = Typography
 
 function UsersPage() {
   const dispatch = useAppDispatch()
+  const { t } = useTranslation()
   const { modal } = App.useApp()
   const primaryColor = useAppSelector((state) => state.ui.primaryColor)
   const currentUserId = useAppSelector((state) => state.auth.user?.id)
   const canImpersonate = useAppSelector((state) => state.auth.roles.includes('Super Admin'))
   const canManageStatus = useAppSelector((state) => state.auth.permissions.includes('users.edit'))
-  const table = useUrlTable(15, 'Search users by name, email, or role…')
+  const table = useUrlTable(15, t('pages.users.search'))
   // Drawers are deep-linkable: ?add=true / ?edit=<id> (see the URL→drawer effect).
   const drawer = useUrlDrawer()
   const addDrawerOpen = useAppSelector((state) => state.users.addDrawerOpen)
@@ -288,10 +290,10 @@ function UsersPage() {
   const { visibleColumns, control } = useColumnToggle(columns)
 
   const summaryCards = [
-    { title: 'Total Users', value: stats?.total ?? 0, icon: <TeamOutlined />, color: primaryColor },
-    { title: 'Roles', value: roles.length, icon: <SafetyCertificateOutlined />, color: '#8b5cf6' },
-    { title: 'With a Role', value: stats?.with_role ?? 0, icon: <UserAddOutlined />, color: '#22c55e' },
-    { title: 'Without a Role', value: stats?.without_role ?? 0, icon: <UserOutlined />, color: '#f59e0b' },
+    { title: t('pages.users.totalUsers'), value: stats?.total ?? 0, icon: <TeamOutlined />, color: primaryColor },
+    { title: t('pages.users.rolesCount'), value: roles.length, icon: <SafetyCertificateOutlined />, color: '#8b5cf6' },
+    { title: t('pages.users.withRole'), value: stats?.with_role ?? 0, icon: <UserAddOutlined />, color: '#22c55e' },
+    { title: t('pages.users.withoutRole'), value: stats?.without_role ?? 0, icon: <UserOutlined />, color: '#f59e0b' },
   ]
 
   const STATUS_MAP = {
@@ -412,15 +414,15 @@ function UsersPage() {
   return (
     <Space orientation="vertical" size={16} className="w-full">
       <PageHeader
-        title="Users"
-        subtitle="Manage users, roles, and account access."
+        title={t('pages.users.title')}
+        subtitle={t('pages.users.subtitle')}
         titleExtra={view === 'list' ? control : undefined}
         extra={
           <Space>
             {viewSwitcher}
             {table.searchInput}
             <Button type="primary" icon={<PlusOutlined />} onClick={() => drawer.openAdd()}>
-              Add User
+              {t('pages.users.add')}
             </Button>
           </Space>
         }

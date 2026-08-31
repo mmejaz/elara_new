@@ -4,8 +4,10 @@ import { useCreateGender } from '../queries'
 import { applyServerErrors, serverMessage } from '../../../utils/formErrors'
 import { toast } from '../../../utils/toast'
 import { useAppSelector } from '../../../store/hooks'
+import { useTranslation } from 'react-i18next'
 
 function AddGenderDrawer() {
+  const { t } = useTranslation()
   const drawer = useUrlDrawer()
   const open = useAppSelector((state) => state.genders.addDrawerOpen)
   const [form] = Form.useForm()
@@ -14,7 +16,7 @@ function AddGenderDrawer() {
   const handleFinish = (values: Record<string, unknown>) => {
     mutation.mutate(values, {
       onSuccess: () => {
-        toast.success('Gender created successfully')
+        toast.success(t('common.createSuccess'))
         form.resetFields()
         drawer.close()
       },
@@ -34,7 +36,7 @@ function AddGenderDrawer() {
 
   return (
     <Drawer
-      title="Add Gender"
+      title={t('pages.genders.add')}
       placement="right"
       size={480}
       open={open}
@@ -43,8 +45,8 @@ function AddGenderDrawer() {
       destroyOnHidden
       footer={
         <div className="flex justify-end gap-2">
-          <Button onClick={handleClose} disabled={mutation.isPending}>Cancel</Button>
-          <Button type="primary" loading={mutation.isPending} onClick={() => form.submit()}>Create</Button>
+          <Button onClick={handleClose} disabled={mutation.isPending}>{t('common.cancel')}</Button>
+          <Button type="primary" loading={mutation.isPending} onClick={() => form.submit()}>{t('common.create')}</Button>
         </div>
       }
     >
@@ -52,17 +54,17 @@ function AddGenderDrawer() {
         type="info"
         showIcon
         className="!mb-4"
-        title="Before you start"
+        title={t('common.beforeYouStart')}
         description={
           <ul className="mt-1 list-disc pl-4 text-xs">
-            <li>Fields marked with <span className="text-red-500">*</span> are required.</li>
-            <li>Enter a unique name — duplicate names aren't allowed.</li>
+            <li>{t('common.requiredFieldsNote')}</li>
+            <li>{t('common.uniqueNameNote')}</li>
           </ul>
         }
       />
       <Form form={form} layout="vertical" onFinish={handleFinish}>
-        <Form.Item label="Name" name="name" rules={[{ required: true, message: 'Enter a name' }]}>
-          <Input placeholder="Enter name" size="large" autoFocus />
+        <Form.Item label={t('common.name')} name="name" rules={[{ required: true, message: t('common.enterName') }]}>
+          <Input placeholder={t('common.namePlaceholder')} size="large" autoFocus />
         </Form.Item>
       </Form>
     </Drawer>

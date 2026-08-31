@@ -9,6 +9,7 @@ import EditPermissionDrawer from '../components/EditPermissionDrawer'
 import { openAddDrawer, openEditDrawer, closeAddDrawer, closeEditDrawer } from '../permissionsSlice'
 import { usePermissionsPaginated } from '../queries'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useTranslation } from 'react-i18next'
 import type { Permission } from '../../../types/models'
 
 const { Text } = Typography
@@ -24,7 +25,8 @@ const ACTION_COLORS: Record<string, string> = {
 
 function PermissionsPage() {
   const dispatch = useAppDispatch()
-  const table = useUrlTable(15, 'Search permissions…')
+  const { t } = useTranslation()
+  const table = useUrlTable(15, t('pages.permissions.search'))
   // Drawers are deep-linkable: ?add=true / ?edit=<id> (see the URL→drawer effect).
   const drawer = useUrlDrawer()
   const addDrawerOpen = useAppSelector((state) => state.permissions.addDrawerOpen)
@@ -81,7 +83,7 @@ function PermissionsPage() {
           ),
       },
       {
-        title: 'Actions',
+        title: t('common.actions'),
         key: 'actions',
         render: (_, permission) => (
           <Tooltip title="Edit Permission">
@@ -103,8 +105,8 @@ function PermissionsPage() {
   return (
     <Space orientation="vertical" size={16} className="w-full">
       <PageHeader
-        title="Permissions"
-        subtitle="Fine-grained capabilities mapped to roles."
+        title={t('pages.permissions.title')}
+        subtitle={t('pages.permissions.subtitle')}
         titleExtra={control}
         extra={
           <Space>
@@ -114,7 +116,7 @@ function PermissionsPage() {
               icon={<PlusOutlined />}
               onClick={() => drawer.openAdd()}
             >
-              Add Permission
+              {t('pages.permissions.add')}
             </Button>
           </Space>
         }

@@ -9,13 +9,15 @@ import EditRoleDrawer from '../components/EditRoleDrawer'
 import { openAddDrawer, openEditDrawer, closeAddDrawer, closeEditDrawer } from '../rolesSlice'
 import { usePaginatedRoles } from '../queries'
 import { useAppDispatch, useAppSelector } from '../../../store/hooks'
+import { useTranslation } from 'react-i18next'
 import type { Role } from '../../../types/models'
 
 const { Text } = Typography
 
 function RolesPage() {
   const dispatch = useAppDispatch()
-  const table = useUrlTable(15, 'Search roles…')
+  const { t } = useTranslation()
+  const table = useUrlTable(15, t('pages.roles.search'))
   // Drawers are deep-linkable: ?add=true / ?edit=<id> (see the URL→drawer effect).
   const drawer = useUrlDrawer()
   const addDrawerOpen = useAppSelector((state) => state.roles.addDrawerOpen)
@@ -62,7 +64,7 @@ function RolesPage() {
         render: (count) => <Text strong>{count ?? 0}</Text>,
       },
       {
-        title: 'Actions',
+        title: t('common.actions'),
         key: 'actions',
         render: (_, role) => (
           <Tooltip title="Edit Role">
@@ -84,8 +86,8 @@ function RolesPage() {
   return (
     <Space orientation="vertical" size={16} className="w-full">
       <PageHeader
-        title="Roles"
-        subtitle="Define what each group of users can access."
+        title={t('pages.roles.title')}
+        subtitle={t('pages.roles.subtitle')}
         titleExtra={control}
         extra={
           <Space>
@@ -95,7 +97,7 @@ function RolesPage() {
               icon={<PlusOutlined />}
               onClick={() => drawer.openAdd()}
             >
-              Add Role
+              {t('pages.roles.add')}
             </Button>
           </Space>
         }

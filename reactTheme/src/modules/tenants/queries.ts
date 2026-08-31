@@ -8,7 +8,7 @@ interface Paginated<T> {
   meta: { current_page: number; per_page: number; total: number; last_page: number }
 }
 
-export function useTenants(params: ServerTableParams) {
+export function useTenants(params: ServerTableParams, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: ['tenants', params],
     queryFn: async (): Promise<Paginated<Tenant>> => {
@@ -16,6 +16,7 @@ export function useTenants(params: ServerTableParams) {
       return data
     },
     placeholderData: keepPreviousData,
+    enabled: options?.enabled ?? true,
   })
 }
 

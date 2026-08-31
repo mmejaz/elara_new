@@ -37,6 +37,8 @@ class ModuleSeeder extends Seeder
                 ['name' => 'Module Builder', 'slug' => 'module-builder', 'icon' => 'BuildOutlined'],
                 ['name' => 'Tenants', 'slug' => 'tenants', 'icon' => 'CloudServerOutlined'],
                 ['name' => 'Global Setting', 'slug' => 'globalsettings', 'icon' => 'AppstoreOutlined', 'resourceful' => true],
+                // Super-Admin-only: role-based dashboard widget configuration.
+                ['name' => 'Dashboard Setting', 'slug' => 'dashboard-settings', 'icon' => 'BarChartOutlined'],
             ],
         ],
         [

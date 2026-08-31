@@ -7,6 +7,7 @@ import DataTable, { useColumnToggle, useUrlDrawer, useUrlTable } from '../../../
 import CreateTenantDrawer from '../components/CreateTenantDrawer'
 import { useDeleteTenant, useSetTenantStatus, useTenants } from '../queries'
 import { toast } from '../../../utils/toast'
+import { useTranslation } from 'react-i18next'
 import type { Tenant } from '../types'
 
 const { Text } = Typography
@@ -15,9 +16,10 @@ const { Text } = Typography
 const dash = <Text type="secondary">—</Text>
 
 function TenantsPage() {
+  const { t } = useTranslation()
   // URL-backed table state (page/search/sort) + deep-linkable create drawer
   // (?add=true), mirroring the Users module — shareable and refresh-proof.
-  const table = useUrlTable(15, 'Search tenants…')
+  const table = useUrlTable(15, t('pages.tenants.search'))
   const drawer = useUrlDrawer()
   const { data, isFetching } = useTenants(table.params)
   const remove = useDeleteTenant()
@@ -135,7 +137,7 @@ function TenantsPage() {
         render: (v: string | null) => (v ? <Text className="!text-xs">{v}</Text> : dash),
       },
       {
-        title: 'Actions',
+        title: t('common.actions'),
         key: 'actions',
         width: 120,
         // The table now scrolls horizontally, so keep the controls reachable.
@@ -163,7 +165,7 @@ function TenantsPage() {
       },
     ],
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
+    [t],
   )
 
   const { visibleColumns, control } = useColumnToggle(columns)
@@ -171,14 +173,14 @@ function TenantsPage() {
   return (
     <Space orientation="vertical" size={16} className="w-full">
       <PageHeader
-        title="Tenants"
-        subtitle="Provision and manage tenant workspaces (each gets its own database)."
+        title={t('pages.tenants.title')}
+        subtitle={t('pages.tenants.subtitle')}
         titleExtra={control}
         extra={
           <Space>
             {table.searchInput}
             <Button type="primary" icon={<PlusOutlined />} onClick={() => drawer.openAdd()}>
-              Create Tenant
+              {t('pages.tenants.add')}
             </Button>
           </Space>
         }

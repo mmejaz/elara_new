@@ -1,0 +1,499 @@
+{
+  "common": {
+    "add": "Ajouter",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "save": "Enregistrer",
+    "saveChanges": "Enregistrer les modifications",
+    "cancel": "Annuler",
+    "create": "Créer",
+    "update": "Mettre à jour",
+    "search": "Rechercher",
+    "searchPlaceholder": "Rechercher…",
+    "actions": "Actions",
+    "confirm": "Confirmer",
+    "close": "Fermer",
+    "loading": "Chargement…",
+    "noData": "Aucune donnée",
+    "name": "Nom",
+    "namePlaceholder": "Saisissez le nom",
+    "enterName": "Saisissez un nom",
+    "status": "Statut",
+    "active": "Actif",
+    "created": "Créé",
+    "yes": "Oui",
+    "no": "Non",
+    "deleted": "Supprimé",
+    "deleteRecordConfirm": "Supprimer cet enregistrement ?",
+    "unableToDelete": "Impossible de supprimer",
+    "beforeYouStart": "Avant de commencer",
+    "requiredFieldsNote": "Les champs marqués d'un * sont obligatoires.",
+    "uniqueNameNote": "Saisissez un nom unique — les doublons ne sont pas autorisés.",
+    "createSuccess": "Créé avec succès",
+    "updateSuccess": "Mis à jour avec succès",
+    "on": "Activé",
+    "somethingWentWrong": "Une erreur est survenue."
+  },
+  "auth": {
+    "signIn": "Se connecter",
+    "welcomeBack": "Bon retour",
+    "welcomeSubtitle": "Saisissez votre e-mail et votre mot de passe pour accéder à votre compte.",
+    "email": "E-mail",
+    "emailPlaceholder": "Saisissez votre e-mail",
+    "password": "Mot de passe",
+    "passwordPlaceholder": "Saisissez votre mot de passe",
+    "forgotPassword": "Mot de passe oublié ?",
+    "rememberMe": "Se souvenir de moi",
+    "or": "ou",
+    "invalidCredentials": "Les identifiants fournis sont incorrects."
+  },
+  "nav": {
+    "overview": "Aperçu",
+    "dashboard": "Tableau de bord",
+    "analytics": "Analytique",
+    "attendance": "Présence",
+    "management": "Gestion",
+    "users": "Utilisateurs",
+    "roles": "Rôles",
+    "permissions": "Autorisations",
+    "modules": "Modules gérés",
+    "module-builder": "Générateur de modules",
+    "tenants": "Locataires",
+    "globalsettings": "Paramètre global",
+    "account": "Compte",
+    "profile": "Profil",
+    "reports": "Rapports",
+    "user-guide": "Guide de l'utilisateur",
+    "developer-guide": "Guide du développeur",
+    "lookups": "Listes de référence",
+    "all-lookups": "Toutes les listes",
+    "applicationtypes": "Type d'application",
+    "countries": "Pays",
+    "cities": "Ville",
+    "genders": "Genre",
+    "departments": "Département",
+    "designations": "Désignation",
+    "leavetypes": "Type de congé",
+    "documenttypes": "Type de document",
+    "organizations": "Organisation",
+    "dashboard-settings": "Réglage du tableau de bord"
+  },
+  "header": {
+    "organization": "Organisation",
+    "allOrganizations": "Toutes les organisations",
+    "searchPlaceholder": "Rechercher dans les modules et les pages",
+    "notifications": "Notifications",
+    "profile": "Profil",
+    "logout": "Déconnexion",
+    "language": "Langue",
+    "signedIn": "Connecté"
+  },
+  "orgSwitcher": {
+    "title": "Organisation",
+    "total": "{{count}} au total",
+    "all": "Toutes les organisations",
+    "noFilter": "Aucun filtre d'organisation",
+    "empty": "Aucune organisation pour le moment",
+    "under": "Sous {{name}}",
+    "topLevel": "Niveau supérieur"
+  },
+  "table": {
+    "columns": "Colonnes",
+    "sticky": "Épinglé",
+    "columnsAndSticky": "Colonnes et épinglage",
+    "noResults": "Aucun résultat"
+  },
+  "dashboard": {
+    "title": "Tableau de bord",
+    "subtitle": "Suivez l'activité du jour et gardez la boutique en mouvement.",
+    "today": "Aujourd'hui",
+    "week": "Semaine",
+    "month": "Mois",
+    "revenue": "Revenu",
+    "orders": "Commandes",
+    "customers": "Clients",
+    "conversion": "Conversion",
+    "monthlyRevenue": "Revenu mensuel",
+    "allTypes": "Tous les types",
+    "received": "Reçu",
+    "pending": "En attente",
+    "monthly": "Mensuel",
+    "yearly": "Annuel",
+    "recentOrders": "Commandes récentes",
+    "trafficByChannel": "Trafic par canal",
+    "share": "Part",
+    "col": {
+      "order": "Commande",
+      "customer": "Client",
+      "product": "Produit",
+      "amount": "Montant",
+      "status": "Statut",
+      "date": "Date"
+    },
+    "orderStatus": {
+      "Paid": "Payé",
+      "Pending": "En attente",
+      "Refunded": "Remboursé"
+    },
+    "channel": {
+      "Direct": "Direct",
+      "Referral": "Référence",
+      "Social": "Réseaux sociaux",
+      "Organic": "Organique"
+    },
+    "customWidgetPlaceholder": "Widget bientôt disponible"
+  },
+  "managedModules": {
+    "title": "Modules gérés",
+    "subtitle": "Activez ou désactivez les modules. Les modules inactifs sont masqués de la barre latérale.",
+    "search": "Rechercher des modules…",
+    "empty": "Aucun module trouvé.",
+    "crud": "CRUD",
+    "menu": "Menu",
+    "active": "Actif",
+    "inactive": "Inactif",
+    "activated": "{{name}} activé",
+    "deactivated": "{{name}} désactivé",
+    "updateError": "Impossible de mettre à jour le module"
+  },
+  "moduleBuilder": {
+    "title": "Générateur de modules",
+    "subtitle": "Générez un nouveau module avec son échafaudage CRUD.",
+    "search": "Rechercher des modules…",
+    "create": "Créer un module",
+    "col": {
+      "module": "Module",
+      "type": "Type",
+      "parent": "Parent",
+      "permissions": "Autorisations"
+    },
+    "groupSection": "Groupe / Section",
+    "resourcefulCrud": "Ressource · CRUD",
+    "parentMenu": "Menu parent",
+    "topLevel": "— niveau supérieur —",
+    "noPermissions": "Aucune",
+    "drawer": {
+      "title": "Créer un nouveau module",
+      "generate": "Générer le module",
+      "alertTitle": "Avant de commencer",
+      "alertRequiredBefore": "Les champs marqués d'un",
+      "alertRequiredAfter": "sont obligatoires.",
+      "alertLetters": "Le nom du module accepte uniquement les lettres et les espaces.",
+      "alertResourceful": "Les modules de type ressource génèrent des fichiers CRUD complets (liste, tiroirs, service, contrôleur).",
+      "nameLabel": "Nom du module",
+      "nameRequired": "Saisissez le nom du module",
+      "namePattern": "Seuls les lettres et les espaces sont autorisés",
+      "nameExtra": "ex. Étudiants, Cours, Factures",
+      "namePlaceholder": "ex. Étudiants",
+      "typeLabel": "Type",
+      "typeRequired": "Sélectionnez un type",
+      "typeExtra": "Comment cette entrée apparaît dans la barre latérale.",
+      "typeMenuItem": "Élément de menu",
+      "typeGroupSection": "Groupe / Section",
+      "parentLabel": "Parent / Section",
+      "parentRequired": "Choisissez où placer ce module",
+      "parentExtra": "Choisissez une section où le placer, ou un élément de menu pour l'imbriquer.",
+      "parentPlaceholder": "Sélectionnez une section ou un module parent",
+      "menuItemTypeLabel": "Type d'élément de menu",
+      "menuItemTypeExtra": "Ressource génère des fichiers CRUD complets (liste, tiroirs, service, contrôleur). Menu parent est un conteneur — imbriquez-y des éléments de type ressource.",
+      "resourcefulCrud": "Ressource (CRUD)",
+      "parentMenu": "Menu parent",
+      "iconLabel": "Icône",
+      "iconPlaceholder": "Sélectionnez une icône",
+      "descriptionLabel": "Description",
+      "descriptionPlaceholder": "Brève description de ce que gère ce module",
+      "permissionsLabel": "Autorisations à générer",
+      "permissionsRequired": "Sélectionnez au moins une autorisation",
+      "previewLabel": "Aperçu",
+      "previewEmpty": "Remplissez le formulaire pour voir un aperçu.",
+      "previewNewSection": "Nouvelle section de niveau supérieur",
+      "previewUnder": "Sous : {{parent}}",
+      "previewNoParent": "Aucun parent sélectionné",
+      "createdSuccess": "Module créé avec succès",
+      "createError": "Impossible de créer le module",
+      "icon": {
+        "appstore": "Appstore",
+        "team": "Équipe",
+        "book": "Livre",
+        "bank": "Banque",
+        "calendar": "Calendrier",
+        "file": "Fichier"
+      },
+      "perm": {
+        "view": "Voir",
+        "create": "Créer",
+        "edit": "Modifier",
+        "delete": "Supprimer",
+        "export": "Exporter"
+      }
+    }
+  },
+  "analytics": {
+    "title": "Analytique",
+    "subtitle": "Comprenez d'où vient votre trafic et comment il se convertit.",
+    "pageViews": "Pages vues",
+    "bounceRate": "Taux de rebond",
+    "avgSession": "Session moy.",
+    "growth": "Croissance",
+    "weeklySalesTrend": "Tendance des ventes hebdomadaires",
+    "sales": "Ventes"
+  },
+  "attendance": {
+    "title": "Présence",
+    "subtitle": "Aperçu quotidien des présences pour toutes les classes.",
+    "searchPlaceholder": "Rechercher des classes…",
+    "register": "Registre de présence — {{month}}",
+    "col": {
+      "class": "Classe",
+      "total": "Total",
+      "present": "Présent",
+      "excused": "Excusé",
+      "unexcused": "Non excusé"
+    }
+  },
+  "reports": {
+    "title": "Rapports",
+    "subtitle": "Générez et téléchargez les rapports de l'espace de travail.",
+    "searchPlaceholder": "Rechercher des rapports…",
+    "download": "Télécharger",
+    "col": {
+      "report": "Rapport",
+      "period": "Période"
+    },
+    "period": {
+      "Monthly": "Mensuel",
+      "Weekly": "Hebdomadaire",
+      "Quarterly": "Trimestriel"
+    }
+  },
+  "profile": {
+    "title": "Profil",
+    "subtitle": "Gérez les informations et les préférences de votre compte.",
+    "changePhoto": "Changer la photo",
+    "removePhoto": "Supprimer la photo",
+    "removePhotoConfirm": "Supprimer la photo de profil ?",
+    "remove": "Supprimer",
+    "defaultName": "Utilisateur",
+    "noRoles": "Aucun rôle",
+    "email": "E-mail",
+    "phone": "Téléphone",
+    "location": "Emplacement",
+    "joined": "Inscrit le",
+    "tabs": {
+      "personal": "Personnel",
+      "access": "Accès",
+      "security": "Sécurité",
+      "settings": "Paramètres"
+    },
+    "personal": {
+      "fullName": "Nom complet",
+      "nameRequired": "Le nom est requis",
+      "namePlaceholder": "Votre nom",
+      "email": "Adresse e-mail",
+      "emailRequired": "L'e-mail est requis",
+      "emailInvalid": "Saisissez un e-mail valide",
+      "emailPlaceholder": "vous@exemple.com",
+      "phone": "Téléphone",
+      "phonePlaceholder": "Numéro de téléphone",
+      "designation": "Désignation",
+      "designationPlaceholder": "ex. Administrateur",
+      "country": "Pays",
+      "countryPlaceholder": "Pays",
+      "city": "Ville",
+      "cityPlaceholder": "Ville",
+      "bio": "Biographie",
+      "bioPlaceholder": "Une courte biographie à votre sujet"
+    },
+    "access": {
+      "rolesHeading": "Rôles et leurs autorisations",
+      "permissionCount_one": "{{count}} autorisation",
+      "permissionCount_other": "{{count}} autorisations",
+      "superAdminAccess": "Accès complet — ce rôle contourne toutes les vérifications d'autorisation.",
+      "noRolePermissions": "Aucune autorisation attribuée à ce rôle.",
+      "noRolesAssigned": "Aucun rôle attribué",
+      "directHeading": "Autorisations attribuées directement",
+      "directDescription": "Autorisations qui vous sont accordées directement, en plus de celles héritées de vos rôles.",
+      "noDirectPermissions": "Aucune autorisation attribuée directement"
+    },
+    "security": {
+      "oldPassword": "Ancien mot de passe",
+      "oldPasswordRequired": "Saisissez votre mot de passe actuel",
+      "oldPasswordPlaceholder": "Saisissez l'ancien mot de passe",
+      "newPassword": "Nouveau mot de passe",
+      "newPasswordRequired": "Saisissez un nouveau mot de passe",
+      "newPasswordPlaceholder": "Saisissez le nouveau mot de passe",
+      "requirementsError": "Le mot de passe ne respecte pas toutes les exigences",
+      "confirmPassword": "Confirmer le mot de passe",
+      "confirmPasswordRequired": "Confirmez votre nouveau mot de passe",
+      "confirmPasswordPlaceholder": "Confirmez le mot de passe",
+      "passwordsMismatch": "Les mots de passe ne correspondent pas",
+      "requirementsTitle": "Le nouveau mot de passe doit contenir :",
+      "rules": {
+        "minLength": "Au moins 8 caractères",
+        "lowercase": "Au moins 1 lettre minuscule (a-z)",
+        "uppercase": "Au moins 1 lettre majuscule (A-Z)",
+        "number": "Au moins 1 chiffre (0-9)",
+        "special": "Au moins 1 caractère spécial"
+      }
+    },
+    "settings": {
+      "emailNotifications": "Notifications par e-mail",
+      "emailNotificationsDesc": "Recevoir des e-mails sur l'activité du compte.",
+      "productUpdates": "Nouveautés produit",
+      "productUpdatesDesc": "Actualités occasionnelles sur les nouvelles fonctionnalités.",
+      "publicProfile": "Profil public",
+      "publicProfileDesc": "Autoriser les autres à voir votre profil.",
+      "save": "Enregistrer les paramètres"
+    }
+  },
+  "pages": {
+    "users": {
+      "title": "Utilisateurs",
+      "subtitle": "Gérez les utilisateurs, les rôles et l'accès aux comptes.",
+      "add": "Ajouter un utilisateur",
+      "search": "Rechercher par nom, e-mail ou rôle…",
+      "totalUsers": "Total des utilisateurs",
+      "rolesCount": "Rôles",
+      "withRole": "Avec un rôle",
+      "withoutRole": "Sans rôle",
+      "roles": "Rôles",
+      "organizations": "Organisations",
+      "noRole": "Aucun rôle"
+    },
+    "roles": {
+      "title": "Rôles",
+      "subtitle": "Définissez ce à quoi chaque groupe d'utilisateurs peut accéder.",
+      "add": "Ajouter un rôle",
+      "search": "Rechercher des rôles…"
+    },
+    "permissions": {
+      "title": "Autorisations",
+      "subtitle": "Gérez les autorisations individuelles qui composent les rôles.",
+      "add": "Ajouter une autorisation",
+      "search": "Rechercher des autorisations…"
+    },
+    "tenants": {
+      "title": "Locataires",
+      "subtitle": "Provisionnez et gérez les espaces de travail des locataires (chacun a sa propre base de données).",
+      "add": "Créer un locataire",
+      "search": "Rechercher des locataires…"
+    },
+    "globalsettings": {
+      "title": "Paramètres globaux",
+      "subtitle": "Créez des applications avec des champs personnalisés, puis ajoutez-y des enregistrements.",
+      "add": "Ajouter une application",
+      "search": "Rechercher des applications…"
+    },
+    "applicationtypes": {
+      "title": "Types d'application",
+      "subtitle": "Gérez les enregistrements des types d'application.",
+      "add": "Ajouter un type d'application",
+      "edit": "Modifier le type d'application",
+      "search": "Rechercher des types d'application…"
+    },
+    "countries": {
+      "title": "Pays",
+      "subtitle": "Gérez les enregistrements des pays.",
+      "add": "Ajouter un pays",
+      "edit": "Modifier le pays",
+      "search": "Rechercher des pays…"
+    },
+    "cities": {
+      "title": "Villes",
+      "subtitle": "Gérez les enregistrements des villes.",
+      "add": "Ajouter une ville",
+      "edit": "Modifier la ville",
+      "search": "Rechercher des villes…"
+    },
+    "genders": {
+      "title": "Genres",
+      "subtitle": "Gérez les enregistrements des genres.",
+      "add": "Ajouter un genre",
+      "edit": "Modifier le genre",
+      "search": "Rechercher des genres…"
+    },
+    "designations": {
+      "title": "Désignations",
+      "subtitle": "Gérez les enregistrements des désignations.",
+      "add": "Ajouter une désignation",
+      "edit": "Modifier la désignation",
+      "search": "Rechercher des désignations…"
+    },
+    "leavetypes": {
+      "title": "Types de congé",
+      "subtitle": "Gérez les enregistrements des types de congé.",
+      "add": "Ajouter un type de congé",
+      "edit": "Modifier le type de congé",
+      "search": "Rechercher des types de congé…"
+    },
+    "documenttypes": {
+      "title": "Types de document",
+      "subtitle": "Gérez les enregistrements des types de document.",
+      "add": "Ajouter un type de document",
+      "edit": "Modifier le type de document",
+      "search": "Rechercher des types de document…"
+    },
+    "departments": {
+      "title": "Départements",
+      "subtitle": "Gérez les enregistrements des départements.",
+      "add": "Ajouter un département",
+      "edit": "Modifier le département",
+      "search": "Rechercher des départements…",
+      "col": {
+        "organization": "Organisation",
+        "parent": "Département parent"
+      },
+      "shared": "Partagé",
+      "fields": {
+        "organization": "Organisation",
+        "organizationPlaceholder": "Sélectionnez une organisation",
+        "organizationSharedPlaceholder": "Aucune / Partagé entre toutes les organisations",
+        "organizationRequired": "Sélectionnez une organisation",
+        "organizationShareHint": "Laissez vide pour partager ce département entre toutes les organisations.",
+        "parent": "Département parent",
+        "parentPlaceholder": "Aucun / Département de premier niveau"
+      }
+    },
+    "organizations": {
+      "title": "Organisations",
+      "subtitle": "Gérez les enregistrements des organisations.",
+      "add": "Ajouter une organisation",
+      "edit": "Modifier l'organisation",
+      "search": "Rechercher des organisations…",
+      "fields": {
+        "parent": "Organisation parente",
+        "parentPlaceholder": "Aucune / Organisation de premier niveau"
+      }
+    }
+  },
+  "dashboardSettings": {
+    "title": "Réglage du tableau de bord",
+    "subtitle": "Choisissez un widget, puis les rôles qui peuvent le voir. Un utilisateur voit un widget si l’un de ses rôles l’autorise.",
+    "widget": "Widget",
+    "hint": "Désactivez un widget pour le masquer à ce rôle.",
+    "saved": "Réglages du tableau de bord enregistrés.",
+    "forbidden": "Seul un Super Admin peut configurer les tableaux de bord.",
+    "noRoles": "Aucun rôle trouvé.",
+    "widgets": "Widgets",
+    "rolesFor": "Rôles pour {{widget}}",
+    "selectWidget": "Sélectionnez un widget",
+    "rolesCount": "{{count}} rôles sur {{total}}",
+    "enableAll": "Tout activer",
+    "disableAll": "Tout désactiver",
+    "visible": "Visible",
+    "hidden": "Masqué",
+    "addWidget": "Ajouter un widget",
+    "widgetName": "Nom du widget",
+    "widgetNamePlaceholder": "ex. Meilleurs produits",
+    "enterWidgetName": "Saisissez un nom de widget",
+    "icon": "Icône",
+    "widgetadded": "Widget ajouté.",
+    "widgetremoved": "Widget supprimé.",
+    "deleteWidget": "Supprimer ce widget ?",
+    "addWidgetNote1": "Un nouveau widget peut être attribué par rôle immédiatement.",
+    "addWidgetNote2": "Les widgets personnalisés apparaissent comme une carte générique jusquà ce quun développeur ajoute un composant.",
+    "off": "Désactivé",
+    "showOnDashboard": "Afficher sur le tableau de bord",
+    "hiddenNote": "Ce widget est masqué de tous les tableaux de bord. Activez « Afficher sur le tableau de bord » pour utiliser les réglages par rôle ci-dessous."
+  }
+}
